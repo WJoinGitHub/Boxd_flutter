@@ -26,8 +26,12 @@ class _VerificationPageState extends State<VerificationPage> {
 
   @override
   void dispose() {
-    for (var c in _controllers) c.dispose();
-    for (var n in _nodes) n.dispose();
+    for (var c in _controllers) {
+      c.dispose();
+    }
+    for (var n in _nodes) {
+      n.dispose();
+    }
     super.dispose();
   }
 
@@ -37,9 +41,9 @@ class _VerificationPageState extends State<VerificationPage> {
       v = v.substring(v.length - 1);
       _controllers[index].text = v;
     }
-    if (index + 1 < _nodes.length)
+    if (index + 1 < _nodes.length) {
       _nodes[index + 1].requestFocus();
-    else {
+    } else {
       bool all = _controllers.every((c) => c.text.isNotEmpty);
       if (all) FocusScope.of(context).unfocus();
     }

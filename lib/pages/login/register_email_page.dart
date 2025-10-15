@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
+import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
+import 'package:flutter_boxd_app_flow/widgets/app_text_field.dart';
 import 'verification_page.dart';
 
 class RegisterEmailPage extends StatefulWidget {
@@ -20,6 +22,7 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('注册 - 输入邮箱')),
+      backgroundColor: AppColors.pageBg,
       body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(children: [
@@ -29,16 +32,16 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
               ),
             ),
             const SizedBox(height: 20),
-            TextField(
+            AppTextField(
               controller: _emailCtrl,
+              labelText: '邮箱',
               keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                  labelText: '邮箱',
-                  suffixIcon: _emailCtrl.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () => setState(() => _emailCtrl.clear()))
-                      : null),
+              suffixIcon: _emailCtrl.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => setState(() => _emailCtrl.clear()),
+                    )
+                  : null,
               onChanged: (_) => setState(() => {}),
             ),
             const SizedBox(height: 24),

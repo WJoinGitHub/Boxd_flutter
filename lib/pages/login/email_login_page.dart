@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
+import 'package:flutter_boxd_app_flow/pages/login/register_email_page.dart';
+import 'package:flutter_boxd_app_flow/pages/login/verification_page.dart';
+import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
+import 'package:flutter_boxd_app_flow/widgets/app_text_field.dart';
 
 class EmailLoginPage extends StatefulWidget {
   const EmailLoginPage({super.key});
@@ -11,6 +15,7 @@ class EmailLoginPage extends StatefulWidget {
 class _EmailLoginPageState extends State<EmailLoginPage> {
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _pwdCtrl = TextEditingController();
+  bool _obscure = true;
 
   @override
   void dispose() {
@@ -19,65 +24,143 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
     super.dispose();
   }
 
-  bool get _canLogin => _emailCtrl.text.isNotEmpty && _pwdCtrl.text.isNotEmpty;
+  bool get _canLogin => _isEmail(_emailCtrl.text) && _pwdCtrl.text.isNotEmpty;
+
+  bool _isEmail(String v) {
+    if (v.isEmpty) return false;
+    final emailReg =
+        RegExp(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
+    return emailReg.hasMatch(v);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('邮箱登录')),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            Flexible(
-              child: Assets.login.images.logo.image(
-                fit: BoxFit.contain,
+      appBar: AppBar(
+        title: const Text('Sign In'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      backgroundColor: AppColors.pageBg,
+      resizeToAvoidBottomInset: true,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            24,
+            24,
+            24,
+            24 + MediaQuery.of(context).viewInsets.bottom,
+          ),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 15),
+              Center(
+                child: SizedBox(
+                  height: 70,
+                  child: Assets.login.images.logo.image(fit: BoxFit.contain),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _emailCtrl,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: '邮箱',
+              const SizedBox(height: 30),
+              AppTextField(
+                controller: _emailCtrl,
+                labelText: 'Enter your email',
+                keyboardType: TextInputType.emailAddress,
                 suffixIcon: _emailCtrl.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
                         onPressed: () => setState(() => _emailCtrl.clear()),
                       )
                     : null,
+                onChanged: (_) => setState(() {}),
               ),
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _pwdCtrl,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: '密码',
-                suffixIcon: _pwdCtrl.text.isNotEmpty
-                    ? IconButton(
+              const SizedBox(height: 16),
+              AppTextField(
+                controller: _pwdCtrl,
+                labelText: 'Password',
+                obscureText: _obscure,
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_pwdCtrl.text.isNotEmpty)
+                      IconButton(
                         icon: const Icon(Icons.clear),
                         onPressed: () => setState(() => _pwdCtrl.clear()),
-                      )
-                    : null,
+                      ),
+                    IconButton(
+                      icon: Icon(
+                          _obscure ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                    ),
+                  ],
+                ),
+                onChanged: (_) => setState(() {}),
               ),
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _canLogin
-                  ? () {
-                      // TODO: 这里可以加实际登录逻辑
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('模拟登录成功')),
-                      );
-                    }
-                  : null,
-              child: const SizedBox(
-                  width: double.infinity, child: Center(child: Text('确认登录'))),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const VerificationPage(
+                            codeLength: 4, isForReset: true)));
+                  },
+                  child: const Text(
+                    'Forget Password?',
+                    style: TextStyle(color: AppColors.orange, fontSize: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: _canLogin
+                    ? () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('模拟登录成功')),
+                        );
+                      }
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const SizedBox(
+                  width: double.infinity,
+                  child: Center(
+                    child: Text(
+                      'Sign In',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Don't have an account? "),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => const RegisterEmailPage()));
+                    },
+                    child: const Text(
+                      'Sign Up',
+                      style: TextStyle(color: AppColors.orange, fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

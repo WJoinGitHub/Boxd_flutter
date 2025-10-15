@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
+import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
+import 'package:flutter_boxd_app_flow/widgets/app_text_field.dart';
 import 'set_username_page.dart';
 
 class SetPasswordPage extends StatefulWidget {
@@ -35,6 +37,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
     final desc = getDescription();
     return Scaffold(
         appBar: AppBar(title: const Text('设置密码')),
+        backgroundColor: AppColors.pageBg,
         body: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(children: [
@@ -46,17 +49,14 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
               const SizedBox(height: 20),
               Text(desc),
               const SizedBox(height: 12),
-              TextField(
+              AppTextField(
                   controller: _pwdCtrl,
+                  labelText: '密码',
                   obscureText: _obscure,
-                  decoration: InputDecoration(
-                      labelText: '密码',
-                      suffixIcon: IconButton(
-                          icon: Icon(_obscure
-                              ? Icons.visibility_off
-                              : Icons.visibility),
-                          onPressed: () =>
-                              setState(() => _obscure = !_obscure))),
+                  suffixIcon: IconButton(
+                      icon: Icon(
+                          _obscure ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () => setState(() => _obscure = !_obscure)),
                   onChanged: (_) => setState(() => {})),
               const SizedBox(height: 24),
               ElevatedButton(

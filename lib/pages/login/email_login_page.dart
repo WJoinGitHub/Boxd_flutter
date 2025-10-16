@@ -105,8 +105,11 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                 child: TextButton(
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const VerificationPage(
-                            codeLength: 4, isForReset: true)));
+                        builder: (_) => VerificationPage(
+                              codeLength: 4,
+                              isForReset: true,
+                              email: _emailCtrl.text,
+                            )));
                   },
                   child: const Text(
                     'Forget Password?',

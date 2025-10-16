@@ -118,9 +118,10 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
                 onPressed: _emailCtrl.text.isNotEmpty
                     ? () => Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => const VerificationPage(
+                            builder: (_) => VerificationPage(
                               codeLength: 4,
                               isForReset: false,
+                              email: _emailCtrl.text,
                             ),
                           ),
                         )
@@ -131,7 +132,7 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('下一步'),
+                child: const Text('Next'),
               ),
             ),
           ],

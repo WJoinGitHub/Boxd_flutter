@@ -57,7 +57,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 15),
+              const SizedBox(height: 16),
               Center(
                 child: SizedBox(
                   height: 70,

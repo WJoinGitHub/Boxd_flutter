@@ -99,7 +99,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                 ),
                 onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 2),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -114,7 +114,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _canLogin
                     ? () {
@@ -142,7 +142,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

@@ -111,7 +111,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                               email: _emailCtrl.text,
                             )));
                   },
-                  child: const Text(
+                  child: Text(
                     'Forget Password?',
                     style: TextStyle(color: AppColors.orange, fontSize: 16),
                   ),
@@ -155,7 +155,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                       Navigator.of(context).push(MaterialPageRoute(
                           builder: (_) => const RegisterEmailPage()));
                     },
-                    child: const Text(
+                    child: Text(
                       'Sign Up',
                       style: TextStyle(color: AppColors.orange, fontSize: 16),
                     ),

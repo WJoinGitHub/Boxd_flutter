@@ -94,7 +94,7 @@ class _VerificationPageState extends State<VerificationPage> {
             const SizedBox(height: 10),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.black,
                 fontSize: 32,
                 fontFamily: 'SF Pro',
@@ -171,8 +171,8 @@ class _VerificationPageState extends State<VerificationPage> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(
-                            color: AppColors.orange, width: 1.5),
+                        borderSide:
+                            BorderSide(color: AppColors.orange, width: 1.5),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       filled: true,
@@ -195,7 +195,7 @@ class _VerificationPageState extends State<VerificationPage> {
                       style: TextStyle(
                         fontFamily: 'SF Pro',
                         fontSize: 14,
-                        color: Colors.black.withOpacity(0.3),
+                        color: AppColors.gray2,
                       ),
                       textAlign: TextAlign.center,
                     )
@@ -206,7 +206,7 @@ class _VerificationPageState extends State<VerificationPage> {
                         foregroundColor: AppColors.orange,
                         padding: EdgeInsets.zero,
                       ),
-                      child: const Text(
+                      child: Text(
                         'Send again',
                         style: TextStyle(
                           fontFamily: 'SF Pro',

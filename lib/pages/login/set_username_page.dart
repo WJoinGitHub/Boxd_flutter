@@ -40,6 +40,7 @@ class _SetUsernamePageState extends State<SetUsernamePage> {
                       : null,
                   child: const SizedBox(
                       width: double.infinity,
+                      height: 50,
                       child: Center(child: Text('下一步')))),
             ])));
   }

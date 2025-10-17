@@ -109,14 +109,14 @@ class _VerificationPageState extends State<VerificationPage> {
               child: Text.rich(
                 TextSpan(
                   children: [
-                    const TextSpan(
+                    TextSpan(
                       text: 'Please enter the 4-digit code sent to your email ',
                       style: TextStyle(
                         fontFamily: 'SF Pro',
                         fontWeight: FontWeight.w400,
                         fontSize: 14,
                         height: 1.0,
-                        color: Colors.black,
+                        color: AppColors.gray3,
                       ),
                     ),
                     TextSpan(
@@ -129,14 +129,14 @@ class _VerificationPageState extends State<VerificationPage> {
                         color: Colors.black,
                       ),
                     ),
-                    const TextSpan(
+                    TextSpan(
                       text: ' for verification.',
                       style: TextStyle(
                         fontFamily: 'SF Pro',
                         fontWeight: FontWeight.w400,
                         fontSize: 14,
                         height: 1.0,
-                        color: Colors.black,
+                        color: AppColors.gray3,
                       ),
                     ),
                   ],
@@ -225,12 +225,13 @@ class _VerificationPageState extends State<VerificationPage> {
                   ? () => Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) =>
-                              const SetPasswordPage(isForReset: false),
+                              SetPasswordPage(isForReset: widget.isForReset),
                         ),
                       )
                   : null,
               child: const SizedBox(
                 width: double.infinity,
+                height: 50,
                 child: Center(child: Text('VERTICAL')),
               ),
             ),

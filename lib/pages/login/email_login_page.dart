@@ -57,7 +57,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
+              const SizedBox(height: 15),
               Center(
                 child: SizedBox(
                   height: 70,
@@ -99,25 +99,22 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                 ),
                 onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => VerificationPage(
-                              codeLength: 4,
-                              isForReset: true,
-                              email: _emailCtrl.text,
-                            )));
+                        builder: (_) => const VerificationPage(
+                            codeLength: 4, isForReset: true)));
                   },
-                  child: Text(
+                  child: const Text(
                     'Forget Password?',
                     style: TextStyle(color: AppColors.orange, fontSize: 16),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: _canLogin
                     ? () {
@@ -145,7 +142,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -155,7 +152,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                       Navigator.of(context).push(MaterialPageRoute(
                           builder: (_) => const RegisterEmailPage()));
                     },
-                    child: Text(
+                    child: const Text(
                       'Sign Up',
                       style: TextStyle(color: AppColors.orange, fontSize: 16),
                     ),

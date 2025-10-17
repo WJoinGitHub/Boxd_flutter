@@ -34,48 +34,24 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.isForReset ? 'Reset Password' : 'Create Password';
-    final desc = widget.isForReset
-        ? 'Pleas enter six or more characters'
-        : 'Pleas enter six or more characters';
+    final desc = getDescription();
     return Scaffold(
-        appBar: AppBar(title: const Text('')),
+        appBar: AppBar(title: const Text('设置密码')),
         backgroundColor: AppColors.pageBg,
         body: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(children: [
-              const SizedBox(height: 16),
-              Center(
-                child: SizedBox(
-                  height: 70,
-                  child: Assets.login.images.logo.image(fit: BoxFit.contain),
+              Flexible(
+                child: Assets.login.images.logo.image(
+                  fit: BoxFit.contain,
                 ),
               ),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                style: TextStyle(
-                  color: AppColors.black,
-                  fontSize: 32,
-                  fontFamily: 'SF Pro',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                desc,
-                style: const TextStyle(
-                  fontFamily: 'SF Pro',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 14,
-                  height: 1.0,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
+              Text(desc),
+              const SizedBox(height: 12),
               AppTextField(
                   controller: _pwdCtrl,
-                  labelText: 'Password',
+                  labelText: '密码',
                   obscureText: _obscure,
                   suffixIcon: IconButton(
                       icon: Icon(
@@ -90,7 +66,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                       : null,
                   child: const SizedBox(
                       width: double.infinity,
-                      child: Center(child: Text('Save')))),
+                      child: Center(child: Text('下一步')))),
             ])));
   }
 }

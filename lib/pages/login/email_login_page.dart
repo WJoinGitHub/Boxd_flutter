@@ -57,7 +57,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 15),
+              const SizedBox(height: 16),
               Center(
                 child: SizedBox(
                   height: 70,
@@ -99,22 +99,25 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                 ),
                 onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 2),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const VerificationPage(
-                            codeLength: 4, isForReset: true)));
+                        builder: (_) => VerificationPage(
+                              codeLength: 4,
+                              isForReset: true,
+                              email: _emailCtrl.text,
+                            )));
                   },
-                  child: const Text(
+                  child: Text(
                     'Forget Password?',
                     style: TextStyle(color: AppColors.orange, fontSize: 16),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _canLogin
                     ? () {
@@ -133,6 +136,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                 ),
                 child: const SizedBox(
                   width: double.infinity,
+                  height: 50,
                   child: Center(
                     child: Text(
                       'Sign In',
@@ -142,7 +146,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -152,7 +156,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                       Navigator.of(context).push(MaterialPageRoute(
                           builder: (_) => const RegisterEmailPage()));
                     },
-                    child: const Text(
+                    child: Text(
                       'Sign Up',
                       style: TextStyle(color: AppColors.orange, fontSize: 16),
                     ),

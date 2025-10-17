@@ -26,47 +26,142 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
   }
 
   bool validate(String p) {
-    final lenOk = p.length >= 6 && p.length <= 8;
+    final lenOk = p.length >= 8 && p.length <= 20;
     final hasLetter = p.contains(RegExp(r'[A-Za-z]'));
-    final hasDigit = p.contains(RegExp(r'\\d'));
+    final hasDigit = p.contains(RegExp(r'\d')); // ✅ 修正这里
     return lenOk && hasLetter && hasDigit;
   }
 
   @override
   Widget build(BuildContext context) {
-    final desc = getDescription();
+    final title = widget.isForReset ? 'Reset Password' : 'Create Password';
+    final desc = widget.isForReset
+        ? 'Pleas enter six or more characters'
+        : 'Pleas enter six or more characters';
     return Scaffold(
-        appBar: AppBar(title: const Text('设置密码')),
+        appBar: AppBar(title: const Text('')),
         backgroundColor: AppColors.pageBg,
         body: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(children: [
-              Flexible(
-                child: Assets.login.images.logo.image(
-                  fit: BoxFit.contain,
+              const SizedBox(height: 16),
+              Center(
+                child: SizedBox(
+                  height: 70,
+                  child: Assets.login.images.logo.image(fit: BoxFit.contain),
                 ),
               ),
-              const SizedBox(height: 20),
-              Text(desc),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: TextStyle(
+                  color: AppColors.black,
+                  fontSize: 32,
+                  fontFamily: 'SF Pro',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                desc,
+                style: TextStyle(
+                  fontFamily: 'SF Pro',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 14,
+                  height: 1.0,
+                  color: AppColors.gray3,
+                ),
+              ),
+              const SizedBox(height: 30),
               AppTextField(
                   controller: _pwdCtrl,
-                  labelText: '密码',
+                  labelText: 'Password',
                   obscureText: _obscure,
                   suffixIcon: IconButton(
-                      icon: Icon(
-                          _obscure ? Icons.visibility_off : Icons.visibility),
-                      onPressed: () => setState(() => _obscure = !_obscure)),
-                  onChanged: (_) => setState(() => {})),
+                    icon: Icon(
+                        _obscure ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _obscure = !_obscure),
+                  ),
+                  onChanged: (_) => setState(() {})), // ✅ 确保每次输入都会重建按钮),
+              if (!widget.isForReset) ...[
+                const SizedBox(height: 8),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Enter six or more characters',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                          height: 1.0,
+                          letterSpacing: 0,
+                          color: Color(0xFF131313),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '8 to 20 characters',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                          height: 1.0,
+                          letterSpacing: 0,
+                          color: Color(0xFF131313),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Letters, number, and special characters',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                          height: 1.0,
+                          letterSpacing: 0,
+                          color: Color(0xFF131313),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
-              ElevatedButton(
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
                   onPressed: validate(_pwdCtrl.text)
-                      ? () => Navigator.of(context).push(MaterialPageRoute(
-                          builder: (_) => const SetUsernamePage()))
+                      ? () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => const SetUsernamePage()),
+                          )
                       : null,
-                  child: const SizedBox(
-                      width: double.infinity,
-                      child: Center(child: Text('下一步')))),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: validate(_pwdCtrl.text)
+                        ? AppColors.orange
+                        : AppColors.gray2, // 灰色禁用状态
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Save',
+                    style: TextStyle(
+                      fontFamily: 'SF Pro',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      height: 1.0,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+              ),
             ])));
   }
 }

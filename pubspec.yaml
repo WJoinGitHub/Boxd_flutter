@@ -38,6 +38,10 @@ flutter:
   assets:
     - assets/launch/images/
     - assets/login/images/
+    - assets/home/images/
+    - assets/user/images/
+    - assets/device/images/
+    - assets/common/images/
 
 flutter_native_splash:
   color: "#FFFFFF"

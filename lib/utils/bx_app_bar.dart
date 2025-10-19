@@ -1,38 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 
-/// 自定义通用 AppBar
+/// 通用自定义 AppBar
 /// 支持：
-/// - 左侧可选自定义返回按钮图片（默认提供）
-/// - 中间标题
-/// - 右侧可选按钮（图标或文字）
+/// ✅ 自定义左侧返回按钮图片（或隐藏）
+/// ✅ 自定义标题（文字居中）
+/// ✅ 自定义右侧按钮（图标或文字）
+/// ✅ 默认返回逻辑（maybePop）
 ///
-/// 用法示例：
+/// 示例：
 /// ```dart
-/// appBar: CustomAppBar(
+/// appBar: BxAppBar(
 ///   title: "Settings",
-///   rightIcon: Icons.help_outline,
+///   rightWidget: Icon(Icons.help_outline, color: Colors.black),
 ///   onRightPressed: () { ... },
 /// )
 /// ```
 class BxAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? title;
-  final Widget? leftIcon; // 可自定义返回按钮图片
+  final Widget? leftIcon; // 自定义返回图标
   final VoidCallback? onLeftPressed;
+  final bool showBack; // 是否显示返回按钮
 
-  final Widget? rightWidget; // 允许自定义 widget
+  final Widget? rightWidget;
   final VoidCallback? onRightPressed;
 
   final Color backgroundColor;
+  final Color titleColor;
 
   const BxAppBar({
     super.key,
     this.title,
     this.leftIcon,
     this.onLeftPressed,
+    this.showBack = true,
     this.rightWidget,
     this.onRightPressed,
     this.backgroundColor = Colors.white,
+    this.titleColor = Colors.black,
   });
 
   @override
@@ -41,41 +46,43 @@ class BxAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: backgroundColor,
       elevation: 0,
       centerTitle: true,
+      leadingWidth: 56, // 保证左边留白一致
+      automaticallyImplyLeading: false, // 防止系统自动添加返回箭头
 
-      // ✅ 左侧返回按钮
-      leading: IconButton(
-        onPressed: onLeftPressed ?? () => Navigator.pop(context),
-        icon: leftIcon ??
-            Assets.common.images.back.image(
-              width: 24,
-              height: 24,
-              fit: BoxFit.contain,
-            ),
-      ),
+      leading: showBack
+          ? IconButton(
+              onPressed:
+                  onLeftPressed ?? () => Navigator.of(context).maybePop(),
+              icon: leftIcon ??
+                  Assets.common.images.back.image(
+                    width: 24,
+                    height: 24,
+                    fit: BoxFit.contain,
+                  ),
+            )
+          : null,
 
-      // ✅ 中间标题
       title: title != null
           ? Text(
               title!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 18,
-                color: Colors.black,
+                color: titleColor,
               ),
             )
           : null,
 
-      // ✅ 右侧按钮（支持文字、图标或自定义 Widget）
       actions: [
         if (rightWidget != null)
-          GestureDetector(
+          InkWell(
             onTap: onRightPressed,
-            behavior: HitTestBehavior.opaque,
+            borderRadius: BorderRadius.circular(24),
             child: Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: rightWidget!,
+              padding: const EdgeInsets.only(right: 16, left: 8),
+              child: Center(child: rightWidget!),
             ),
-          )
+          ),
       ],
     );
   }

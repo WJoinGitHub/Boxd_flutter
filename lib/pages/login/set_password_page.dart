@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
+import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/widgets/app_text_field.dart';
 import 'set_username_page.dart';
 
@@ -39,7 +40,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
         ? 'Pleas enter six or more characters'
         : 'Pleas enter six or more characters';
     return Scaffold(
-        appBar: AppBar(title: const Text('')),
+        appBar: const BxAppBar(title: ""),
         backgroundColor: AppColors.pageBg,
         body: Padding(
             padding: const EdgeInsets.all(16.0),

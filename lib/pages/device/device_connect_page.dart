@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:location/location.dart' as loc;
 import 'package:device_info_plus/device_info_plus.dart';
@@ -215,24 +216,7 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text("Connect Device"),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        leading: const Padding(
-          padding: EdgeInsets.only(left: 16),
-          child: Icon(Icons.arrow_back_ios, size: 20),
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Center(
-                child: Text("Help", style: TextStyle(color: Colors.blue))),
-          ),
-        ],
-      ),
+      appBar: const BxAppBar(title: "Connect Device"),
       body: Column(
         children: [
           _buildStatusSection(),

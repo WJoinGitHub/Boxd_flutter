@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
+import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 
 class UnitSwitchingPage extends StatefulWidget {
   const UnitSwitchingPage({super.key});
@@ -31,14 +33,13 @@ class _UnitSwitchingPageState extends State<UnitSwitchingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () => Navigator.pop(context, selectedUnit),
+      appBar: BxAppBar(
+        leftIcon: Assets.common.images.deviceBack.image(
+          width: 24,
+          height: 24,
+          fit: BoxFit.contain,
         ),
+        title: "Settings",
       ),
       backgroundColor: Colors.white,
       body: Center(

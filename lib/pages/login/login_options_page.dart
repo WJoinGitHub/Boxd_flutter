@@ -5,6 +5,7 @@ import 'package:flutter_boxd_app_flow/services/google_sign_in_service.dart';
 import 'package:flutter_boxd_app_flow/services/apple_sign_in_service.dart';
 import 'package:flutter_boxd_app_flow/services/facebook_sign_in_service.dart';
 import 'package:flutter_boxd_app_flow/pages/login/email_login_page.dart';
+import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/widgets/social_button.dart';
 import 'register_email_page.dart';
 
@@ -14,14 +15,7 @@ class LoginOptionsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('登录'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        // 去掉右边 ❌
-      ),
+      appBar: const BxAppBar(title: ""),
       body: _LoginRoot(),
     );
   }

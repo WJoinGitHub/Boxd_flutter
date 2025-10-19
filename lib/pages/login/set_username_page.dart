@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
-import 'package:flutter_boxd_app_flow/utils/api_client.dart'; // ✅ 新增导入
+import 'package:flutter_boxd_app_flow/utils/api_client.dart';
+import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart'; // ✅ 新增导入
 
 class SetUsernamePage extends StatefulWidget {
   const SetUsernamePage({super.key});
@@ -62,7 +63,7 @@ class _SetUsernamePageState extends State<SetUsernamePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: const Text('设置用户名')),
+        appBar: const BxAppBar(title: ""),
         body: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(children: [
@@ -72,7 +73,7 @@ class _SetUsernamePageState extends State<SetUsernamePage> {
               const SizedBox(height: 20),
               TextField(
                   controller: _nameCtrl,
-                  decoration: const InputDecoration(labelText: '用户名'),
+                  decoration: const InputDecoration(labelText: 'UserName'),
                   onChanged: (_) => setState(() => {})),
               const SizedBox(height: 24),
               if (_message != null)

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
+import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'set_password_page.dart';
 
 class VerificationPage extends StatefulWidget {
@@ -79,7 +80,7 @@ class _VerificationPageState extends State<VerificationPage> {
   Widget build(BuildContext context) {
     final title = widget.isForReset ? 'Reset Password' : 'Sign In';
     return Scaffold(
-      appBar: AppBar(title: const Text('')),
+      appBar: const BxAppBar(title: ""),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

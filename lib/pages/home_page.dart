@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
+import 'package:flutter_boxd_app_flow/pages/device/device_connect_page.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/pages/login/email_login_page.dart';
 
@@ -12,6 +13,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool connected = false;
+  int temperature = 29;
+  @override
+  void initState() {
+    super.initState();
+    print("HomePage initState start");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +58,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      // 点击事件
                       Navigator.of(context).push(
                         PageRouteBuilder(
                           fullscreenDialog: true,
@@ -60,23 +66,24 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent, // 无背景
-                      shadowColor: Colors.transparent, // 无阴影
-                      elevation: 0, // 去掉立体感
-                      padding: EdgeInsets.zero, // 去掉内部留白
-                      minimumSize: const Size(40, 40), // 点击区域
-                      shape: const CircleBorder(), // 可选，圆形区域
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      elevation: 0,
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(40, 40),
+                      shape: const CircleBorder(),
                     ),
                     child: Center(
                       child: Assets.home.images.homeAvatar.image(
-                        width: 28, // 图片实际宽度（自定义）
-                        height: 32, // 图片实际高度（自定义）
+                        width: 28,
+                        height: 32,
                         fit: BoxFit.contain,
                       ),
                     ),
                   ),
                 ],
               ),
+
               const SizedBox(height: 2),
 
               // 连接状态
@@ -105,21 +112,20 @@ class _HomePageState extends State<HomePage> {
                   if (!connected)
                     ElevatedButton(
                       onPressed: () {
-                        // 点击事件
                         Navigator.of(context).push(
                           PageRouteBuilder(
-                            fullscreenDialog: true,
-                            pageBuilder: (_, __, ___) => const EmailLoginPage(),
+                            pageBuilder: (_, __, ___) =>
+                                const DeviceConnectPage(),
                           ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent, // 无背景
-                        shadowColor: Colors.transparent, // 无阴影
-                        elevation: 0, // 去掉立体感
-                        padding: EdgeInsets.zero, // 去掉内部留白
-                        minimumSize: const Size(35, 32), // 点击区域
-                        shape: const CircleBorder(), // 可选，圆形区域
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        elevation: 0,
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(35, 32),
+                        shape: const CircleBorder(),
                       ),
                       child: Center(
                         child: Assets.home.images.addDevice.image(
@@ -131,8 +137,47 @@ class _HomePageState extends State<HomePage> {
                     ),
                 ],
               ),
-              const SizedBox(height: 16),
-              // 三个按钮
+
+              const SizedBox(height: 24),
+
+              // 🔥 新增：左右图片区域
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // 左边温度仪表 + 文案
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Assets.home.images.devTemperatureF.image(
+                        width: 140,
+                        fit: BoxFit.contain,
+                      ),
+                      Positioned(
+                        top: 65,
+                        child: Text(
+                          temperature.toString(),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // 右边设备图片
+                  Assets.home.images.homeDevice.image(
+                    width: 180,
+                    fit: BoxFit.contain,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 40),
+
+              // 三个功能按钮
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -141,6 +186,7 @@ class _HomePageState extends State<HomePage> {
                   _buildModeButton("Timer", AppColors.orange),
                 ],
               ),
+
               const Spacer(),
             ],
           ),

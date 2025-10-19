@@ -3,6 +3,7 @@ import 'pages/home_page.dart';
 import 'utils/app_colors.dart';
 
 void main() {
+  print("main start");
   runApp(const MyApp());
 }
 

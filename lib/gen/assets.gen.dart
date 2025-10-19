@@ -11,6 +11,27 @@
 
 import 'package:flutter/widgets.dart';
 
+class $AssetsCommonGen {
+  const $AssetsCommonGen();
+
+  /// Directory path: assets/common/images
+  $AssetsCommonImagesGen get images => const $AssetsCommonImagesGen();
+}
+
+class $AssetsDeviceGen {
+  const $AssetsDeviceGen();
+
+  /// Directory path: assets/device/images
+  $AssetsDeviceImagesGen get images => const $AssetsDeviceImagesGen();
+}
+
+class $AssetsHomeGen {
+  const $AssetsHomeGen();
+
+  /// Directory path: assets/home/images
+  $AssetsHomeImagesGen get images => const $AssetsHomeImagesGen();
+}
+
 class $AssetsLaunchGen {
   const $AssetsLaunchGen();
 
@@ -23,6 +44,55 @@ class $AssetsLoginGen {
 
   /// Directory path: assets/login/images
   $AssetsLoginImagesGen get images => const $AssetsLoginImagesGen();
+}
+
+class $AssetsUserGen {
+  const $AssetsUserGen();
+
+  /// Directory path: assets/user/images
+  $AssetsUserImagesGen get images => const $AssetsUserImagesGen();
+}
+
+class $AssetsCommonImagesGen {
+  const $AssetsCommonImagesGen();
+
+  /// File path: assets/common/images/back.png
+  AssetGenImage get back => const AssetGenImage('assets/common/images/back.png');
+
+  /// File path: assets/common/images/device_back.png
+  AssetGenImage get deviceBack => const AssetGenImage('assets/common/images/device_back.png');
+
+  /// List of all assets
+  List<AssetGenImage> get values => [back, deviceBack];
+}
+
+class $AssetsDeviceImagesGen {
+  const $AssetsDeviceImagesGen();
+}
+
+class $AssetsHomeImagesGen {
+  const $AssetsHomeImagesGen();
+
+  /// File path: assets/home/images/add_device.png
+  AssetGenImage get addDevice => const AssetGenImage('assets/home/images/add_device.png');
+
+  /// File path: assets/home/images/dev_temperature_f.png
+  AssetGenImage get devTemperatureF => const AssetGenImage('assets/home/images/dev_temperature_f.png');
+
+  /// File path: assets/home/images/home_avatar.png
+  AssetGenImage get homeAvatar => const AssetGenImage('assets/home/images/home_avatar.png');
+
+  /// File path: assets/home/images/home_banner.png
+  AssetGenImage get homeBanner => const AssetGenImage('assets/home/images/home_banner.png');
+
+  /// File path: assets/home/images/home_device.png
+  AssetGenImage get homeDevice => const AssetGenImage('assets/home/images/home_device.png');
+
+  /// File path: assets/home/images/home_device_on.png
+  AssetGenImage get homeDeviceOn => const AssetGenImage('assets/home/images/home_device_on.png');
+
+  /// List of all assets
+  List<AssetGenImage> get values => [addDevice, devTemperatureF, homeAvatar, homeBanner, homeDevice, homeDeviceOn];
 }
 
 class $AssetsLaunchImagesGen {
@@ -45,11 +115,25 @@ class $AssetsLoginImagesGen {
   List<AssetGenImage> get values => [logo];
 }
 
+class $AssetsUserImagesGen {
+  const $AssetsUserImagesGen();
+
+  /// File path: assets/user/images/user_avatar.png
+  AssetGenImage get userAvatar => const AssetGenImage('assets/user/images/user_avatar.png');
+
+  /// List of all assets
+  List<AssetGenImage> get values => [userAvatar];
+}
+
 class Assets {
   const Assets._();
 
+  static const $AssetsCommonGen common = $AssetsCommonGen();
+  static const $AssetsDeviceGen device = $AssetsDeviceGen();
+  static const $AssetsHomeGen home = $AssetsHomeGen();
   static const $AssetsLaunchGen launch = $AssetsLaunchGen();
   static const $AssetsLoginGen login = $AssetsLoginGen();
+  static const $AssetsUserGen user = $AssetsUserGen();
 }
 
 class AssetGenImage {

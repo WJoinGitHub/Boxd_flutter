@@ -19,5 +19,8 @@ class AppColors {
   static final Color gray1 = fromHex(0x000000, 0.2);
   static final Color gray2 = fromHex(0x000000, 0.3);
   static final Color gray3 = fromHex(0x000000, 0.54);
+  static final Color gray4 = fromHex(0x7F8489);
   static final Color white = fromHex(0xFFFFFF);
+  static final Color green = fromHex(0x3EC032);
+  static final Color blue = fromHex(0xFFFFFF);
 }

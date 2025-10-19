@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/device/device_connect_page.dart';
+import 'package:flutter_boxd_app_flow/pages/setting/setting_page.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/pages/login/email_login_page.dart';
 
@@ -14,6 +15,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool connected = false;
   int temperature = 29;
+
   @override
   void initState() {
     super.initState();
@@ -61,7 +63,7 @@ class _HomePageState extends State<HomePage> {
                       Navigator.of(context).push(
                         PageRouteBuilder(
                           fullscreenDialog: true,
-                          pageBuilder: (_, __, ___) => const EmailLoginPage(),
+                          pageBuilder: (_, __, ___) => const SettingsPage(),
                         ),
                       );
                     },

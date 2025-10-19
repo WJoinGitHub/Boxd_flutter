@@ -22,6 +22,7 @@ dependencies:
   permission_handler: ^11.3.0
   location: ^6.0.2
   device_info_plus: ^11.1.0
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:
@@ -46,6 +47,7 @@ flutter:
     - assets/user/images/
     - assets/device/images/
     - assets/common/images/
+    - assets/setting/images/
 
 flutter_native_splash:
   color: "#FFFFFF"

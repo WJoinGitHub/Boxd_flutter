@@ -46,6 +46,13 @@ class $AssetsLoginGen {
   $AssetsLoginImagesGen get images => const $AssetsLoginImagesGen();
 }
 
+class $AssetsSettingGen {
+  const $AssetsSettingGen();
+
+  /// Directory path: assets/setting/images
+  $AssetsSettingImagesGen get images => const $AssetsSettingImagesGen();
+}
+
 class $AssetsUserGen {
   const $AssetsUserGen();
 
@@ -115,6 +122,42 @@ class $AssetsLoginImagesGen {
   List<AssetGenImage> get values => [logo];
 }
 
+class $AssetsSettingImagesGen {
+  const $AssetsSettingImagesGen();
+
+  /// File path: assets/setting/images/app_version_setting.png
+  AssetGenImage get appVersionSetting => const AssetGenImage('assets/setting/images/app_version_setting.png');
+
+  /// File path: assets/setting/images/feedback_setting.png
+  AssetGenImage get feedbackSetting => const AssetGenImage('assets/setting/images/feedback_setting.png');
+
+  /// File path: assets/setting/images/noti_setting.png
+  AssetGenImage get notiSetting => const AssetGenImage('assets/setting/images/noti_setting.png');
+
+  /// File path: assets/setting/images/privacy_policy_setting.png
+  AssetGenImage get privacyPolicySetting => const AssetGenImage('assets/setting/images/privacy_policy_setting.png');
+
+  /// File path: assets/setting/images/share_setting.png
+  AssetGenImage get shareSetting => const AssetGenImage('assets/setting/images/share_setting.png');
+
+  /// File path: assets/setting/images/temperature_unit_setting.png
+  AssetGenImage get temperatureUnitSetting => const AssetGenImage('assets/setting/images/temperature_unit_setting.png');
+
+  /// File path: assets/setting/images/terms_setting.png
+  AssetGenImage get termsSetting => const AssetGenImage('assets/setting/images/terms_setting.png');
+
+  /// List of all assets
+  List<AssetGenImage> get values => [
+        appVersionSetting,
+        feedbackSetting,
+        notiSetting,
+        privacyPolicySetting,
+        shareSetting,
+        temperatureUnitSetting,
+        termsSetting
+      ];
+}
+
 class $AssetsUserImagesGen {
   const $AssetsUserImagesGen();
 
@@ -133,6 +176,7 @@ class Assets {
   static const $AssetsHomeGen home = $AssetsHomeGen();
   static const $AssetsLaunchGen launch = $AssetsLaunchGen();
   static const $AssetsLoginGen login = $AssetsLoginGen();
+  static const $AssetsSettingGen setting = $AssetsSettingGen();
   static const $AssetsUserGen user = $AssetsUserGen();
 }
 

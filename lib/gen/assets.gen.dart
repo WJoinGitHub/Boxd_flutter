@@ -98,8 +98,18 @@ class $AssetsHomeImagesGen {
   /// File path: assets/home/images/home_device_on.png
   AssetGenImage get homeDeviceOn => const AssetGenImage('assets/home/images/home_device_on.png');
 
+  /// File path: assets/home/images/home_heat.png
+  AssetGenImage get homeHeat => const AssetGenImage('assets/home/images/home_heat.png');
+
+  /// File path: assets/home/images/home_ins.png
+  AssetGenImage get homeIns => const AssetGenImage('assets/home/images/home_ins.png');
+
+  /// File path: assets/home/images/home_time.png
+  AssetGenImage get homeTime => const AssetGenImage('assets/home/images/home_time.png');
+
   /// List of all assets
-  List<AssetGenImage> get values => [addDevice, devTemperatureF, homeAvatar, homeBanner, homeDevice, homeDeviceOn];
+  List<AssetGenImage> get values =>
+      [addDevice, devTemperatureF, homeAvatar, homeBanner, homeDevice, homeDeviceOn, homeHeat, homeIns, homeTime];
 }
 
 class $AssetsLaunchImagesGen {

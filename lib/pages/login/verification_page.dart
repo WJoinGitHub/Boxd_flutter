@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
+import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'set_password_page.dart';
@@ -26,6 +27,7 @@ class _VerificationPageState extends State<VerificationPage> {
   late List<FocusNode> _nodes;
   int _secondsLeft = 60;
   Timer? _timer;
+  bool _loading = false;
 
   @override
   void initState() {
@@ -33,7 +35,7 @@ class _VerificationPageState extends State<VerificationPage> {
     _controllers =
         List.generate(widget.codeLength, (_) => TextEditingController());
     _nodes = List.generate(widget.codeLength, (_) => FocusNode());
-    _startTimer();
+    _sendCode(showLoading: false);
   }
 
   void _startTimer() {
@@ -47,6 +49,63 @@ class _VerificationPageState extends State<VerificationPage> {
         setState(() => _secondsLeft--);
       }
     });
+  }
+
+  Future<void> _verifyCode() async {
+    final code = _controllers.map((c) => c.text).join();
+    try {
+      final result = await ApiClient.verifyCode(
+        widget.email,
+        code,
+        widget.isForReset ? CodeType.resetPassword : CodeType.register,
+      );
+      if (result['code'] == 200 && mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => SetPasswordPage(isForReset: widget.isForReset),
+          ),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message'] ?? '验证失败')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('验证失败: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendCode({bool showLoading = true}) async {
+    if (showLoading) setState(() => _loading = true);
+    try {
+      final result = await ApiClient.sendCode(
+        widget.email,
+        widget.isForReset ? CodeType.resetPassword : CodeType.register,
+      );
+      if (result['code'] == 200) {
+        _startTimer();
+      } else {
+        setState(() => _secondsLeft = 0);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? '发送失败')),
+          );
+        }
+      }
+    } catch (e) {
+      setState(() => _secondsLeft = 0);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('发送失败: $e')),
+        );
+      }
+    } finally {
+      if (showLoading && mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -202,19 +261,29 @@ class _VerificationPageState extends State<VerificationPage> {
                     )
                   : TextButton(
                       key: const ValueKey('sendagain'),
-                      onPressed: _startTimer,
+                      onPressed: _loading ? null : () => _sendCode(),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.orange,
                         padding: EdgeInsets.zero,
+                        overlayColor: Colors.transparent,
                       ),
-                      child: Text(
-                        'Send again',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro',
-                          fontSize: 12,
-                          color: AppColors.orange,
-                        ),
-                      ),
+                      child: _loading
+                          ? SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.orange,
+                              ),
+                            )
+                          : Text(
+                              'Send again',
+                              style: TextStyle(
+                                fontFamily: 'SF Pro',
+                                fontSize: 12,
+                                color: AppColors.orange,
+                              ),
+                            ),
                     ),
             ),
 
@@ -223,12 +292,7 @@ class _VerificationPageState extends State<VerificationPage> {
             // 下一步按钮
             ElevatedButton(
               onPressed: _controllers.every((c) => c.text.isNotEmpty)
-                  ? () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              SetPasswordPage(isForReset: widget.isForReset),
-                        ),
-                      )
+                  ? _verifyCode
                   : null,
               child: const SizedBox(
                 width: double.infinity,

@@ -31,10 +31,29 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
     debugPrint("Tapped Privacy Policy");
   }
 
+  void _sendCode() {
+    if (!_emailCtrl.text.contains('@') || !_emailCtrl.text.contains('.')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请输入有效的邮箱地址')),
+      );
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => VerificationPage(
+          codeLength: 4,
+          isForReset: false,
+          email: _emailCtrl.text,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BxAppBar(title: ""),
+      appBar: BxAppBar(title: "", backgroundColor: AppColors.pageBg),
       backgroundColor: AppColors.pageBg,
       body: Padding(
         padding: const EdgeInsets.all(13.0),
@@ -117,17 +136,7 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
               width: double.infinity,
               height: 42,
               child: ElevatedButton(
-                onPressed: _emailCtrl.text.isNotEmpty
-                    ? () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => VerificationPage(
-                              codeLength: 4,
-                              isForReset: false,
-                              email: _emailCtrl.text,
-                            ),
-                          ),
-                        )
-                    : null,
+                onPressed: _emailCtrl.text.isNotEmpty ? _sendCode : null,
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(42),
                   shape: RoundedRectangleBorder(

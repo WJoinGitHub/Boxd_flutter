@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
-import 'package:flutter_boxd_app_flow/utils/api_client.dart';
+import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart'; // ✅ 新增导入
 
 class SetUsernamePage extends StatefulWidget {

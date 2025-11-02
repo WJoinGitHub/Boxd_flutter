@@ -132,29 +132,29 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
 
     return Column(
       children: [
-        const SizedBox(height: 40),
-        const Icon(Icons.bluetooth, size: 64, color: Colors.blueAccent),
-        const SizedBox(height: 20),
+        const SizedBox(height: 33),
+        const Icon(Icons.bluetooth, size: 53, color: Colors.blueAccent),
+        const SizedBox(height: 17),
         Text(title,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 7),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 27),
           child: Text(desc,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, color: Colors.black54)),
+              style: const TextStyle(fontSize: 12, color: Colors.black54)),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 27),
         ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.black,
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            minimumSize: const Size(320, 56),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            minimumSize: const Size(267, 47),
           ),
           child: Text(buttonText,
-              style: const TextStyle(color: Colors.white, fontSize: 16)),
+              style: const TextStyle(color: Colors.white, fontSize: 13)),
         ),
       ],
     );
@@ -167,14 +167,14 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
 
     if (scanning) {
       return const Padding(
-        padding: EdgeInsets.only(top: 40),
+        padding: EdgeInsets.only(top: 33),
         child: CircularProgressIndicator(),
       );
     }
 
     if (devices.isEmpty) {
       return const Padding(
-        padding: EdgeInsets.only(top: 40),
+        padding: EdgeInsets.only(top: 33),
         child:
             Text("No devices found", style: TextStyle(color: Colors.black45)),
       );
@@ -201,7 +201,7 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueAccent,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                    borderRadius: BorderRadius.circular(7)),
               ),
               child:
                   const Text("Connect", style: TextStyle(color: Colors.white)),
@@ -220,7 +220,7 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       body: Column(
         children: [
           _buildStatusSection(),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           _buildDeviceList(),
         ],
       ),

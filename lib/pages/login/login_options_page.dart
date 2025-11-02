@@ -25,7 +25,7 @@ class _LoginRoot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -34,7 +34,7 @@ class _LoginRoot extends StatelessWidget {
               fit: BoxFit.contain,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 17),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).push(MaterialPageRoute(
@@ -48,7 +48,7 @@ class _LoginRoot extends StatelessWidget {
               child: Center(child: Text('邮箱登录')),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           SocialButton(
             text: 'Facebook 登录',
             icon: Icons.facebook,
@@ -56,7 +56,7 @@ class _LoginRoot extends StatelessWidget {
               await FacebookSignInService.signIn(context);
             },
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           if (Platform.isAndroid)
             SocialButton(
               text: 'Google 登录',
@@ -73,7 +73,7 @@ class _LoginRoot extends StatelessWidget {
                 await AppleSignInService.signIn(context);
               },
             ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 17),
           TextButton(
             onPressed: () {
               Navigator.of(context).push(MaterialPageRoute(

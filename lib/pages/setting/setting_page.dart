@@ -33,21 +33,21 @@ class _SettingsPageState extends State<SettingsPage> {
       backgroundColor: Colors.white,
       appBar: BxAppBar(
         leftIcon: Assets.common.images.deviceBack.image(
-          width: 24,
-          height: 24,
+          width: 20,
+          height: 20,
           fit: BoxFit.contain,
         ),
         title: "Settings",
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(13),
         children: [
           _buildProfile(),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _buildCouponCard(),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _buildSupportTile(),
-          const SizedBox(height: 20),
+          const SizedBox(height: 17),
 
           /// Device Section
           _buildSectionTitle('Device'),
@@ -55,8 +55,8 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildRowTile(
               'Firmware update',
               leading: Assets.setting.images.appVersionSetting.image(
-                width: 22,
-                height: 22,
+                width: 18,
+                height: 18,
                 fit: BoxFit.contain,
               ),
               trailing: 'V1.0.1',
@@ -65,8 +65,8 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildRowTile(
               'Unit switching',
               leading: Assets.setting.images.temperatureUnitSetting.image(
-                width: 22,
-                height: 22,
+                width: 18,
+                height: 18,
                 fit: BoxFit.contain,
               ),
               trailing: temperatureUnit,
@@ -85,7 +85,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ]),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 17),
 
           /// Info Section
           _buildSectionTitle('Info'),
@@ -93,22 +93,22 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildRowTile(
               'Privacy Policy',
               leading: Assets.setting.images.privacyPolicySetting.image(
-                width: 22,
-                height: 22,
+                width: 18,
+                height: 18,
                 fit: BoxFit.contain,
               ),
             ),
             _buildRowTile(
               'Terms & Conditions',
               leading: Assets.setting.images.termsSetting.image(
-                width: 22,
-                height: 22,
+                width: 18,
+                height: 18,
                 fit: BoxFit.contain,
               ),
             ),
           ]),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 17),
 
           /// App Section
           _buildSectionTitle('App'),
@@ -116,24 +116,24 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildRowTile(
               'Share App',
               leading: Assets.setting.images.shareSetting.image(
-                width: 22,
-                height: 22,
+                width: 18,
+                height: 18,
                 fit: BoxFit.contain,
               ),
             ),
             _buildRowTile(
               'Feedback',
               leading: Assets.setting.images.feedbackSetting.image(
-                width: 22,
-                height: 22,
+                width: 18,
+                height: 18,
                 fit: BoxFit.contain,
               ),
             ),
             _buildSwitchTile(
               title: "Allow Notifications",
               leading: Assets.setting.images.feedbackSetting.image(
-                width: 22,
-                height: 22,
+                width: 18,
+                height: 18,
                 fit: BoxFit.contain,
               ),
               value: allowNotifications,
@@ -143,14 +143,14 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ]),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
           Center(
             child: TextButton(
               onPressed: () {},
               child: const Text(
                 'Logout',
-                style: TextStyle(color: Colors.black54, fontSize: 16),
+                style: TextStyle(color: Colors.black54, fontSize: 13),
               ),
             ),
           ),
@@ -163,50 +163,50 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildProfile() => Row(
         children: const [
-          CircleAvatar(radius: 24, backgroundColor: Colors.black12),
-          SizedBox(width: 12),
+          CircleAvatar(radius: 20, backgroundColor: Colors.black12),
+          SizedBox(width: 10),
           Text(
             'HotRice',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
           ),
         ],
       );
 
   Widget _buildCouponCard() => Container(
-        height: 80,
+        height: 67,
         decoration: BoxDecoration(
           color: Colors.black,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
           children: const [
-            SizedBox(width: 16),
+            SizedBox(width: 13),
             Expanded(
               child: Text(
                 '🎁 Coupons\nGet more food helpers',
                 style: TextStyle(color: Colors.white),
               ),
             ),
-            SizedBox(width: 16),
+            SizedBox(width: 13),
           ],
         ),
       );
 
   Widget _buildSupportTile() => Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.orange.shade200),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: const ListTile(
           title: Text('Support'),
           subtitle: Text('Help and Troubleshooting'),
-          trailing: Icon(Icons.arrow_forward_ios, size: 16),
+          trailing: Icon(Icons.arrow_forward_ios, size: 13),
         ),
       );
 
   Widget _buildSectionTitle(String title) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.only(bottom: 7),
         child: Text(
           title,
           style: const TextStyle(
@@ -221,7 +221,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF8F8F8), // 浅灰色背景
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(13),
       ),
       child: Column(
         children: List.generate(
@@ -254,11 +254,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(width: 4),
-                const Icon(Icons.arrow_forward_ios, size: 16),
+                const SizedBox(width: 3),
+                const Icon(Icons.arrow_forward_ios, size: 13),
               ],
             )
-          : const Icon(Icons.arrow_forward_ios, size: 16),
+          : const Icon(Icons.arrow_forward_ios, size: 13),
       onTap: onTap,
     );
   }
@@ -270,7 +270,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required ValueChanged<bool> onChanged,
   }) {
     return SwitchListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 13),
       title: Text(title),
       value: value,
       onChanged: onChanged,

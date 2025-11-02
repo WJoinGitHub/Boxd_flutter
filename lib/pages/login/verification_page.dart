@@ -82,31 +82,31 @@ class _VerificationPageState extends State<VerificationPage> {
     return Scaffold(
       appBar: const BxAppBar(title: ""),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(13.0),
         child: Column(
           children: [
-            const SizedBox(height: 16),
+            const SizedBox(height: 13),
             Center(
               child: SizedBox(
-                height: 70,
+                height: 58,
                 child: Assets.login.images.logo.image(fit: BoxFit.contain),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Text(
               title,
               style: TextStyle(
                 color: AppColors.black,
-                fontSize: 32,
+                fontSize: 27,
                 fontFamily: 'SF Pro',
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // 上方提示文案
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 13.0),
               child: Text.rich(
                 TextSpan(
                   children: [
@@ -115,7 +115,7 @@ class _VerificationPageState extends State<VerificationPage> {
                       style: TextStyle(
                         fontFamily: 'SF Pro',
                         fontWeight: FontWeight.w400,
-                        fontSize: 14,
+                        fontSize: 12,
                         height: 1.0,
                         color: AppColors.gray3,
                       ),
@@ -125,7 +125,7 @@ class _VerificationPageState extends State<VerificationPage> {
                       style: const TextStyle(
                         fontFamily: 'SF Pro',
                         fontWeight: FontWeight.w500,
-                        fontSize: 14,
+                        fontSize: 12,
                         height: 1.0,
                         color: Colors.black,
                       ),
@@ -135,7 +135,7 @@ class _VerificationPageState extends State<VerificationPage> {
                       style: TextStyle(
                         fontFamily: 'SF Pro',
                         fontWeight: FontWeight.w400,
-                        fontSize: 14,
+                        fontSize: 12,
                         height: 1.0,
                         color: AppColors.gray3,
                       ),
@@ -146,15 +146,15 @@ class _VerificationPageState extends State<VerificationPage> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // 验证码输入框
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(widget.codeLength, (i) {
                 return Container(
-                  width: 48,
-                  margin: const EdgeInsets.symmetric(horizontal: 6),
+                  width: 40,
+                  margin: const EdgeInsets.symmetric(horizontal: 5),
                   child: TextField(
                     controller: _controllers[i],
                     focusNode: _nodes[i],
@@ -169,12 +169,12 @@ class _VerificationPageState extends State<VerificationPage> {
                       counterText: '',
                       enabledBorder: OutlineInputBorder(
                         borderSide: BorderSide.none,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(7),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderSide:
                             BorderSide(color: AppColors.orange, width: 1.5),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(7),
                       ),
                       filled: true,
                       fillColor: Colors.grey.withOpacity(0.1),
@@ -184,7 +184,7 @@ class _VerificationPageState extends State<VerificationPage> {
               }),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 13),
 
             // 倒计时 / send again 按钮
             AnimatedSwitcher(
@@ -195,7 +195,7 @@ class _VerificationPageState extends State<VerificationPage> {
                       key: const ValueKey('countdown'),
                       style: TextStyle(
                         fontFamily: 'SF Pro',
-                        fontSize: 14,
+                        fontSize: 12,
                         color: AppColors.gray2,
                       ),
                       textAlign: TextAlign.center,
@@ -211,14 +211,14 @@ class _VerificationPageState extends State<VerificationPage> {
                         'Send again',
                         style: TextStyle(
                           fontFamily: 'SF Pro',
-                          fontSize: 14,
+                          fontSize: 12,
                           color: AppColors.orange,
                         ),
                       ),
                     ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // 下一步按钮
             ElevatedButton(
@@ -232,7 +232,7 @@ class _VerificationPageState extends State<VerificationPage> {
                   : null,
               child: const SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 42,
                 child: Center(child: Text('VERTICAL')),
               ),
             ),

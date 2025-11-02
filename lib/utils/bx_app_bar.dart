@@ -46,7 +46,7 @@ class BxAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: backgroundColor,
       elevation: 0,
       centerTitle: true,
-      leadingWidth: 56, // 保证左边留白一致
+      leadingWidth: 47, // 保证左边留白一致
       automaticallyImplyLeading: false, // 防止系统自动添加返回箭头
 
       leading: showBack
@@ -55,8 +55,8 @@ class BxAppBar extends StatelessWidget implements PreferredSizeWidget {
                   onLeftPressed ?? () => Navigator.of(context).maybePop(),
               icon: leftIcon ??
                   Assets.common.images.back.image(
-                    width: 24,
-                    height: 24,
+                    width: 20,
+                    height: 20,
                     fit: BoxFit.contain,
                   ),
             )
@@ -67,7 +67,7 @@ class BxAppBar extends StatelessWidget implements PreferredSizeWidget {
               title!,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                fontSize: 18,
+                fontSize: 15,
                 color: titleColor,
               ),
             )
@@ -77,9 +77,9 @@ class BxAppBar extends StatelessWidget implements PreferredSizeWidget {
         if (rightWidget != null)
           InkWell(
             onTap: onRightPressed,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(20),
             child: Padding(
-              padding: const EdgeInsets.only(right: 16, left: 8),
+              padding: const EdgeInsets.only(right: 13, left: 7),
               child: Center(child: rightWidget!),
             ),
           ),

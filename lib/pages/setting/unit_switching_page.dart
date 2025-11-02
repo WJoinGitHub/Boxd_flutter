@@ -35,8 +35,8 @@ class _UnitSwitchingPageState extends State<UnitSwitchingPage> {
     return Scaffold(
       appBar: BxAppBar(
         leftIcon: Assets.common.images.deviceBack.image(
-          width: 24,
-          height: 24,
+          width: 20,
+          height: 20,
           fit: BoxFit.contain,
         ),
         title: "Settings",
@@ -44,30 +44,30 @@ class _UnitSwitchingPageState extends State<UnitSwitchingPage> {
       backgroundColor: Colors.white,
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text('45°C',
                   style: TextStyle(
                       color: Colors.black26,
-                      fontSize: 40,
+                      fontSize: 33,
                       fontWeight: FontWeight.bold)),
               const Text('113°F',
                   style: TextStyle(
                       color: Colors.black26,
-                      fontSize: 40,
+                      fontSize: 33,
                       fontWeight: FontWeight.bold)),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               const Text('Unit switching',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20)),
-              const SizedBox(height: 8),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 17)),
+              const SizedBox(height: 7),
               const Text('You can set the display unit for temperature here',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.black54, fontSize: 14)),
-              const SizedBox(height: 32),
+                  style: TextStyle(color: Colors.black54, fontSize: 12)),
+              const SizedBox(height: 27),
               _buildUnitButton('°F', 'Fahrenheit'),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               _buildUnitButton('°C', 'Centigrade'),
             ],
           ),
@@ -81,10 +81,10 @@ class _UnitSwitchingPageState extends State<UnitSwitchingPage> {
     return GestureDetector(
       onTap: () => _selectUnit(symbol),
       child: Container(
-        width: 160,
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        width: 133,
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(7),
           border: Border.all(
             color: selected ? AppColors.orange : Colors.black26,
             width: selected ? 2 : 1,
@@ -95,11 +95,11 @@ class _UnitSwitchingPageState extends State<UnitSwitchingPage> {
             Text(symbol,
                 style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontSize: 13,
                     color: selected ? AppColors.orange : Colors.black)),
             Text(label,
                 style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 12,
                     color: selected ? AppColors.orange : Colors.black54)),
           ],
         ),

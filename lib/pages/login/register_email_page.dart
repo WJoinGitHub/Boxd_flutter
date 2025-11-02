@@ -37,28 +37,28 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
       appBar: const BxAppBar(title: ""),
       backgroundColor: AppColors.pageBg,
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(13.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start, // ✅ 左对齐
           children: [
-            const SizedBox(height: 16),
+            const SizedBox(height: 13),
             Center(
               child: SizedBox(
-                height: 70,
+                height: 58,
                 child: Assets.login.images.logo.image(fit: BoxFit.contain),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Center(
               child: Text(
                 "Sign In",
-                style: TextStyle(color: AppColors.black, fontSize: 32),
+                style: TextStyle(color: AppColors.black, fontSize: 27),
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 25),
             AppTextField(
               controller: _emailCtrl,
-              labelText: '邮箱',
+              labelText: 'Email',
               keyboardType: TextInputType.emailAddress,
               suffixIcon: _emailCtrl.text.isNotEmpty
                   ? IconButton(
@@ -69,7 +69,7 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
               onChanged: (_) => setState(() => {}),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             // ✅ 左对齐 + 整体段落 + 16 边距
             Padding(
@@ -80,7 +80,7 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
                 text: TextSpan(
                   style: TextStyle(
                     color: AppColors.gray3,
-                    fontSize: 12,
+                    fontSize: 10,
                     height: 1.5,
                   ),
                   children: [
@@ -112,10 +112,10 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 42,
               child: ElevatedButton(
                 onPressed: _emailCtrl.text.isNotEmpty
                     ? () => Navigator.of(context).push(
@@ -129,9 +129,9 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
                         )
                     : null,
                 style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(50),
+                  minimumSize: const Size.fromHeight(42),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 child: const Text('Next'),

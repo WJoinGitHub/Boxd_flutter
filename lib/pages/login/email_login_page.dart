@@ -48,23 +48,23 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
-            24,
-            24,
-            24,
-            24 + MediaQuery.of(context).viewInsets.bottom,
+            20,
+            20,
+            20,
+            20 + MediaQuery.of(context).viewInsets.bottom,
           ),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 16),
+              const SizedBox(height: 13),
               Center(
                 child: SizedBox(
-                  height: 70,
+                  height: 58,
                   child: Assets.login.images.logo.image(fit: BoxFit.contain),
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 25),
               AppTextField(
                 controller: _emailCtrl,
                 labelText: 'Enter your email',
@@ -77,7 +77,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                     : null,
                 onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 13),
               AppTextField(
                 controller: _pwdCtrl,
                 labelText: 'Password',
@@ -113,11 +113,11 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                   },
                   child: Text(
                     'Forget Password?',
-                    style: TextStyle(color: AppColors.orange, fontSize: 16),
+                    style: TextStyle(color: AppColors.orange, fontSize: 13),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _canLogin
                     ? () {
@@ -129,24 +129,24 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: const SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 42,
                   child: Center(
                     child: Text(
                       'Sign In',
                       style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                          TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -158,7 +158,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                     },
                     child: Text(
                       'Sign Up',
-                      style: TextStyle(color: AppColors.orange, fontSize: 16),
+                      style: TextStyle(color: AppColors.orange, fontSize: 13),
                     ),
                   ),
                 ],

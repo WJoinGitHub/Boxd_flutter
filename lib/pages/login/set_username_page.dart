@@ -65,20 +65,20 @@ class _SetUsernamePageState extends State<SetUsernamePage> {
     return Scaffold(
         appBar: const BxAppBar(title: ""),
         body: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(13.0),
             child: Column(children: [
               Flexible(
                 child: Assets.login.images.logo.image(fit: BoxFit.contain),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 17),
               TextField(
                   controller: _nameCtrl,
                   decoration: const InputDecoration(labelText: 'UserName'),
                   onChanged: (_) => setState(() => {})),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               if (_message != null)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: 7),
                   child: Text(_message!,
                       style: const TextStyle(color: Colors.red)),
                 ),
@@ -87,7 +87,7 @@ class _SetUsernamePageState extends State<SetUsernamePage> {
                       !_loading && _nameCtrl.text.isNotEmpty ? _register : null,
                   child: SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: 42,
                       child: Center(
                           child: _loading
                               ? const CircularProgressIndicator(

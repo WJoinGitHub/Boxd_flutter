@@ -1,8 +1,21 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'pages/home_page.dart';
 import 'utils/app_colors.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  // iOS 调试模式下触发本地网络权限弹窗
+  if (Platform.isIOS) {
+    Future.delayed(const Duration(milliseconds: 500), () async {
+      try {
+        final socket = await Socket.connect('127.0.0.1', 8080,
+            timeout: const Duration(milliseconds: 100));
+        socket.destroy();
+      } catch (_) {}
+    });
+  }
+
   print("main start");
   runApp(const MyApp());
 }

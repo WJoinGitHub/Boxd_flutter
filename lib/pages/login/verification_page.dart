@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
+import 'package:flutter_boxd_app_flow/pages/login/set_username_page.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
@@ -60,11 +61,26 @@ class _VerificationPageState extends State<VerificationPage> {
         widget.isForReset ? CodeType.resetPassword : CodeType.register,
       );
       if (result['code'] == 200 && mounted) {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => SetPasswordPage(isForReset: widget.isForReset),
-          ),
-        );
+        if (widget.isForReset) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => SetPasswordPage(
+                isForReset: true,
+                email: widget.email,
+                verifyCode: code,
+              ),
+            ),
+          );
+        } else {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => SetUsernamePage(
+                email: widget.email,
+                verifyCode: code,
+              ),
+            ),
+          );
+        }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(result['message'] ?? '验证失败')),
@@ -212,7 +228,7 @@ class _VerificationPageState extends State<VerificationPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(widget.codeLength, (i) {
                 return Container(
-                  width: 40,
+                  width: 60,
                   margin: const EdgeInsets.symmetric(horizontal: 5),
                   child: TextField(
                     controller: _controllers[i],

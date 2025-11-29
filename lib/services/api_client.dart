@@ -22,38 +22,40 @@ enum CodeType {
 }
 
 class ApiClient {
-  static const String baseUrl = 'https://api.qimitech.com/api/v1';
-  static const String _clientIdIOS = '8ee4a01508aaf380d306c750413f530a';
-  static const String _clientIdAndroid = 'aceab110a598dc6bff24805d23aab5df';
-  static const String _clientSecretIOS =
+  static const String baseUrl = 'https://api.qimitech.com';
+  static const String basePath = '/api/v1';
+  static const String _appIdIOS = '8ee4a01508aaf380d306c750413f530a';
+  static const String _appIdAndroid = 'aceab110a598dc6bff24805d23aab5df';
+  static const String _appSecretIOS =
       'd66530267153704b2e86d89204089e6f0aed041b82f2a9729e4779b2cf51cd22';
-  static const String _clientSecretAndroid =
+  static const String _appSecretAndroid =
       '091eee43543d14bfed76282e4a1e3a90cddbef91fb8f6baabe4b61347e8595de';
+  static const String userAgent = 'HotRice/1.0.0';
 
   static String? _token;
 
-  static String get clientId =>
-      Platform.isIOS ? _clientIdIOS : _clientIdAndroid;
-  static String get clientSecret =>
-      Platform.isIOS ? _clientSecretIOS : _clientSecretAndroid;
+  static String get appId => Platform.isIOS ? _appIdIOS : _appIdAndroid;
+  static String get appSecret =>
+      Platform.isIOS ? _appSecretIOS : _appSecretAndroid;
 
   static void setToken(String token) => _token = token;
   static void clearToken() => _token = null;
 
-  /// 生成随机 nonce（32位）
-  static String _generateNonce([int length = 32]) {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    final rand = Random();
-    return List.generate(length, (_) => chars[rand.nextInt(chars.length)])
-        .join();
-  }
-
   /// 生成签名
   static String _generateSignature(
-      String timestamp, String nonce, String body) {
-    final signString = clientId + timestamp + nonce + body + clientSecret;
+    String method,
+    String path,
+    String timestamp,
+    String body,
+  ) {
+    final token = _token?.replaceFirst('Bearer ', '') ?? '';
+    final signString = token.isEmpty
+        ? method + path + timestamp + body + userAgent
+        : method + path + timestamp + token + body + userAgent;
+    final key = utf8.encode(appSecret);
     final bytes = utf8.encode(signString);
-    return sha256.convert(bytes).toString();
+    final hmac = Hmac(sha256, key);
+    return hmac.convert(bytes).toString();
   }
 
   /// 统一请求方法
@@ -64,24 +66,24 @@ class ApiClient {
     Map<String, dynamic>? queryParams,
   }) async {
     final uri = queryParams != null
-        ? Uri.parse('$baseUrl$path').replace(
+        ? Uri.parse('$baseUrl$basePath$path').replace(
             queryParameters:
                 queryParams.map((k, v) => MapEntry(k, v.toString())),
           )
-        : Uri.parse('$baseUrl$path');
+        : Uri.parse('$baseUrl$basePath$path');
 
     final timestamp =
         (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
-    final nonce = _generateNonce();
     final bodyStr = body != null ? jsonEncode(body) : '';
-    final signature = _generateSignature(timestamp, nonce, bodyStr);
+    final signature =
+        _generateSignature(method, basePath + path, timestamp, bodyStr);
 
     final headers = {
       'Content-Type': 'application/json',
-      'X-App-ID': clientId,
+      'X-App-ID': appId,
       'X-Timestamp': timestamp,
-      'X-Nonce': nonce,
       'X-Signature': signature,
+      'User-Agent': userAgent,
       if (_token != null) 'Authorization': 'Bearer $_token',
     };
 
@@ -136,7 +138,8 @@ class ApiClient {
 
   static Future<Map<String, dynamic>> verifyCode(
           String email, String code, CodeType type) =>
-      post('/auth/verify-code', {'email': email, 'code': code, 'type': type.value});
+      post('/auth/verify-code',
+          {'email': email, 'code': code, 'type': type.value});
 
   static Future<Map<String, dynamic>> register({
     required String email,

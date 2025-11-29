@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
+import 'package:flutter_boxd_app_flow/services/ble_service.dart';
+import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:location/location.dart' as loc;
@@ -32,24 +35,47 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
 
   Future<void> checkStatus() async {
     // 蓝牙状态
-    final btState = await FlutterBluePlus.adapterState.first;
-    bluetoothOn = btState == BluetoothAdapterState.on;
-
-    // 权限状态
-    bluetoothGranted = await Permission.bluetooth.isGranted ||
-        await Permission.bluetoothScan.isGranted ||
-        await Permission.bluetoothConnect.isGranted;
+    try {
+      if (Platform.isIOS) {
+        // iOS 默认认为蓝牙已开启，实际状态在扫描时才能确定
+        bluetoothOn = true;
+      } else {
+        final btState = await FlutterBluePlus.adapterState.first.timeout(
+          const Duration(seconds: 2),
+          onTimeout: () => BluetoothAdapterState.on,
+        );
+        bluetoothOn = btState == BluetoothAdapterState.on;
+      }
+    } catch (e) {
+      bluetoothOn = true;
+    }
 
     // Android 12+ 判断
     if (Platform.isAndroid) {
       isAndroid12OrAbove = (await _getAndroidVersion()) >= 12;
     }
 
-    // 定位状态
-    locationGranted = await Permission.locationWhenInUse.isGranted;
-    final locService = loc.Location();
-    locationOn =
-        await locService.serviceEnabled() || await locService.requestService();
+    // 权限状态
+    if (Platform.isAndroid) {
+      if (isAndroid12OrAbove) {
+        bluetoothGranted = await Permission.bluetoothScan.isGranted &&
+            await Permission.bluetoothConnect.isGranted;
+        nearbyGranted = bluetoothGranted;
+      } else {
+        bluetoothGranted = await Permission.bluetooth.isGranted;
+        nearbyGranted = true;
+      }
+      // 定位状态（仅 Android 需要）
+      locationGranted = await Permission.locationWhenInUse.isGranted;
+      final locService = loc.Location();
+      locationOn = await locService.serviceEnabled();
+    } else {
+      // iOS 不需要额外的蓝牙权限检查
+      bluetoothGranted = true;
+      nearbyGranted = true;
+      locationGranted = true;
+      locationOn = true;
+    }
 
     setState(() {});
   }
@@ -66,27 +92,57 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
   Future<void> startScan() async {
     if (!bluetoothOn || !bluetoothGranted) return;
 
+    print('[SCAN] 开始扫描设备...');
     setState(() {
       scanning = true;
       devices.clear();
     });
 
-    FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
-
-    FlutterBluePlus.scanResults.listen((results) {
-      for (var r in results) {
-        if (!devices.contains(r.device)) {
+    try {
+      // 先检查已连接的设备
+      final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
+      print('[SCAN] 已连接设备: ${connectedDevices.length} 个');
+      for (var device in connectedDevices) {
+        if (device.platformName.isNotEmpty && !devices.contains(device)) {
+          print('[SCAN] 已连接: ${device.platformName} (${device.remoteId})');
           setState(() {
-            devices.add(r.device);
+            devices.add(device);
           });
         }
       }
-    });
 
-    await Future.delayed(const Duration(seconds: 5));
-    await FlutterBluePlus.stopScan();
+      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
+      print('[SCAN] 扫描已启动');
+
+      FlutterBluePlus.scanResults.listen((results) {
+        print('[SCAN] 收到扫描结果: ${results.length} 个设备');
+        for (var r in results) {
+          if (!devices.contains(r.device) && r.device.platformName.isNotEmpty) {
+            print(
+                '[SCAN] 发现设备: ${r.device.platformName} (${r.device.remoteId})');
+            setState(() {
+              devices.add(r.device);
+            });
+          }
+        }
+      });
+
+      await Future.delayed(const Duration(seconds: 5));
+      await FlutterBluePlus.stopScan();
+      print('[SCAN] 扫描完成，共发现 ${devices.length} 个设备');
+    } catch (e) {
+      print('[SCAN] 扫描失败: $e');
+    }
 
     setState(() => scanning = false);
+  }
+
+  Future<void> connectDevice(BluetoothDevice device) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _ConnectDialog(device: device),
+    );
   }
 
   Widget _buildStatusSection() {
@@ -95,25 +151,38 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
     String buttonText = "";
     VoidCallback? onPressed;
 
-    if (!bluetoothGranted) {
-      title = "Please enable Bluetooth permission";
-      desc = "App needs permission to access Bluetooth hardware.";
-      buttonText = "Open Settings";
-      onPressed = () => openAppSettings();
-    } else if (!bluetoothOn) {
+    if (!bluetoothOn) {
       title = "Please turn on Bluetooth";
       desc = "Your phone’s Bluetooth is turned off. Please turn it on.";
-      buttonText = "Turn on";
-      onPressed = () async {
-        await FlutterBluePlus.turnOn();
-        checkStatus();
-      };
-    } else if (Platform.isAndroid && isAndroid12OrAbove && !nearbyGranted) {
-      title = "Please allow access to nearby devices";
-      desc = "To search for nearby devices for pairing or connection.";
-      buttonText = "Open Settings";
-      onPressed = () => openAppSettings();
-    } else if (!locationGranted || !locationOn) {
+      buttonText = Platform.isIOS ? "Open Settings" : "Turn on";
+      onPressed = Platform.isIOS
+          ? () => openAppSettings()
+          : () async {
+              try {
+                await FlutterBluePlus.turnOn();
+              } catch (e) {}
+              checkStatus();
+            };
+    } else if (Platform.isAndroid && !bluetoothGranted) {
+      if (isAndroid12OrAbove) {
+        title = "Please allow access to nearby devices";
+        desc = "To search for nearby devices for pairing or connection.";
+        buttonText = "Grant Permission";
+        onPressed = () async {
+          await Permission.bluetoothScan.request();
+          await Permission.bluetoothConnect.request();
+          checkStatus();
+        };
+      } else {
+        title = "Please enable Bluetooth permission";
+        desc = "App needs permission to access Bluetooth hardware.";
+        buttonText = "Grant Permission";
+        onPressed = () async {
+          await Permission.bluetooth.request();
+          checkStatus();
+        };
+      }
+    } else if (Platform.isAndroid && (!locationGranted || !locationOn)) {
       title = "Please turn on Location";
       desc = "To find nearby Bluetooth devices.";
       buttonText = "Turn on";
@@ -161,7 +230,11 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
   }
 
   Widget _buildDeviceList() {
-    if (!bluetoothOn || !bluetoothGranted || !locationOn || !locationGranted) {
+    if (!bluetoothOn) {
+      return const SizedBox.shrink();
+    }
+    if (Platform.isAndroid &&
+        (!bluetoothGranted || !locationOn || !locationGranted)) {
       return const SizedBox.shrink();
     }
 
@@ -191,15 +264,9 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
                 : "Unknown Device"),
             subtitle: Text(device.remoteId.str),
             trailing: ElevatedButton(
-              onPressed: () async {
-                await device.connect();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text("Connected to ${device.platformName}")),
-                );
-              },
+              onPressed: () => connectDevice(device),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
+                backgroundColor: AppColors.orange,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(7)),
               ),
@@ -225,5 +292,123 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
         ],
       ),
     );
+  }
+}
+
+class _ConnectDialog extends StatefulWidget {
+  final BluetoothDevice device;
+  const _ConnectDialog({required this.device});
+
+  @override
+  State<_ConnectDialog> createState() => _ConnectDialogState();
+}
+
+class _ConnectDialogState extends State<_ConnectDialog> {
+  String status = 'connecting';
+  final bleService = BleService();
+
+  @override
+  void initState() {
+    super.initState();
+    _connect();
+  }
+
+  Future<void> _connect() async {
+    try {
+      final success = await bleService.connect(widget.device);
+      if (mounted) {
+        setState(() => status = success ? 'success' : 'failed');
+        if (success) {
+          await Future.delayed(const Duration(seconds: 1));
+          if (mounted) {
+            Navigator.of(context).pop(); // 关闭弹窗
+            Navigator.of(context).pop(true); // 返回上一页
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => status = 'failed');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Connect',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Assets.device.images.hotRice.image(height: 120),
+            const SizedBox(height: 16),
+            Text('HotRice',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.black)),
+            const SizedBox(height: 24),
+            if (status == 'connecting')
+              CircularProgressIndicator(color: AppColors.orange)
+            else if (status == 'success')
+              Icon(Icons.check_circle, size: 48, color: AppColors.orange)
+            else
+              Column(
+                children: [
+                  Icon(Icons.error_outline, size: 48, color: AppColors.orange),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Connect failed. Please try restarting your phone\'s\nBluetooth or power off and then power on the device',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() => status = 'connecting');
+                      _connect();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.orange,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      minimumSize: const Size(120, 40),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.refresh, size: 18, color: Colors.white),
+                        SizedBox(width: 4),
+                        Text('Retry',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 14)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    if (status != 'success') bleService.disconnect();
+    super.dispose();
   }
 }

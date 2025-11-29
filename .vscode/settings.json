@@ -1,0 +1,6 @@
+{
+  "dart.flutterRunAdditionalArgs": [
+    "--host-vmservice-port=0",
+    "--disable-service-auth-codes"
+  ]
+}

@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
+import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/widgets/app_text_field.dart';
-import 'set_username_page.dart';
 
 class SetPasswordPage extends StatefulWidget {
   final bool isForReset;
-  const SetPasswordPage({super.key, required this.isForReset});
+  final String email;
+  final String verifyCode;
+  final String? nickname;
+  const SetPasswordPage({
+    super.key,
+    required this.isForReset,
+    required this.email,
+    required this.verifyCode,
+    this.nickname,
+  });
   @override
   State<SetPasswordPage> createState() => _SetPasswordPageState();
 }
@@ -15,15 +24,67 @@ class SetPasswordPage extends StatefulWidget {
 class _SetPasswordPageState extends State<SetPasswordPage> {
   final _pwdCtrl = TextEditingController();
   bool _obscure = true;
+  bool _loading = false;
+
   @override
   void dispose() {
     _pwdCtrl.dispose();
     super.dispose();
   }
 
-  String getDescription() {
-    if (widget.isForReset) return '请输入新密码\n密码要求：1) 6-8 位 2) 包含字母和数字';
-    return '设置密码\n密码要求：1) 6-8 位 2) 包含字母和数字';
+  Future<void> _savePassword() async {
+    if (!validate(_pwdCtrl.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('密码要求：8-20位，包含字母和数字')),
+      );
+      return;
+    }
+
+    setState(() => _loading = true);
+    try {
+      if (widget.isForReset) {
+        final result = await ApiClient.resetPassword(
+          widget.email,
+          widget.verifyCode,
+          _pwdCtrl.text,
+        );
+        if (result['code'] == 200 && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('密码重置成功')),
+          );
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? '重置失败')),
+          );
+        }
+      } else {
+        final result = await ApiClient.register(
+          email: widget.email,
+          password: _pwdCtrl.text,
+          nickname: widget.nickname!,
+          verifyToken: widget.verifyCode,
+        );
+        if (result['code'] == 200 && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('注册成功！')),
+          );
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? '注册失败')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('request error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   bool validate(String p) {
@@ -135,11 +196,8 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                 width: double.infinity,
                 height: 42,
                 child: ElevatedButton(
-                  onPressed: validate(_pwdCtrl.text)
-                      ? () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (_) => const SetUsernamePage()),
-                          )
+                  onPressed: validate(_pwdCtrl.text) && !_loading
+                      ? _savePassword
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: validate(_pwdCtrl.text)
@@ -151,16 +209,25 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Save',
-                    style: TextStyle(
-                      fontFamily: 'SF Pro',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 13,
-                      height: 1.0,
-                      letterSpacing: 0,
-                    ),
-                  ),
+                  child: _loading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Save',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                            height: 1.0,
+                            letterSpacing: 0,
+                          ),
+                        ),
                 ),
               ),
             ])));

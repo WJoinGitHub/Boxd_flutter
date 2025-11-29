@@ -75,6 +75,12 @@ class $AssetsCommonImagesGen {
 
 class $AssetsDeviceImagesGen {
   const $AssetsDeviceImagesGen();
+
+  /// File path: assets/device/images/hot_rice.png
+  AssetGenImage get hotRice => const AssetGenImage('assets/device/images/hot_rice.png');
+
+  /// List of all assets
+  List<AssetGenImage> get values => [hotRice];
 }
 
 class $AssetsHomeImagesGen {

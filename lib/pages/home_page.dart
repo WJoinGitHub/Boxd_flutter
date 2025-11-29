@@ -4,6 +4,7 @@ import 'package:flutter_boxd_app_flow/pages/device/device_connect_page.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/setting_page.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/pages/login/email_login_page.dart';
+import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,10 +17,34 @@ class _HomePageState extends State<HomePage> {
   bool connected = false;
   int temperature = 29;
 
+  final bleService = BleService();
+
   @override
   void initState() {
     super.initState();
     print("HomePage initState start");
+    _autoConnect();
+  }
+
+  Future<void> _autoConnect() async {
+    print('[HOME] 尝试自动连接...');
+    final device = await BleService.getLastDevice();
+    if (device != null) {
+      print('[HOME] 找到上次设备，开始连接...');
+      final success = await bleService.connect(device);
+      if (success && mounted) {
+        setState(() => connected = true);
+        print('[HOME] 自动连接成功');
+      }
+    } else {
+      print('[HOME] 未找到上次设备');
+    }
+  }
+
+  @override
+  void dispose() {
+    bleService.dispose();
+    super.dispose();
   }
 
   @override
@@ -128,13 +153,16 @@ class _HomePageState extends State<HomePage> {
                               ),
                               if (!connected)
                                 ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.of(context).push(
+                                  onPressed: () async {
+                                    final result = await Navigator.of(context).push(
                                       PageRouteBuilder(
                                         pageBuilder: (_, __, ___) =>
                                             const DeviceConnectPage(),
                                       ),
                                     );
+                                    if (result == true && mounted) {
+                                      setState(() => connected = true);
+                                    }
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.transparent,

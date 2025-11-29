@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
+import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/widgets/app_text_field.dart';
@@ -66,10 +67,28 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
           verifyToken: widget.verifyCode,
         );
         if (result['code'] == 200 && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('注册成功！')),
-          );
-          Navigator.of(context).popUntil((route) => route.isFirst);
+          final data = result['data'];
+          if (data != null) {
+            final tokens = data['tokens'];
+            final user = data['user'];
+            
+            if (tokens != null && user != null) {
+              await UserService().saveTokens(
+                accessToken: tokens['access_token'],
+                refreshToken: tokens['refresh_token'],
+                expiresAt: tokens['expires_at'],
+              );
+              
+              final userInfo = UserInfo.fromJson(user);
+              UserService().saveUserInfo(userInfo);
+            }
+          }
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('注册成功！')),
+            );
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(result['message'] ?? '注册失败')),

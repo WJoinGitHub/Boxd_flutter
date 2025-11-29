@@ -61,13 +61,14 @@ class _VerificationPageState extends State<VerificationPage> {
         widget.isForReset ? CodeType.resetPassword : CodeType.register,
       );
       if (result['code'] == 200 && mounted) {
+        final verifyToken = result['data']?['verify_token'] ?? code;
         if (widget.isForReset) {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => SetPasswordPage(
                 isForReset: true,
                 email: widget.email,
-                verifyCode: code,
+                verifyCode: verifyToken,
               ),
             ),
           );
@@ -76,7 +77,7 @@ class _VerificationPageState extends State<VerificationPage> {
             MaterialPageRoute(
               builder: (_) => SetUsernamePage(
                 email: widget.email,
-                verifyCode: code,
+                verifyCode: verifyToken,
               ),
             ),
           );

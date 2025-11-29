@@ -31,23 +31,21 @@ class AppTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: labelText,
         floatingLabelBehavior: FloatingLabelBehavior.auto,
-        floatingLabelAlignment: FloatingLabelAlignment.start,
         labelStyle: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w500,
-          height: 1.0,
           color: AppColors.gray3,
         ),
         floatingLabelStyle: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w500,
-          height: 1.0,
           color: AppColors.gray3,
         ),
         filled: true,
         fillColor: AppColors.white,
-        contentPadding: const EdgeInsets.fromLTRB(13, 23, 13, 15),
-        constraints: const BoxConstraints(minHeight: 60),
+        contentPadding: const EdgeInsets.fromLTRB(13, 30, 13, 10),
+        constraints: const BoxConstraints(minHeight: 64),
+        alignLabelWithHint: true,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(13),
           borderSide: BorderSide.none,
@@ -57,7 +55,6 @@ class AppTextField extends StatelessWidget {
       style: TextStyle(
         fontSize: 13,
         color: AppColors.black1,
-        height: 1.0,
       ),
       onChanged: onChanged,
     );

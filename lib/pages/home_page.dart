@@ -5,6 +5,7 @@ import 'package:flutter_boxd_app_flow/pages/setting/setting_page.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/pages/login/email_login_page.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
+import 'package:flutter_boxd_app_flow/services/user_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,7 +24,15 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     print("HomePage initState start");
+    _autoLogin();
     _autoConnect();
+  }
+
+  Future<void> _autoLogin() async {
+    final hasToken = await UserService().loadFromLocal();
+    if (hasToken && mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _autoConnect() async {

@@ -158,20 +158,24 @@ class ApiClient {
         if (timezone != null) 'timezone': timezone,
       });
 
-  static Future<Map<String, dynamic>> login(
-      String username, String password) async {
-    final result =
-        await post('/auth/login', {'username': username, 'password': password});
-    if (result['code'] == 200 && result['data']?['token'] != null) {
-      setToken(result['data']['token']);
+  static Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  }) async {
+    final result = await post('/auth/login', {
+      'email': email,
+      'password': password,
+    });
+    if (result['code'] == 200 && result['data']?['tokens']?['access_token'] != null) {
+      setToken(result['data']['tokens']['access_token']);
     }
     return result;
   }
 
-  static Future<Map<String, dynamic>> refreshToken() async {
-    final result = await post('/auth/refresh', {});
-    if (result['code'] == 200 && result['data']?['token'] != null) {
-      setToken(result['data']['token']);
+  static Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    final result = await post('/auth/refresh-token', {'refresh_token': refreshToken});
+    if (result['code'] == 200 && result['data']?['tokens']?['access_token'] != null) {
+      setToken(result['data']['tokens']['access_token']);
     }
     return result;
   }

@@ -37,16 +37,16 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _autoConnect() async {
     print('[HOME] 尝试自动连接...');
-    final device = await BleService.getLastDevice();
+    final device = await BleService.getFirstBoundDevice();
     if (device != null) {
-      print('[HOME] 找到上次设备，开始连接...');
+      print('[HOME] 找到绑定设备，开始连接...');
       final success = await bleService.connect(device);
       if (success && mounted) {
         setState(() => connected = true);
         print('[HOME] 自动连接成功');
       }
     } else {
-      print('[HOME] 未找到上次设备');
+      print('[HOME] 未找到绑定设备');
     }
   }
 
@@ -104,13 +104,22 @@ class _HomePageState extends State<HomePage> {
                               ),
                               ElevatedButton(
                                 onPressed: () {
-                                  Navigator.of(context).push(
-                                    PageRouteBuilder(
-                                      fullscreenDialog: true,
-                                      pageBuilder: (_, __, ___) =>
-                                          const EmailLoginPage(),
-                                    ),
-                                  );
+                                  if (UserService().isLoggedIn) {
+                                    Navigator.of(context).push(
+                                      PageRouteBuilder(
+                                        pageBuilder: (_, __, ___) =>
+                                            const SettingsPage(),
+                                      ),
+                                    );
+                                  } else {
+                                    Navigator.of(context).push(
+                                      PageRouteBuilder(
+                                        fullscreenDialog: true,
+                                        pageBuilder: (_, __, ___) =>
+                                            const EmailLoginPage(),
+                                      ),
+                                    );
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.transparent,
@@ -121,11 +130,29 @@ class _HomePageState extends State<HomePage> {
                                   shape: const CircleBorder(),
                                 ),
                                 child: Center(
-                                  child: Assets.home.images.homeAvatar.image(
-                                    width: 23,
-                                    height: 27,
-                                    fit: BoxFit.contain,
-                                  ),
+                                  child: UserService().isLoggedIn
+                                      ? CircleAvatar(
+                                          radius: 16.5,
+                                          backgroundColor: AppColors.orange,
+                                          child: Text(
+                                            UserService()
+                                                    .currentUser
+                                                    ?.nickname
+                                                    .substring(0, 1)
+                                                    .toUpperCase() ??
+                                                'U',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        )
+                                      : Assets.home.images.homeAvatar.image(
+                                          width: 23,
+                                          height: 27,
+                                          fit: BoxFit.contain,
+                                        ),
                                 ),
                               ),
                             ],
@@ -163,7 +190,8 @@ class _HomePageState extends State<HomePage> {
                               if (!connected)
                                 ElevatedButton(
                                   onPressed: () async {
-                                    final result = await Navigator.of(context).push(
+                                    final result =
+                                        await Navigator.of(context).push(
                                       PageRouteBuilder(
                                         pageBuilder: (_, __, ___) =>
                                             const DeviceConnectPage(),

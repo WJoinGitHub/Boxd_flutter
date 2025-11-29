@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'api_client.dart';
 import 'ble_protocol.dart';
 
 class BleService {
@@ -105,10 +105,14 @@ class BleService {
         '(写特征: ${_writeCharacteristic != null}, 通知特征: ${_notifyCharacteristic != null})');
     
     if (success) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('last_device_id', device.remoteId.str);
-      await prefs.setString('last_device_name', device.platformName);
-      print('[BLE] 已保存设备: ${device.platformName}');
+      try {
+        final result = await ApiClient.bindDevice(device.remoteId.str);
+        if (result['code'] == 200) {
+          print('[BLE] 设备绑定成功');
+        }
+      } catch (e) {
+        print('[BLE] 设备绑定失败: $e');
+      }
     }
     
     return success;
@@ -181,43 +185,48 @@ class BleService {
     await _write(BleProtocolHelper.stopDeviceCommand());
   }
 
-  /// 自动连接上次连接的设备
-  static Future<BluetoothDevice?> getLastDevice() async {
+  /// 获取第一个绑定的设备
+  static Future<BluetoothDevice?> getFirstBoundDevice() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final deviceId = prefs.getString('last_device_id');
-      if (deviceId == null) return null;
-      
-      print('[BLE] 查找上次连接的设备: $deviceId');
-      
-      final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
-      for (var device in connectedDevices) {
-        if (device.remoteId.str == deviceId) {
-          print('[BLE] 找到已连接设备');
-          return device;
+      final result = await ApiClient.getDevices(page: 1, pageSize: 1);
+      if (result['code'] == 200 && result['data'] != null) {
+        final devices = result['data'] as List;
+        if (devices.isNotEmpty) {
+          final deviceUuid = devices[0]['device_uuid'];
+          print('[BLE] 找到绑定设备: $deviceUuid');
+          
+          final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
+          for (var device in connectedDevices) {
+            if (device.remoteId.str == deviceUuid) {
+              print('[BLE] 设备已连接');
+              return device;
+            }
+          }
+          
+          print('[BLE] 开始扫描设备...');
+          await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
+          
+          BluetoothDevice? foundDevice;
+          final subscription = FlutterBluePlus.scanResults.listen((results) {
+            for (var r in results) {
+              if (r.device.remoteId.str == deviceUuid) {
+                foundDevice = r.device;
+                break;
+              }
+            }
+          });
+          
+          await Future.delayed(const Duration(seconds: 5));
+          await FlutterBluePlus.stopScan();
+          await subscription.cancel();
+          
+          return foundDevice;
         }
       }
-      
-      print('[BLE] 开始扫描查找设备...');
-      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
-      
-      BluetoothDevice? foundDevice;
-      final subscription = FlutterBluePlus.scanResults.listen((results) {
-        for (var r in results) {
-          if (r.device.remoteId.str == deviceId) {
-            foundDevice = r.device;
-            break;
-          }
-        }
-      });
-      
-      await Future.delayed(const Duration(seconds: 5));
-      await FlutterBluePlus.stopScan();
-      await subscription.cancel();
-      
-      return foundDevice;
+      print('[BLE] 未找到绑定设备');
+      return null;
     } catch (e) {
-      print('[BLE] 查找上次设备失败: $e');
+      print('[BLE] 获取设备失败: $e');
       return null;
     }
   }

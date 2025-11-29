@@ -52,9 +52,9 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
           
           if (tokens != null && user != null) {
             await UserService().saveTokens(
-              accessToken: tokens['access_token'],
-              refreshToken: tokens['refresh_token'],
-              expiresAt: tokens['expires_at'],
+              accessToken: tokens['access_token'] ?? '',
+              refreshToken: tokens['refresh_token'] ?? '',
+              expiresAt: tokens['expires_at'] ?? '',
             );
             
             final userInfo = UserInfo.fromJson(user);

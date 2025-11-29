@@ -74,9 +74,9 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
             
             if (tokens != null && user != null) {
               await UserService().saveTokens(
-                accessToken: tokens['access_token'],
-                refreshToken: tokens['refresh_token'],
-                expiresAt: tokens['expires_at'],
+                accessToken: tokens['access_token'] ?? '',
+                refreshToken: tokens['refresh_token'] ?? '',
+                expiresAt: tokens['expires_at'] ?? '',
               );
               
               final userInfo = UserInfo.fromJson(user);

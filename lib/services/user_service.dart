@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_client.dart';
 
 class UserInfo {
   final int userId;
@@ -62,7 +63,15 @@ class UserService {
   }) async {
     _accessToken = accessToken;
     _refreshToken = refreshToken;
-    _expiresAt = DateTime.parse(expiresAt);
+    ApiClient.setToken(accessToken);
+    
+    if (expiresAt.isNotEmpty) {
+      try {
+        _expiresAt = DateTime.parse(expiresAt);
+      } catch (e) {
+        print('[USER] 解析过期时间失败: $e');
+      }
+    }
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', accessToken);
@@ -71,16 +80,9 @@ class UserService {
     print('[USER] Tokens 已保存');
   }
 
-  /// 保存用户信息
-  Future<void> saveUserInfo(UserInfo user) async {
+  /// 保存用户信息（仅内存）
+  void saveUserInfo(UserInfo user) {
     _currentUser = user;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('user_id', user.userId);
-    await prefs.setString('user_email', user.email);
-    await prefs.setString('user_nickname', user.nickname);
-    await prefs.setString('user_language', user.language);
-    await prefs.setString('user_timezone', user.timezone);
-    await prefs.setString('user_created_at', user.createdAt);
     print('[USER] 用户信息已保存: ${user.email}');
   }
 
@@ -97,6 +99,9 @@ class UserService {
         return false;
       }
 
+      ApiClient.setToken(_accessToken!);
+      print('[USER] 已更新 ApiClient token');
+
       if (expiresAtStr != null) {
         _expiresAt = DateTime.parse(expiresAtStr);
 
@@ -110,26 +115,34 @@ class UserService {
         }
       }
 
-      final userId = prefs.getInt('user_id');
-      final userEmail = prefs.getString('user_email');
-
-      if (userId != null && userEmail != null) {
-        _currentUser = UserInfo(
-          userId: userId,
-          email: userEmail,
-          nickname: prefs.getString('user_nickname') ?? '',
-          language: prefs.getString('user_language') ?? 'zh-CN',
-          timezone: prefs.getString('user_timezone') ?? 'Asia/Shanghai',
-          createdAt: prefs.getString('user_created_at') ?? '',
-        );
-        print('[USER] 已加载本地用户信息: $userEmail');
-        return true;
-      }
-
-      return false;
+      await fetchUserInfo();
+      return true;
     } catch (e) {
       print('[USER] 加载本地数据失败: $e');
       return false;
+    }
+  }
+
+  /// 获取用户信息
+  Future<UserInfo?> fetchUserInfo() async {
+    if (_accessToken == null) return null;
+
+    try {
+      final result = await ApiClient.getUserProfile();
+      if (result['code'] == 200) {
+        final userData = result['data'];
+        if (userData != null) {
+          final userInfo = UserInfo.fromJson(userData);
+          saveUserInfo(userInfo);
+          print('[USER] 获取用户信息成功');
+          return userInfo;
+        }
+      }
+      print('[USER] 获取用户信息失败: ${result['message']}');
+      return null;
+    } catch (e) {
+      print('[USER] 获取用户信息失败: $e');
+      return null;
     }
   }
 
@@ -138,20 +151,21 @@ class UserService {
     if (_refreshToken == null) return false;
 
     try {
-      // TODO: 调用实际的 API
-      // final response = await http.post(
-      //   Uri.parse('YOUR_API_URL/auth/refresh-token'),
-      //   body: {'refresh_token': _refreshToken},
-      // );
-      // final data = jsonDecode(response.body);
-
-      print('[USER] 刷新 token 成功');
-      // await saveTokens(
-      //   accessToken: data['access_token'],
-      //   refreshToken: data['refresh_token'],
-      //   expiresAt: data['expires_at'],
-      // );
-      return true;
+      final result = await ApiClient.refreshToken(_refreshToken!);
+      if (result['code'] == 200) {
+        final tokens = result['data']?['tokens'];
+        if (tokens != null) {
+          await saveTokens(
+            accessToken: tokens['access_token'],
+            refreshToken: tokens['refresh_token'],
+            expiresAt: tokens['expires_at'],
+          );
+          print('[USER] 刷新 token 成功');
+          return true;
+        }
+      }
+      print('[USER] 刷新 token 失败: ${result['message']}');
+      return false;
     } catch (e) {
       print('[USER] 刷新 token 失败: $e');
       return false;
@@ -164,16 +178,11 @@ class UserService {
     _refreshToken = null;
     _expiresAt = null;
     _currentUser = null;
+    ApiClient.clearToken();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
     await prefs.remove('refresh_token');
     await prefs.remove('expires_at');
-    await prefs.remove('user_id');
-    await prefs.remove('user_email');
-    await prefs.remove('user_nickname');
-    await prefs.remove('user_language');
-    await prefs.remove('user_timezone');
-    await prefs.remove('user_created_at');
     print('[USER] 已登出');
   }
 }

@@ -1,18 +1,44 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'api_client.dart';
 import 'ble_protocol.dart';
 
 class BleService {
+  static final BleService _instance = BleService._internal();
+  factory BleService() => _instance;
+  BleService._internal();
+
   BluetoothDevice? _device;
   BluetoothCharacteristic? _writeCharacteristic;
   BluetoothCharacteristic? _notifyCharacteristic;
+  String? _deviceMacAddress;
 
   final _statusController = StreamController<DeviceStatusData>.broadcast();
   Stream<DeviceStatusData> get statusStream => _statusController.stream;
 
+  bool get isConnected => _writeCharacteristic != null && _notifyCharacteristic != null;
+
+  Timer? _heartbeatTimer;
+  int _missedHeartbeats = 0;
+  DateTime? _lastHeartbeatTime;
+
+  Completer<bool>? _commandCompleter;
+  int? _pendingCommand;
+  int? _pendingSubCommand;
+
+  /// 获取设备 MAC 地址
+  String _getDeviceMacAddress(BluetoothDevice device) {
+    if (Platform.isAndroid) {
+      return device.remoteId.str.replaceAll(':', '').toUpperCase();
+    } else {
+      // iOS: 从缓存的 MAC 地址返回，如果没有则使用 remoteId
+      return _deviceMacAddress ?? device.remoteId.str.replaceAll('-', '').toUpperCase();
+    }
+  }
+
   /// 连接设备
-  Future<bool> connect(BluetoothDevice device) async {
+  Future<bool> connect(BluetoothDevice device, {bool skipBind = false}) async {
     _device = device;
     print('[BLE] 开始连接设备: ${device.platformName} (${device.remoteId})');
 
@@ -105,14 +131,40 @@ class BleService {
         '(写特征: ${_writeCharacteristic != null}, 通知特征: ${_notifyCharacteristic != null})');
     
     if (success) {
-      try {
-        final result = await ApiClient.bindDevice(device.remoteId.str);
-        if (result['code'] == 200) {
-          print('[BLE] 设备绑定成功');
+      if (!skipBind) {
+        final deviceUuid = _getDeviceMacAddress(device);
+        final deviceName = device.platformName.isNotEmpty 
+            ? device.platformName 
+            : 'Boxd-${deviceUuid.substring(deviceUuid.length - 4)}';
+        print('[BLE] 绑定设备 UUID: $deviceUuid, 名称: $deviceName');
+        
+        bool bindSuccess = false;
+        for (int i = 0; i < 3; i++) {
+          try {
+            final result = await ApiClient.bindDevice(
+              deviceUuid,
+              deviceName: deviceName,
+            );
+            if (result['code'] == 200) {
+              print('[BLE] 设备绑定成功');
+              bindSuccess = true;
+              break;
+            }
+          } catch (e) {
+            print('[BLE] 设备绑定失败 (尝试 ${i + 1}/3): $e');
+            if (i < 2) await Future.delayed(const Duration(seconds: 1));
+          }
         }
-      } catch (e) {
-        print('[BLE] 设备绑定失败: $e');
+        
+        if (!bindSuccess) {
+          print('[BLE] 设备绑定失败，断开连接');
+          await disconnect();
+          return false;
+        }
       }
+      
+      // _startHeartbeatMonitor();
+      await getDeviceStatus();
     }
     
     return success;
@@ -120,6 +172,7 @@ class BleService {
 
   /// 断开连接
   Future<void> disconnect() async {
+    _stopHeartbeatMonitor();
     try {
       if (_device != null) {
         print('[BLE] 断开连接...');
@@ -135,54 +188,134 @@ class BleService {
     }
   }
 
-  /// 发送数据
-  Future<void> _write(List<int> data) async {
+  /// 发送数据并等待响应
+  Future<bool> _writeWithResponse(List<int> data, int command, int subCommand) async {
     if (_writeCharacteristic == null) throw Exception('未连接设备');
+    
+    _commandCompleter = Completer<bool>();
+    _pendingCommand = command;
+    _pendingSubCommand = subCommand;
+    
     try {
       await _writeCharacteristic!.write(data, withoutResponse: false);
       print('[BLE] 数据已发送: $data');
+      
+      return await _commandCompleter!.future.timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          _commandCompleter = null;
+          _pendingCommand = null;
+          _pendingSubCommand = null;
+          return false;
+        },
+      );
     } catch (e) {
       print('[BLE] 发送数据失败: $e');
+      _commandCompleter = null;
+      _pendingCommand = null;
+      _pendingSubCommand = null;
+      return false;
     }
   }
 
   /// 接收数据
   void _onDataReceived(List<int> data) {
     print('[BLE] 收到数据: $data');
+    _lastHeartbeatTime = DateTime.now();
+    _missedHeartbeats = 0;
+    
+    if (data.length >= 5 && data[0] == 0x02 && data[data.length - 1] == 0x03) {
+      final command = data[1];
+      final subCommand = data[2];
+      if (_pendingCommand == command && _pendingSubCommand == subCommand && _commandCompleter != null) {
+        final result = data.length >= 4 ? data[3] : 0;
+        _commandCompleter!.complete(result == 1);
+        _commandCompleter = null;
+        _pendingCommand = null;
+        _pendingSubCommand = null;
+      }
+    }
+    
     final status = BleProtocolHelper.parseDeviceStatus(data);
     if (status != null) {
       _statusController.add(status);
     }
   }
 
+  /// 启动心跳检测
+  void _startHeartbeatMonitor() {
+    _heartbeatTimer?.cancel();
+    _missedHeartbeats = 0;
+    _lastHeartbeatTime = DateTime.now();
+    
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_lastHeartbeatTime != null) {
+        final elapsed = DateTime.now().difference(_lastHeartbeatTime!).inSeconds;
+        if (elapsed > 1) {
+          _missedHeartbeats++;
+          print('[BLE] 心跳超时: $_missedHeartbeats/5');
+          
+          if (_missedHeartbeats >= 5) {
+            print('[BLE] 心跳失败，重新连接...');
+            timer.cancel();
+            _reconnect();
+          }
+        }
+      }
+    });
+  }
+
+  /// 停止心跳检测
+  void _stopHeartbeatMonitor() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    _missedHeartbeats = 0;
+    _lastHeartbeatTime = null;
+  }
+
+  /// 重新连接
+  Future<void> _reconnect() async {
+    final device = _device;
+    if (device == null) return;
+    
+    print('[BLE] 开始重新连接...');
+    await disconnect();
+    await Future.delayed(const Duration(seconds: 2));
+    await connect(device);
+  }
+
   /// 获取设备信息
   Future<void> getDeviceInfo() async {
-    await _write(BleProtocolHelper.getDeviceInfoCommand());
+    final data = BleProtocolHelper.getDeviceInfoCommand();
+    await _writeCharacteristic!.write(data, withoutResponse: false);
   }
 
   /// 获取设备状态
   Future<void> getDeviceStatus() async {
-    await _write(BleProtocolHelper.getDeviceStatusCommand());
+    final data = BleProtocolHelper.getDeviceStatusCommand();
+    await _writeCharacteristic!.write(data, withoutResponse: false);
   }
 
   /// 设置工作模式
-  Future<void> setWork({
+  Future<bool> setWork({
     required WorkMode mode,
     required int temperature,
     required int heatingTime,
     required int mealTime,
   }) async {
-    await _write(BleProtocolHelper.setWorkCommand(
+    final data = BleProtocolHelper.setWorkCommand(
       mode: mode,
       temperature: temperature,
       heatingTime: heatingTime,
       mealTime: mealTime,
-    ));
+    );
+    return await _writeWithResponse(data, 0x40, 0x00);
   }
 
   /// 停止设备
-  Future<void> stopDevice() async {
-    await _write(BleProtocolHelper.stopDeviceCommand());
+  Future<bool> stopDevice() async {
+    final data = BleProtocolHelper.stopDeviceCommand();
+    return await _writeWithResponse(data, 0x53, 0x03);
   }
 
   /// 获取第一个绑定的设备
@@ -197,7 +330,10 @@ class BleService {
           
           final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
           for (var device in connectedDevices) {
-            if (device.remoteId.str == deviceUuid) {
+            final currentUuid = Platform.isAndroid 
+                ? device.remoteId.str.replaceAll(':', '').toUpperCase()
+                : device.remoteId.str.replaceAll('-', '').toUpperCase();
+            if (currentUuid == deviceUuid) {
               print('[BLE] 设备已连接');
               return device;
             }
@@ -209,7 +345,10 @@ class BleService {
           BluetoothDevice? foundDevice;
           final subscription = FlutterBluePlus.scanResults.listen((results) {
             for (var r in results) {
-              if (r.device.remoteId.str == deviceUuid) {
+              final currentUuid = Platform.isAndroid 
+                  ? r.device.remoteId.str.replaceAll(':', '').toUpperCase()
+                  : r.device.remoteId.str.replaceAll('-', '').toUpperCase();
+              if (currentUuid == deviceUuid) {
                 foundDevice = r.device;
                 break;
               }
@@ -233,6 +372,7 @@ class BleService {
 
   /// 释放资源
   void dispose() {
+    _stopHeartbeatMonitor();
     _statusController.close();
   }
 }

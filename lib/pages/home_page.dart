@@ -4,8 +4,12 @@ import 'package:flutter_boxd_app_flow/pages/device/device_connect_page.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/setting_page.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/pages/login/email_login_page.dart';
+import 'dart:io';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
+import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
+import 'package:flutter_boxd_app_flow/services/api_client.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,8 +28,12 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     print("HomePage initState start");
-    _autoLogin();
-    _autoConnect();
+    _init();
+  }
+
+  Future<void> _init() async {
+    await _autoLogin();
+    await _autoConnect();
   }
 
   Future<void> _autoLogin() async {
@@ -37,16 +45,57 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _autoConnect() async {
     print('[HOME] 尝试自动连接...');
-    final device = await BleService.getFirstBoundDevice();
-    if (device != null) {
-      print('[HOME] 找到绑定设备，开始连接...');
-      final success = await bleService.connect(device);
-      if (success && mounted) {
-        setState(() => connected = true);
-        print('[HOME] 自动连接成功');
+    try {
+      final result = await ApiClient.getDevices(page: 1, pageSize: 1);
+      if (result['code'] == 200 && result['data'] != null) {
+        final devices = result['data'] as List;
+        if (devices.isNotEmpty) {
+          final deviceUuid = devices[0]['device_uuid'];
+          print('[HOME] 找到绑定设备: $deviceUuid');
+          
+          final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
+          BluetoothDevice? targetDevice;
+          
+          for (var device in connectedDevices) {
+            final currentUuid = Platform.isAndroid 
+                ? device.remoteId.str.replaceAll(':', '').toUpperCase()
+                : device.remoteId.str.replaceAll('-', '').toUpperCase();
+            if (currentUuid == deviceUuid) {
+              targetDevice = device;
+              break;
+            }
+          }
+          
+          if (targetDevice == null) {
+            print('[HOME] 开始扫描设备...');
+            await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
+            await for (var results in FlutterBluePlus.scanResults) {
+              for (var r in results) {
+                final currentUuid = Platform.isAndroid 
+                    ? r.device.remoteId.str.replaceAll(':', '').toUpperCase()
+                    : r.device.remoteId.str.replaceAll('-', '').toUpperCase();
+                print('[HOME] 扫描到设备: ${r.device.platformName} UUID: $currentUuid');
+                if (currentUuid == deviceUuid) {
+                  targetDevice = r.device;
+                  break;
+                }
+              }
+              if (targetDevice != null) break;
+            }
+            await FlutterBluePlus.stopScan();
+          }
+          
+          if (targetDevice != null && mounted) {
+            final success = await bleService.connect(targetDevice, skipBind: true);
+            if (success && mounted) {
+              setState(() => connected = true);
+              print('[HOME] 自动连接成功');
+            }
+          }
+        }
       }
-    } else {
-      print('[HOME] 未找到绑定设备');
+    } catch (e) {
+      print('[HOME] 自动连接失败: $e');
     }
   }
 
@@ -198,7 +247,7 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                     );
                                     if (result == true && mounted) {
-                                      setState(() => connected = true);
+                                      setState(() => connected = bleService.isConnected);
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
@@ -303,33 +352,64 @@ class _HomePageState extends State<HomePage> {
 
   /// 构建功能按钮（带图片 + 文字）
   Widget _buildModeButton(String label, Widget icon, Color color) {
-    return Container(
-      width: 64,
-      height: 145,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(37),
-        border: Border.all(color: color, width: 1),
-      ),
-      child: Column(
-        children: [
-          const SizedBox(height: 20), // 顶部固定留白，保证上对齐
-          SizedBox(
-            height: 58, // 图标区域固定高度
-            child: Center(child: icon),
-          ),
-          const Spacer(), // 自动推下文字
-          Padding(
-            padding: const EdgeInsets.only(bottom: 28), // 底部固定间距
-            child: Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
+    return GestureDetector(
+      onTap: () async {
+        if (!connected) return;
+        
+        bool success = false;
+        if (label == "Ins") {
+          success = await bleService.setWork(
+            mode: WorkMode.keepWarm,
+            temperature: 60,
+            heatingTime: 0,
+            mealTime: 0,
+          );
+        } else if (label == "Heat") {
+          success = await bleService.setWork(
+            mode: WorkMode.heating,
+            temperature: 80,
+            heatingTime: 30,
+            mealTime: 0,
+          );
+        }
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(success ? '指令发送成功' : '发送指令失败，请稍后重试'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      },
+      child: Container(
+        width: 64,
+        height: 145,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(37),
+          border: Border.all(color: color, width: 1),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 58,
+              child: Center(child: icon),
+            ),
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 28),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

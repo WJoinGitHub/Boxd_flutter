@@ -166,15 +166,18 @@ class ApiClient {
       'email': email,
       'password': password,
     });
-    if (result['code'] == 200 && result['data']?['tokens']?['access_token'] != null) {
+    if (result['code'] == 200 &&
+        result['data']?['tokens']?['access_token'] != null) {
       setToken(result['data']['tokens']['access_token']);
     }
     return result;
   }
 
   static Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
-    final result = await post('/auth/refresh-token', {'refresh_token': refreshToken});
-    if (result['code'] == 200 && result['data']?['tokens']?['access_token'] != null) {
+    final result =
+        await post('/auth/refresh-token', {'refresh_token': refreshToken});
+    if (result['code'] == 200 &&
+        result['data']?['tokens']?['access_token'] != null) {
       setToken(result['data']['tokens']['access_token']);
     }
     return result;

@@ -147,8 +147,8 @@ class BleProtocolHelper {
       0x00,
       mode.value,
       temperature,
-      ...uint16ToBytes(heatingTime),
-      ...uint16ToBytes(mealTime),
+      heatingTime & 0xFF,
+      mealTime & 0xFF,
     ];
     return buildPacket(0x40, data);
   }

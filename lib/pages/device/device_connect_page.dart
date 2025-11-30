@@ -154,15 +154,8 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
     if (!bluetoothOn) {
       title = "Please turn on Bluetooth";
       desc = "Your phone’s Bluetooth is turned off. Please turn it on.";
-      buttonText = Platform.isIOS ? "Open Settings" : "Turn on";
-      onPressed = Platform.isIOS
-          ? () => openAppSettings()
-          : () async {
-              try {
-                await FlutterBluePlus.turnOn();
-              } catch (e) {}
-              checkStatus();
-            };
+      buttonText = "Open Settings";
+      onPressed = () => openAppSettings();
     } else if (Platform.isAndroid && !bluetoothGranted) {
       if (isAndroid12OrAbove) {
         title = "Please allow access to nearby devices";
@@ -284,12 +277,14 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const BxAppBar(title: "Connect Device"),
-      body: Column(
-        children: [
-          _buildStatusSection(),
-          const SizedBox(height: 20),
-          _buildDeviceList(),
-        ],
+      body: Center(
+        child: Column(
+          children: [
+            _buildStatusSection(),
+            const SizedBox(height: 20),
+            _buildDeviceList(),
+          ],
+        ),
       ),
     );
   }

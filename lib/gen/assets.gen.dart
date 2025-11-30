@@ -76,11 +76,20 @@ class $AssetsCommonImagesGen {
 class $AssetsDeviceImagesGen {
   const $AssetsDeviceImagesGen();
 
+  /// File path: assets/device/images/dev_heat.png
+  AssetGenImage get devHeat => const AssetGenImage('assets/device/images/dev_heat.png');
+
+  /// File path: assets/device/images/dev_heat_work.png
+  AssetGenImage get devHeatWork => const AssetGenImage('assets/device/images/dev_heat_work.png');
+
+  /// File path: assets/device/images/dev_ins.png
+  AssetGenImage get devIns => const AssetGenImage('assets/device/images/dev_ins.png');
+
   /// File path: assets/device/images/hot_rice.png
   AssetGenImage get hotRice => const AssetGenImage('assets/device/images/hot_rice.png');
 
   /// List of all assets
-  List<AssetGenImage> get values => [hotRice];
+  List<AssetGenImage> get values => [devHeat, devHeatWork, devIns, hotRice];
 }
 
 class $AssetsHomeImagesGen {

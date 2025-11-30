@@ -10,6 +10,8 @@ import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_boxd_app_flow/pages/keep_warm_page.dart';
+import 'package:flutter_boxd_app_flow/pages/heating_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -356,29 +358,21 @@ class _HomePageState extends State<HomePage> {
       onTap: () async {
         if (!connected) return;
         
-        bool success = false;
         if (label == "Ins") {
-          success = await bleService.setWork(
+          final success = await bleService.setWork(
             mode: WorkMode.keepWarm,
             temperature: 60,
             heatingTime: 0,
             mealTime: 0,
           );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(success ? '指令发送成功' : '发送指令失败，请稍后重试')),
+            );
+          }
         } else if (label == "Heat") {
-          success = await bleService.setWork(
-            mode: WorkMode.heating,
-            temperature: 80,
-            heatingTime: 30,
-            mealTime: 0,
-          );
-        }
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(success ? '指令发送成功' : '发送指令失败，请稍后重试'),
-              duration: const Duration(seconds: 2),
-            ),
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const HeatingPage()),
           );
         }
       },

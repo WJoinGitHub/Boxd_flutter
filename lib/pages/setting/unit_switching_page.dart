@@ -35,8 +35,8 @@ class _UnitSwitchingPageState extends State<UnitSwitchingPage> {
     return Scaffold(
       appBar: BxAppBar(
         leftIcon: Assets.common.images.deviceBack.image(
-          width: 20,
-          height: 20,
+          width: 35,
+          height: 35,
           fit: BoxFit.contain,
         ),
         title: "Settings",

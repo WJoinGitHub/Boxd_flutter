@@ -36,18 +36,13 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
   Future<void> checkStatus() async {
     // 蓝牙状态
     try {
-      if (Platform.isIOS) {
-        // iOS 默认认为蓝牙已开启，实际状态在扫描时才能确定
-        bluetoothOn = true;
-      } else {
-        final btState = await FlutterBluePlus.adapterState.first.timeout(
-          const Duration(seconds: 2),
-          onTimeout: () => BluetoothAdapterState.on,
-        );
-        bluetoothOn = btState == BluetoothAdapterState.on;
-      }
+      final btState = await FlutterBluePlus.adapterState.first.timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => BluetoothAdapterState.on,
+      );
+      bluetoothOn = btState == BluetoothAdapterState.on;
     } catch (e) {
-      bluetoothOn = true;
+      bluetoothOn = false;
     }
 
     // Android 12+ 判断
@@ -70,8 +65,9 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       final locService = loc.Location();
       locationOn = await locService.serviceEnabled();
     } else {
-      // iOS 不需要额外的蓝牙权限检查
-      bluetoothGranted = true;
+      // iOS 蓝牙权限检查
+      final btStatus = await Permission.bluetooth.status;
+      bluetoothGranted = btStatus.isGranted || btStatus.isLimited;
       nearbyGranted = true;
       locationGranted = true;
       locationOn = true;
@@ -168,7 +164,7 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
         };
       } else {
         title = "Please enable Bluetooth permission";
-        desc = "App needs permission to access Bluetooth hardware.";
+        desc = "MEDCURSOR needs permission to access the Bluetooth pairing hardware.";
         buttonText = "Grant Permission";
         onPressed = () async {
           await Permission.bluetooth.request();
@@ -192,31 +188,44 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       onPressed = scanning ? null : startScan;
     }
 
+    final showBluetoothIcon = bluetoothOn && bluetoothGranted;
+    
     return Column(
       children: [
-        const SizedBox(height: 33),
-        const Icon(Icons.bluetooth, size: 53, color: Colors.blueAccent),
-        const SizedBox(height: 17),
-        Text(title,
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 7),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 27),
-          child: Text(desc,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: Colors.black54)),
-        ),
-        const SizedBox(height: 27),
-        ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            minimumSize: const Size(267, 47),
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (showBluetoothIcon)
+                const Icon(Icons.bluetooth, size: 53, color: Colors.blueAccent)
+              else
+                Assets.device.images.devOpenBle.image(height: 200),
+              const SizedBox(height: 17),
+              Text(title,
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 7),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 27),
+                child: Text(desc,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              ),
+            ],
           ),
-          child: Text(buttonText,
-              style: const TextStyle(color: Colors.white, fontSize: 13)),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              minimumSize: const Size(double.infinity, 47),
+            ),
+            child: Text(buttonText,
+                style: const TextStyle(color: Colors.white, fontSize: 13)),
+          ),
         ),
       ],
     );
@@ -232,43 +241,45 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
     }
 
     if (scanning) {
-      return const Padding(
-        padding: EdgeInsets.only(top: 33),
-        child: CircularProgressIndicator(),
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
     if (devices.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.only(top: 33),
-        child:
-            Text("No devices found", style: TextStyle(color: Colors.black45)),
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child:
+              Text("No devices found", style: TextStyle(color: Colors.black45)),
+        ),
       );
     }
 
-    return Expanded(
-      child: ListView.builder(
-        itemCount: devices.length,
-        itemBuilder: (context, index) {
-          final device = devices[index];
-          return ListTile(
-            title: Text(device.platformName.isNotEmpty
-                ? device.platformName
-                : "Unknown Device"),
-            subtitle: Text(device.remoteId.str),
-            trailing: ElevatedButton(
-              onPressed: () => connectDevice(device),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.orange,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(7)),
-              ),
-              child:
-                  const Text("Connect", style: TextStyle(color: Colors.white)),
+    return ListView.builder(
+      itemCount: devices.length,
+      itemBuilder: (context, index) {
+        final device = devices[index];
+        return ListTile(
+          title: Text(device.platformName.isNotEmpty
+              ? device.platformName
+              : "Unknown Device"),
+          subtitle: Text(device.remoteId.str),
+          trailing: ElevatedButton(
+            onPressed: () => connectDevice(device),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.orange,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(7)),
             ),
-          );
-        },
-      ),
+            child:
+                const Text("Connect", style: TextStyle(color: Colors.white)),
+          ),
+        );
+      },
     );
   }
 
@@ -276,15 +287,21 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: const BxAppBar(title: "Connect Device"),
-      body: Center(
-        child: Column(
-          children: [
-            _buildStatusSection(),
-            const SizedBox(height: 20),
-            _buildDeviceList(),
-          ],
-        ),
+      appBar: BxAppBar(
+        title: "Connect Device",
+        rightWidget: const Text('Help', style: TextStyle(color: Color(0xFF00C389), fontSize: 16, fontWeight: FontWeight.w500)),
+        onRightPressed: () {},
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: _buildStatusSection(),
+          ),
+          if (bluetoothOn && bluetoothGranted && (Platform.isIOS || (locationOn && locationGranted)))
+            Expanded(
+              child: _buildDeviceList(),
+            ),
+        ],
       ),
     );
   }

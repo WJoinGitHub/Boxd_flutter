@@ -19,7 +19,7 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
 
   void _sendCommand() async {
     final totalMinutes = hours * 60 + minutes;
-    
+
     if (totalMinutes > 240) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('时间不能超过4小时')),
@@ -48,8 +48,8 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
       backgroundColor: Colors.white,
       appBar: BxAppBar(
         leftIcon: Assets.common.images.deviceBack.image(
-          width: 20,
-          height: 20,
+          width: 35,
+          height: 35,
           fit: BoxFit.contain,
         ),
         title: "QIMI\nHotRice",
@@ -93,7 +93,8 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
             ],
           ),
           const SizedBox(height: 40),
-          const Text('Keep Warm Heating ...', style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic)),
+          const Text('Keep Warm Heating ...',
+              style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic)),
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -102,24 +103,37 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(width: 80, child: Center(child: Text('HOURS', style: TextStyle(fontSize: 12, color: Colors.grey)))),
+                    const SizedBox(
+                        width: 80,
+                        child: Center(
+                            child: Text('HOURS',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey)))),
                     const SizedBox(width: 40),
-                    const SizedBox(width: 80, child: Center(child: Text('MIN', style: TextStyle(fontSize: 12, color: Colors.grey)))),
+                    const SizedBox(
+                        width: 80,
+                        child: Center(
+                            child: Text('MIN',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey)))),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Container(
                   height: 60,
                   decoration: BoxDecoration(
-                    border: Border.all(color: const Color(0xFF7F8489), width: 1),
+                    border:
+                        Border.all(color: const Color(0xFF7F8489), width: 1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildTimePicker(hours, (v) => setState(() => hours = v), 5),
+                      _buildTimePicker(
+                          hours, (v) => setState(() => hours = v), 5),
                       const Text(':', style: TextStyle(fontSize: 40)),
-                      _buildTimePicker(minutes, (v) => setState(() => minutes = v), 60),
+                      _buildTimePicker(
+                          minutes, (v) => setState(() => minutes = v), 60),
                     ],
                   ),
                 ),
@@ -134,9 +148,11 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
                 minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28)),
               ),
-              child: const Text('SLIDE TO EAT', style: TextStyle(color: Colors.white, fontSize: 16)),
+              child: const Text('SLIDE TO EAT',
+                  style: TextStyle(color: Colors.white, fontSize: 16)),
             ),
           ),
         ],
@@ -158,7 +174,8 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
             return Center(
               child: Text(
                 index.toString().padLeft(2, '0'),
-                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w300),
+                style:
+                    const TextStyle(fontSize: 32, fontWeight: FontWeight.w300),
               ),
             );
           },

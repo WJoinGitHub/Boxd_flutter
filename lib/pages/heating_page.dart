@@ -16,14 +16,36 @@ class HeatingPage extends StatefulWidget {
 class _HeatingPageState extends State<HeatingPage> {
   int heatingHours = 0;
   int heatingMinutes = 30;
-  int mealHours = 12;
-  int mealMinutes = 0;
+  int mealHours = DateTime.now().hour;
+  int mealMinutes = DateTime.now().minute;
   final bleService = BleService();
   bool isHeating = false;
 
+  late final FixedExtentScrollController heatingHoursController =
+      FixedExtentScrollController(initialItem: 0);
+  late final FixedExtentScrollController heatingMinutesController =
+      FixedExtentScrollController(initialItem: 30);
+  late final FixedExtentScrollController mealHoursController =
+      FixedExtentScrollController(initialItem: DateTime.now().hour);
+  late final FixedExtentScrollController mealMinutesController =
+      FixedExtentScrollController(initialItem: DateTime.now().minute);
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    heatingHoursController.dispose();
+    heatingMinutesController.dispose();
+    mealHoursController.dispose();
+    mealMinutesController.dispose();
+    super.dispose();
+  }
+
   void _sendCommand() async {
     final heatingTotalMinutes = heatingHours * 60 + heatingMinutes;
-    final mealTotalMinutes = mealHours * 60 + mealMinutes;
 
     if (heatingTotalMinutes > 240) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -32,18 +54,51 @@ class _HeatingPageState extends State<HeatingPage> {
       return;
     }
 
-    if (mealTotalMinutes > 240) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('开饭时间不能超过4小时')),
-      );
-      return;
-    }
+    // 计算目标时间（加热结束时间）
+    final now = DateTime.now();
+    final targetTime =
+        DateTime(now.year, now.month, now.day, mealHours, mealMinutes);
+
+    // 如果目标时间小于当前时间，说明是第二天
+    final actualTargetTime = targetTime.isBefore(now)
+        ? targetTime.add(const Duration(days: 1))
+        : targetTime;
+
+    // 计算时间差（分钟）
+    final diffMinutes = actualTargetTime.difference(now).inMinutes;
+
+    // // 验证不超过4小时（240分钟）
+    // if (diffMinutes > 240) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text('加热结束时间距离现在不能超过4小时')),
+    //   );
+    //   return;
+    // }
+
+    // if (diffMinutes < 0) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text('加热结束时间不能早于当前时间')),
+    //   );
+    //   return;
+    // }
+
+    // // 验证：时长 + 现在时间 < 结束时间
+    // final estimatedEndTime = now.add(Duration(minutes: heatingTotalMinutes));
+    // if (estimatedEndTime.isAfter(actualTargetTime)) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text('加热时长过长，无法在设定时间前完成')),
+    //   );
+    //   return;
+    // }
+
+    // 将结束时间转换为总分钟数（从00:00开始计算）
+    final mealTimeTotalMinutes = mealHours * 60 + mealMinutes;
 
     final success = await bleService.setWork(
       mode: WorkMode.heating,
       temperature: 25,
       heatingTime: heatingTotalMinutes,
-      mealTime: mealTotalMinutes,
+      mealTime: mealTimeTotalMinutes,
     );
 
     if (mounted) {
@@ -162,11 +217,17 @@ class _HeatingPageState extends State<HeatingPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildTimePicker(heatingHours,
-                          (v) => setState(() => heatingHours = v), 5),
+                      _buildTimePicker(
+                          heatingHours,
+                          (v) => setState(() => heatingHours = v),
+                          5,
+                          heatingHoursController),
                       const Text(':', style: TextStyle(fontSize: 40)),
-                      _buildTimePicker(heatingMinutes,
-                          (v) => setState(() => heatingMinutes = v), 60),
+                      _buildTimePicker(
+                          heatingMinutes,
+                          (v) => setState(() => heatingMinutes = v),
+                          60,
+                          heatingMinutesController),
                     ],
                   ),
                 ),
@@ -196,10 +257,16 @@ class _HeatingPageState extends State<HeatingPage> {
                   Assets.device.images.devHeat.image(height: 40),
                   const SizedBox(width: 20),
                   _buildSimpleTimePicker(
-                      mealHours, (v) => setState(() => mealHours = v)),
+                      mealHours,
+                      (v) => setState(() => mealHours = v),
+                      24,
+                      mealHoursController),
                   const Text(':', style: TextStyle(fontSize: 32)),
                   _buildSimpleTimePicker(
-                      mealMinutes, (v) => setState(() => mealMinutes = v)),
+                      mealMinutes,
+                      (v) => setState(() => mealMinutes = v),
+                      60,
+                      mealMinutesController),
                 ],
               ),
             ),
@@ -207,28 +274,42 @@ class _HeatingPageState extends State<HeatingPage> {
           const Spacer(),
           Padding(
             padding: const EdgeInsets.all(20),
-            child: ElevatedButton(
-              onPressed: _sendCommand,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey,
-                minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28)),
-              ),
-              child: const Text('START',
-                  style: TextStyle(color: Colors.white, fontSize: 16)),
-            ),
+            child: isHeating
+                ? Container(
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    child: const Center(
+                      child: Text('SLIDE TO EAT',
+                          style: TextStyle(color: Colors.white, fontSize: 16)),
+                    ),
+                  )
+                : ElevatedButton(
+                    onPressed: _sendCommand,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      minimumSize: const Size(double.infinity, 56),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28)),
+                    ),
+                    child: const Text('START',
+                        style: TextStyle(color: Colors.white, fontSize: 16)),
+                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTimePicker(int value, Function(int) onChanged, int maxCount) {
+  Widget _buildTimePicker(int value, Function(int) onChanged, int maxCount,
+      FixedExtentScrollController controller) {
     return SizedBox(
       width: 80,
       height: 60,
       child: ListWheelScrollView.useDelegate(
+        controller: controller,
         itemExtent: 40,
         diameterRatio: 1.5,
         physics: const FixedExtentScrollPhysics(),
@@ -249,11 +330,13 @@ class _HeatingPageState extends State<HeatingPage> {
     );
   }
 
-  Widget _buildSimpleTimePicker(int value, Function(int) onChanged) {
+  Widget _buildSimpleTimePicker(int value, Function(int) onChanged,
+      int maxCount, FixedExtentScrollController controller) {
     return SizedBox(
       width: 60,
       height: 60,
       child: ListWheelScrollView.useDelegate(
+        controller: controller,
         itemExtent: 30,
         diameterRatio: 1.5,
         physics: const FixedExtentScrollPhysics(),
@@ -268,7 +351,7 @@ class _HeatingPageState extends State<HeatingPage> {
               ),
             );
           },
-          childCount: 60,
+          childCount: maxCount,
         ),
       ),
     );

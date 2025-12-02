@@ -54,12 +54,12 @@ class _HomePageState extends State<HomePage> {
         if (devices.isNotEmpty) {
           final deviceUuid = devices[0]['device_uuid'];
           print('[HOME] 找到绑定设备: $deviceUuid');
-          
+
           final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
           BluetoothDevice? targetDevice;
-          
+
           for (var device in connectedDevices) {
-            final currentUuid = Platform.isAndroid 
+            final currentUuid = Platform.isAndroid
                 ? device.remoteId.str.replaceAll(':', '').toUpperCase()
                 : device.remoteId.str.replaceAll('-', '').toUpperCase();
             if (currentUuid == deviceUuid) {
@@ -67,16 +67,18 @@ class _HomePageState extends State<HomePage> {
               break;
             }
           }
-          
+
           if (targetDevice == null) {
             print('[HOME] 开始扫描设备...');
-            await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
+            await FlutterBluePlus.startScan(
+                timeout: const Duration(seconds: 5));
             await for (var results in FlutterBluePlus.scanResults) {
               for (var r in results) {
-                final currentUuid = Platform.isAndroid 
+                final currentUuid = Platform.isAndroid
                     ? r.device.remoteId.str.replaceAll(':', '').toUpperCase()
                     : r.device.remoteId.str.replaceAll('-', '').toUpperCase();
-                print('[HOME] 扫描到设备: ${r.device.platformName} UUID: $currentUuid');
+                print(
+                    '[HOME] 扫描到设备: ${r.device.platformName} UUID: $currentUuid');
                 if (currentUuid == deviceUuid) {
                   targetDevice = r.device;
                   break;
@@ -86,9 +88,10 @@ class _HomePageState extends State<HomePage> {
             }
             await FlutterBluePlus.stopScan();
           }
-          
+
           if (targetDevice != null && mounted) {
-            final success = await bleService.connect(targetDevice, skipBind: true);
+            final success =
+                await bleService.connect(targetDevice, skipBind: true);
             if (success && mounted) {
               setState(() => connected = true);
               print('[HOME] 自动连接成功');
@@ -249,7 +252,8 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                     );
                                     if (result == true && mounted) {
-                                      setState(() => connected = bleService.isConnected);
+                                      setState(() =>
+                                          connected = bleService.isConnected);
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
@@ -357,7 +361,7 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: () async {
         if (!connected) return;
-        
+
         if (label == "Ins") {
           final success = await bleService.setWork(
             mode: WorkMode.keepWarm,

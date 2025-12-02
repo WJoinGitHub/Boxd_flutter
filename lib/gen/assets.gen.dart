@@ -66,15 +66,24 @@ class $AssetsCommonImagesGen {
   /// File path: assets/common/images/back.png
   AssetGenImage get back => const AssetGenImage('assets/common/images/back.png');
 
+  /// File path: assets/common/images/common_close.png
+  AssetGenImage get commonClose => const AssetGenImage('assets/common/images/common_close.png');
+
   /// File path: assets/common/images/device_back.png
   AssetGenImage get deviceBack => const AssetGenImage('assets/common/images/device_back.png');
 
   /// List of all assets
-  List<AssetGenImage> get values => [back, deviceBack];
+  List<AssetGenImage> get values => [back, commonClose, deviceBack];
 }
 
 class $AssetsDeviceImagesGen {
   const $AssetsDeviceImagesGen();
+
+  /// File path: assets/device/images/dev_btn_rotate.png
+  AssetGenImage get devBtnRotate => const AssetGenImage('assets/device/images/dev_btn_rotate.png');
+
+  /// File path: assets/device/images/dev_eye.png
+  AssetGenImage get devEye => const AssetGenImage('assets/device/images/dev_eye.png');
 
   /// File path: assets/device/images/dev_heat.png
   AssetGenImage get devHeat => const AssetGenImage('assets/device/images/dev_heat.png');
@@ -82,14 +91,27 @@ class $AssetsDeviceImagesGen {
   /// File path: assets/device/images/dev_heat_work.png
   AssetGenImage get devHeatWork => const AssetGenImage('assets/device/images/dev_heat_work.png');
 
+  /// File path: assets/device/images/dev_help_msg.png
+  AssetGenImage get devHelpMsg => const AssetGenImage('assets/device/images/dev_help_msg.png');
+
   /// File path: assets/device/images/dev_ins.png
   AssetGenImage get devIns => const AssetGenImage('assets/device/images/dev_ins.png');
+
+  /// File path: assets/device/images/dev_next_gray.png
+  AssetGenImage get devNextGray => const AssetGenImage('assets/device/images/dev_next_gray.png');
+
+  /// File path: assets/device/images/dev_open_ble.png
+  AssetGenImage get devOpenBle => const AssetGenImage('assets/device/images/dev_open_ble.png');
+
+  /// File path: assets/device/images/dev_open_ble_top.png
+  AssetGenImage get devOpenBleTop => const AssetGenImage('assets/device/images/dev_open_ble_top.png');
 
   /// File path: assets/device/images/hot_rice.png
   AssetGenImage get hotRice => const AssetGenImage('assets/device/images/hot_rice.png');
 
   /// List of all assets
-  List<AssetGenImage> get values => [devHeat, devHeatWork, devIns, hotRice];
+  List<AssetGenImage> get values =>
+      [devBtnRotate, devEye, devHeat, devHeatWork, devHelpMsg, devIns, devNextGray, devOpenBle, devOpenBleTop, hotRice];
 }
 
 class $AssetsHomeImagesGen {

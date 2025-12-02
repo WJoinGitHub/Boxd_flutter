@@ -74,10 +74,13 @@ class UserService {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('access_token', accessToken);
-    await prefs.setString('refresh_token', refreshToken);
-    await prefs.setString('expires_at', expiresAt);
-    print('[USER] Tokens 已保存');
+    final saveAccessToken = await prefs.setString('access_token', accessToken);
+    final saveRefreshToken = await prefs.setString('refresh_token', refreshToken);
+    final saveExpiresAt = await prefs.setString('expires_at', expiresAt);
+    print('[USER] Tokens 已保存: access=$saveAccessToken, refresh=$saveRefreshToken, expires=$saveExpiresAt');
+    print('[USER] 保存的 access_token: ${accessToken.substring(0, 20)}...');
+    print('[USER] 保存的 refresh_token: ${refreshToken.substring(0, 20)}...');
+    print('[USER] 保存的 expires_at: $expiresAt');
   }
 
   /// 保存用户信息（仅内存）
@@ -89,10 +92,15 @@ class UserService {
   /// 从本地加载 token 和用户信息
   Future<bool> loadFromLocal() async {
     try {
+      print('[USER] 开始从本地加载 token...');
       final prefs = await SharedPreferences.getInstance();
       _accessToken = prefs.getString('access_token');
       _refreshToken = prefs.getString('refresh_token');
       final expiresAtStr = prefs.getString('expires_at');
+      
+      print('[USER] 读取的 access_token: ${_accessToken != null ? "${_accessToken!.substring(0, 20)}..." : "null"}');
+      print('[USER] 读取的 refresh_token: ${_refreshToken != null ? "${_refreshToken!.substring(0, 20)}..." : "null"}');
+      print('[USER] 读取的 expires_at: $expiresAtStr');
 
       if (_accessToken == null) {
         print('[USER] 未找到本地 token');

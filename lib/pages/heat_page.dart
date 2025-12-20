@@ -5,14 +5,14 @@ import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 
-class KeepWarmPage extends StatefulWidget {
-  const KeepWarmPage({super.key});
+class HeatPage extends StatefulWidget {
+  const HeatPage({super.key});
 
   @override
-  State<KeepWarmPage> createState() => _KeepWarmPageState();
+  State<HeatPage> createState() => _HeatPageState();
 }
 
-class _KeepWarmPageState extends State<KeepWarmPage> {
+class _HeatPageState extends State<HeatPage> {
   int minutes = 30;
   int temperature = 0;
   int batteryLevel = 0;

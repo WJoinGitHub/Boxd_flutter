@@ -6,14 +6,14 @@ import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 
-class HeatingPage extends StatefulWidget {
-  const HeatingPage({super.key});
+class HeatingTimePage extends StatefulWidget {
+  const HeatingTimePage({super.key});
 
   @override
-  State<HeatingPage> createState() => _HeatingPageState();
+  State<HeatingTimePage> createState() => _HeatingTimePageState();
 }
 
-class _HeatingPageState extends State<HeatingPage> {
+class _HeatingTimePageState extends State<HeatingTimePage> {
   int heatingHours = 0;
   int heatingMinutes = 30;
   int mealHours = DateTime.now().hour;

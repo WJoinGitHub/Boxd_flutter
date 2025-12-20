@@ -10,8 +10,8 @@ import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:flutter_boxd_app_flow/pages/keep_warm_page.dart';
-import 'package:flutter_boxd_app_flow/pages/heating_page.dart';
+import 'package:flutter_boxd_app_flow/pages/heat_page.dart';
+import 'package:flutter_boxd_app_flow/pages/heating_time_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -282,7 +282,8 @@ class _HomePageState extends State<HomePage> {
                                               const EmailLoginPage(),
                                         ),
                                       );
-                                      if (!mounted || !UserService().isLoggedIn) return;
+                                      if (!mounted || !UserService().isLoggedIn)
+                                        return;
                                     }
                                     final result =
                                         await Navigator.of(context).push(
@@ -474,11 +475,11 @@ class _HomePageState extends State<HomePage> {
           }
         } else if (label == "Heat") {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const KeepWarmPage()),
+            MaterialPageRoute(builder: (_) => const HeatPage()),
           );
         } else if (label == "Timer") {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const HeatingPage()),
+            MaterialPageRoute(builder: (_) => const HeatingTimePage()),
           );
         }
       },

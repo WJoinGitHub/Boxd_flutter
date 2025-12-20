@@ -16,6 +16,9 @@ class BleService {
 
   final _statusController = StreamController<DeviceStatusData>.broadcast();
   Stream<DeviceStatusData> get statusStream => _statusController.stream;
+  
+  DeviceStatusData? _lastStatus;
+  DeviceStatusData? get lastStatus => _lastStatus;
 
   bool get isConnected =>
       _writeCharacteristic != null && _notifyCharacteristic != null;
@@ -245,6 +248,7 @@ class BleService {
 
     final status = BleProtocolHelper.parseDeviceStatus(data);
     if (status != null) {
+      _lastStatus = status;
       _statusController.add(status);
     }
   }

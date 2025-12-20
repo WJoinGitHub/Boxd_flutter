@@ -5,6 +5,7 @@ import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
+import 'package:flutter_boxd_app_flow/widgets/temperature_picker_dialog.dart';
 
 class HeatingTimePage extends StatefulWidget {
   const HeatingTimePage({super.key});
@@ -19,6 +20,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
   int mealHours = DateTime.now().hour;
   int mealMinutes = DateTime.now().minute;
   int temperature = 0;
+  int? selectedTemperature;
   int batteryLevel = 0;
   final bleService = BleService();
   bool isHeating = false;
@@ -35,6 +37,14 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
   @override
   void initState() {
     super.initState();
+    final lastStatus = bleService.lastStatus;
+    if (lastStatus != null) {
+      if (lastStatus.temperature != null) temperature = lastStatus.temperature!;
+      if (lastStatus.batteryLevel != null) {
+        final level = lastStatus.batteryLevel!;
+        batteryLevel = (level >= 1 && level <= 4) ? level * 25 : level;
+      }
+    }
     bleService.statusStream.listen((status) {
       if (mounted) {
         setState(() {
@@ -58,11 +68,18 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
   }
 
   void _sendCommand() async {
+    if (selectedTemperature == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select temperature')),
+      );
+      return;
+    }
+
     final heatingTotalMinutes = heatingHours * 60 + heatingMinutes;
 
     if (heatingTotalMinutes < 20 || heatingTotalMinutes > 50) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('加热时间必须在20-50分钟之间')),
+        const SnackBar(content: Text('Heating time must be between 20-50 minutes')),
       );
       return;
     }
@@ -83,14 +100,14 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     // 验证不超过5小时（300分钟）
     if (diffMinutes > 300) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('加热结束时间距离现在不能超过5小时')),
+        const SnackBar(content: Text('End time cannot exceed 5 hours from now')),
       );
       return;
     }
 
     if (diffMinutes < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('加热结束时间不能早于当前时间')),
+        const SnackBar(content: Text('End time cannot be earlier than current time')),
       );
       return;
     }
@@ -99,7 +116,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     final estimatedEndTime = now.add(Duration(minutes: heatingTotalMinutes));
     if (estimatedEndTime.isAfter(actualTargetTime)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('加热时长过长，无法在设定时间前完成')),
+        const SnackBar(content: Text('Heating duration too long, cannot finish before set time')),
       );
       return;
     }
@@ -109,7 +126,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
 
     final success = await bleService.setWork(
       mode: WorkMode.timing,
-      temperature: 60,
+      temperature: selectedTemperature!,
       heatingTime: heatingTotalMinutes,
       mealTime: mealTimeTotalMinutes,
     );
@@ -119,7 +136,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
         setState(() => isHeating = true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('发送指令失败，请稍后重试')),
+          const SnackBar(content: Text('Failed to send command, please try again')),
         );
       }
     }
@@ -145,25 +162,38 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
             children: [
               Padding(
                 padding: const EdgeInsets.only(left: 40),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Assets.home.images.devTemperatureF.image(
-                      width: 117,
-                      fit: BoxFit.contain,
-                    ),
-                    Positioned(
-                      top: 54,
-                      child: Text(
-                        temperature.toString(),
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black,
+                child: GestureDetector(
+                  onTap: () async {
+                    final result = await showDialog<int>(
+                      context: context,
+                      builder: (context) => TemperaturePickerDialog(
+                        initialTemperature: selectedTemperature ?? 90,
+                      ),
+                    );
+                    if (result != null) {
+                      setState(() => selectedTemperature = result);
+                    }
+                  },
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Assets.home.images.devTemperatureF.image(
+                        width: 117,
+                        fit: BoxFit.contain,
+                      ),
+                      Positioned(
+                        top: 54,
+                        child: Text(
+                          selectedTemperature?.toString() ?? temperature.toString(),
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.black,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               Padding(

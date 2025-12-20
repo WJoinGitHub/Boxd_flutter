@@ -4,6 +4,7 @@ import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
+import 'package:flutter_boxd_app_flow/widgets/temperature_picker_dialog.dart';
 
 class HeatPage extends StatefulWidget {
   const HeatPage({super.key});
@@ -15,6 +16,7 @@ class HeatPage extends StatefulWidget {
 class _HeatPageState extends State<HeatPage> {
   int minutes = 30;
   int temperature = 0;
+  int? selectedTemperature;
   int batteryLevel = 0;
   final bleService = BleService();
 
@@ -24,6 +26,14 @@ class _HeatPageState extends State<HeatPage> {
   @override
   void initState() {
     super.initState();
+    final lastStatus = bleService.lastStatus;
+    if (lastStatus != null) {
+      if (lastStatus.temperature != null) temperature = lastStatus.temperature!;
+      if (lastStatus.batteryLevel != null) {
+        final level = lastStatus.batteryLevel!;
+        batteryLevel = (level >= 1 && level <= 4) ? level * 25 : level;
+      }
+    }
     bleService.statusStream.listen((status) {
       if (mounted) {
         setState(() {
@@ -44,23 +54,30 @@ class _HeatPageState extends State<HeatPage> {
   }
 
   void _sendCommand() async {
+    if (selectedTemperature == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select temperature')),
+      );
+      return;
+    }
+
     if (minutes < 20 || minutes > 50) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('加热时间必须在20-50分钟之间')),
+        const SnackBar(content: Text('Heating time must be between 20-50 minutes')),
       );
       return;
     }
 
     final success = await bleService.setWork(
       mode: WorkMode.heating,
-      temperature: 25,
+      temperature: selectedTemperature!,
       heatingTime: minutes,
       mealTime: 0,
     );
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(success ? '指令发送成功' : '发送指令失败，请稍后重试')),
+        SnackBar(content: Text(success ? 'Command sent successfully' : 'Failed to send command, please try again')),
       );
       if (success) Navigator.pop(context);
     }
@@ -86,25 +103,38 @@ class _HeatPageState extends State<HeatPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.only(left: 40),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Assets.home.images.devTemperatureF.image(
-                      width: 117,
-                      fit: BoxFit.contain,
-                    ),
-                    Positioned(
-                      top: 54,
-                      child: Text(
-                        temperature.toString(),
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black,
+                child: GestureDetector(
+                  onTap: () async {
+                    final result = await showDialog<int>(
+                      context: context,
+                      builder: (context) => TemperaturePickerDialog(
+                        initialTemperature: selectedTemperature ?? 90,
+                      ),
+                    );
+                    if (result != null) {
+                      setState(() => selectedTemperature = result);
+                    }
+                  },
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Assets.home.images.devTemperatureF.image(
+                        width: 117,
+                        fit: BoxFit.contain,
+                      ),
+                      Positioned(
+                        top: 54,
+                        child: Text(
+                          selectedTemperature?.toString() ?? temperature.toString(),
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.black,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               Padding(

@@ -22,7 +22,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool connected = false;
-  int temperature = 29;
+  int temperature = 0;
+  int batteryLevel = 0;
 
   final bleService = BleService();
 
@@ -31,6 +32,28 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     print("HomePage initState start");
     _init();
+    bleService.statusStream.listen((status) {
+      if (mounted) {
+        setState(() {
+          // 更新电量
+          if (status.batteryLevel != null) {
+            print('[HOME] 原始电量值: ${status.batteryLevel}');
+            final level = status.batteryLevel!;
+            if (level >= 1 && level <= 4) {
+              batteryLevel = level * 25;
+            } else {
+              batteryLevel = level;
+            }
+            print('[HOME] 转换后电量: $batteryLevel%');
+          }
+          // 更新温度
+          if (status.temperature != null) {
+            temperature = status.temperature!;
+            print('[HOME] 更新温度: $temperature°C');
+          }
+        });
+      }
+    });
   }
 
   Future<void> _init() async {
@@ -39,9 +62,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _autoLogin() async {
+    print('[HOME] 开始自动登录...');
     final hasToken = await UserService().loadFromLocal();
-    if (hasToken && mounted) {
-      setState(() {});
+    print('[HOME] loadFromLocal 结果: $hasToken');
+    if (hasToken) {
+      await UserService().fetchUserInfo();
+      print('[HOME] 用户信息: ${UserService().currentUser?.email}');
+      print('[HOME] isLoggedIn: ${UserService().isLoggedIn}');
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 
@@ -244,6 +274,16 @@ class _HomePageState extends State<HomePage> {
                               if (!connected)
                                 ElevatedButton(
                                   onPressed: () async {
+                                    if (!UserService().isLoggedIn) {
+                                      await Navigator.of(context).push(
+                                        PageRouteBuilder(
+                                          fullscreenDialog: true,
+                                          pageBuilder: (_, __, ___) =>
+                                              const EmailLoginPage(),
+                                        ),
+                                      );
+                                      if (!mounted || !UserService().isLoggedIn) return;
+                                    }
                                     final result =
                                         await Navigator.of(context).push(
                                       PageRouteBuilder(
@@ -304,10 +344,37 @@ class _HomePageState extends State<HomePage> {
                                 ],
                               ),
 
-                              // 右边设备图片
-                              Assets.home.images.homeDevice.image(
-                                width: 150,
-                                fit: BoxFit.contain,
+                              // 右边设备图片 + 电量
+                              Column(
+                                children: [
+                                  Assets.home.images.homeDevice.image(
+                                    width: 150,
+                                    fit: BoxFit.contain,
+                                  ),
+                                  if (connected)
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          batteryLevel > 20
+                                              ? Icons.battery_std
+                                              : Icons.battery_alert,
+                                          color: batteryLevel > 20
+                                              ? Colors.green
+                                              : Colors.red,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '$batteryLevel%',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                ],
                               ),
                             ],
                           ),
@@ -345,11 +412,42 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-            // Banner 贴底
-            Assets.home.images.homeBanner.image(
-              width: double.infinity,
-              fit: BoxFit.contain,
-            ),
+            // Banner 贴底 / 电源开关
+            if (connected)
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: ElevatedButton(
+                  onPressed: () async {
+                    final success = await bleService.stopDevice();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text(success ? '设备已关机' : '关机失败，请稍后重试')),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28)),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.power_settings_new, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text('POWER OFF',
+                          style: TextStyle(color: Colors.white, fontSize: 16)),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Assets.home.images.homeBanner.image(
+                width: double.infinity,
+                fit: BoxFit.contain,
+              ),
           ],
         ),
       ),
@@ -375,6 +473,10 @@ class _HomePageState extends State<HomePage> {
             );
           }
         } else if (label == "Heat") {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const KeepWarmPage()),
+          );
+        } else if (label == "Timer") {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const HeatingPage()),
           );

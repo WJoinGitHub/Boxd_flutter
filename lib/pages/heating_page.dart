@@ -18,6 +18,8 @@ class _HeatingPageState extends State<HeatingPage> {
   int heatingMinutes = 30;
   int mealHours = DateTime.now().hour;
   int mealMinutes = DateTime.now().minute;
+  int temperature = 0;
+  int batteryLevel = 0;
   final bleService = BleService();
   bool isHeating = false;
 
@@ -33,6 +35,17 @@ class _HeatingPageState extends State<HeatingPage> {
   @override
   void initState() {
     super.initState();
+    bleService.statusStream.listen((status) {
+      if (mounted) {
+        setState(() {
+          if (status.temperature != null) temperature = status.temperature!;
+          if (status.batteryLevel != null) {
+            final level = status.batteryLevel!;
+            batteryLevel = (level >= 1 && level <= 4) ? level * 25 : level;
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -47,9 +60,9 @@ class _HeatingPageState extends State<HeatingPage> {
   void _sendCommand() async {
     final heatingTotalMinutes = heatingHours * 60 + heatingMinutes;
 
-    if (heatingTotalMinutes > 240) {
+    if (heatingTotalMinutes < 20 || heatingTotalMinutes > 50) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('加热时间不能超过4小时')),
+        const SnackBar(content: Text('加热时间必须在20-50分钟之间')),
       );
       return;
     }
@@ -67,36 +80,36 @@ class _HeatingPageState extends State<HeatingPage> {
     // 计算时间差（分钟）
     final diffMinutes = actualTargetTime.difference(now).inMinutes;
 
-    // // 验证不超过4小时（240分钟）
-    // if (diffMinutes > 240) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     const SnackBar(content: Text('加热结束时间距离现在不能超过4小时')),
-    //   );
-    //   return;
-    // }
+    // 验证不超过5小时（300分钟）
+    if (diffMinutes > 300) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('加热结束时间距离现在不能超过5小时')),
+      );
+      return;
+    }
 
-    // if (diffMinutes < 0) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     const SnackBar(content: Text('加热结束时间不能早于当前时间')),
-    //   );
-    //   return;
-    // }
+    if (diffMinutes < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('加热结束时间不能早于当前时间')),
+      );
+      return;
+    }
 
-    // // 验证：时长 + 现在时间 < 结束时间
-    // final estimatedEndTime = now.add(Duration(minutes: heatingTotalMinutes));
-    // if (estimatedEndTime.isAfter(actualTargetTime)) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     const SnackBar(content: Text('加热时长过长，无法在设定时间前完成')),
-    //   );
-    //   return;
-    // }
+    // 验证：时长 + 现在时间 < 结束时间
+    final estimatedEndTime = now.add(Duration(minutes: heatingTotalMinutes));
+    if (estimatedEndTime.isAfter(actualTargetTime)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('加热时长过长，无法在设定时间前完成')),
+      );
+      return;
+    }
 
     // 将结束时间转换为总分钟数（从00:00开始计算）
     final mealTimeTotalMinutes = mealHours * 60 + mealMinutes;
 
     final success = await bleService.setWork(
-      mode: WorkMode.heating,
-      temperature: 25,
+      mode: WorkMode.timing,
+      temperature: 60,
       heatingTime: heatingTotalMinutes,
       mealTime: mealTimeTotalMinutes,
     );
@@ -141,9 +154,9 @@ class _HeatingPageState extends State<HeatingPage> {
                     ),
                     Positioned(
                       top: 54,
-                      child: const Text(
-                        '25',
-                        style: TextStyle(
+                      child: Text(
+                        temperature.toString(),
+                        style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w400,
                           color: Colors.black,
@@ -155,9 +168,34 @@ class _HeatingPageState extends State<HeatingPage> {
               ),
               Padding(
                 padding: const EdgeInsets.only(right: 40),
-                child: Assets.home.images.homeDevice.image(
-                  width: 150,
-                  fit: BoxFit.contain,
+                child: Column(
+                  children: [
+                    Assets.home.images.homeDevice.image(
+                      width: 150,
+                      fit: BoxFit.contain,
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          batteryLevel > 20
+                              ? Icons.battery_std
+                              : Icons.battery_alert,
+                          color:
+                              batteryLevel > 20 ? Colors.green : Colors.red,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$batteryLevel%',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -166,7 +204,7 @@ class _HeatingPageState extends State<HeatingPage> {
           if (isHeating)
             Column(
               children: [
-                Assets.device.images.devHeatWork.image(height: 45),
+                Assets.device.images.devHeat.image(height: 45),
                 const SizedBox(height: 8),
                 const Text('Delicious food\nis heating up',
                     textAlign: TextAlign.center,
@@ -220,7 +258,7 @@ class _HeatingPageState extends State<HeatingPage> {
                       _buildTimePicker(
                           heatingHours,
                           (v) => setState(() => heatingHours = v),
-                          5,
+                          6,
                           heatingHoursController),
                       const Text(':', style: TextStyle(fontSize: 40)),
                       _buildTimePicker(

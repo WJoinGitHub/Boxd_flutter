@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
 
@@ -53,39 +54,47 @@ class UserService {
 
   UserInfo? get currentUser => _currentUser;
   String? get accessToken => _accessToken;
-  bool get isLoggedIn => _accessToken != null && _currentUser != null;
+  bool get isLoggedIn => _accessToken != null;
 
   /// 保存 tokens
   Future<void> saveTokens({
     required String accessToken,
     required String refreshToken,
-    required String expiresAt,
+    String? expiresAt,
+    int? expiresIn,
   }) async {
     _accessToken = accessToken;
     _refreshToken = refreshToken;
     ApiClient.setToken(accessToken);
     
-    if (expiresAt.isNotEmpty) {
+    String expiresAtStr = '';
+    if (expiresAt != null && expiresAt.isNotEmpty) {
+      expiresAtStr = expiresAt;
       try {
         _expiresAt = DateTime.parse(expiresAt);
       } catch (e) {
         print('[USER] 解析过期时间失败: $e');
       }
+    } else if (expiresIn != null) {
+      _expiresAt = DateTime.now().add(Duration(seconds: expiresIn));
+      expiresAtStr = _expiresAt!.toIso8601String();
     }
 
     final prefs = await SharedPreferences.getInstance();
     final saveAccessToken = await prefs.setString('access_token', accessToken);
     final saveRefreshToken = await prefs.setString('refresh_token', refreshToken);
-    final saveExpiresAt = await prefs.setString('expires_at', expiresAt);
+    final saveExpiresAt = await prefs.setString('expires_at', expiresAtStr);
     print('[USER] Tokens 已保存: access=$saveAccessToken, refresh=$saveRefreshToken, expires=$saveExpiresAt');
     print('[USER] 保存的 access_token: ${accessToken.substring(0, 20)}...');
     print('[USER] 保存的 refresh_token: ${refreshToken.substring(0, 20)}...');
-    print('[USER] 保存的 expires_at: $expiresAt');
+    print('[USER] 保存的 expires_at: $expiresAtStr');
   }
 
-  /// 保存用户信息（仅内存）
-  void saveUserInfo(UserInfo user) {
+  /// 保存用户信息（内存和本地）
+  Future<void> saveUserInfo(UserInfo user) async {
     _currentUser = user;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_info', jsonEncode(user.toJson()));
     print('[USER] 用户信息已保存: ${user.email}');
   }
 
@@ -97,6 +106,7 @@ class UserService {
       _accessToken = prefs.getString('access_token');
       _refreshToken = prefs.getString('refresh_token');
       final expiresAtStr = prefs.getString('expires_at');
+      final userInfoStr = prefs.getString('user_info');
       
       print('[USER] 读取的 access_token: ${_accessToken != null ? "${_accessToken!.substring(0, 20)}..." : "null"}');
       print('[USER] 读取的 refresh_token: ${_refreshToken != null ? "${_refreshToken!.substring(0, 20)}..." : "null"}');
@@ -109,6 +119,16 @@ class UserService {
 
       ApiClient.setToken(_accessToken!);
       print('[USER] 已更新 ApiClient token');
+
+      if (userInfoStr != null) {
+        try {
+          final userJson = jsonDecode(userInfoStr);
+          _currentUser = UserInfo.fromJson(userJson);
+          print('[USER] 从本地加载用户信息: ${_currentUser?.email}');
+        } catch (e) {
+          print('[USER] 解析用户信息失败: $e');
+        }
+      }
 
       if (expiresAtStr != null) {
         _expiresAt = DateTime.parse(expiresAtStr);
@@ -167,6 +187,7 @@ class UserService {
             accessToken: tokens['access_token'],
             refreshToken: tokens['refresh_token'],
             expiresAt: tokens['expires_at'],
+            expiresIn: tokens['expires_in'],
           );
           print('[USER] 刷新 token 成功');
           return true;
@@ -191,6 +212,7 @@ class UserService {
     await prefs.remove('access_token');
     await prefs.remove('refresh_token');
     await prefs.remove('expires_at');
+    await prefs.remove('user_info');
     print('[USER] 已登出');
   }
 }

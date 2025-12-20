@@ -73,7 +73,7 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       locationOn = true;
     }
 
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   Future<int> _getAndroidVersion() async {
@@ -89,10 +89,12 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
     if (!bluetoothOn || !bluetoothGranted) return;
 
     print('[SCAN] 开始扫描设备...');
-    setState(() {
-      scanning = true;
-      devices.clear();
-    });
+    if (mounted) {
+      setState(() {
+        scanning = true;
+        devices.clear();
+      });
+    }
 
     try {
       // 先检查已连接的设备
@@ -101,9 +103,11 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       for (var device in connectedDevices) {
         if (device.platformName.isNotEmpty && !devices.contains(device)) {
           print('[SCAN] 已连接: ${device.platformName} (${device.remoteId})');
-          setState(() {
-            devices.add(device);
-          });
+          if (mounted) {
+            setState(() {
+              devices.add(device);
+            });
+          }
         }
       }
 
@@ -111,14 +115,17 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       print('[SCAN] 扫描已启动');
 
       FlutterBluePlus.scanResults.listen((results) {
+        if (!mounted) return;
         print('[SCAN] 收到扫描结果: ${results.length} 个设备');
         for (var r in results) {
           if (!devices.contains(r.device) && r.device.platformName.isNotEmpty) {
             print(
                 '[SCAN] 发现设备: ${r.device.platformName} (${r.device.remoteId})');
-            setState(() {
-              devices.add(r.device);
-            });
+            if (mounted) {
+              setState(() {
+                devices.add(r.device);
+              });
+            }
           }
         }
       });
@@ -130,7 +137,7 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       print('[SCAN] 扫描失败: $e');
     }
 
-    setState(() => scanning = false);
+    if (mounted) setState(() => scanning = false);
   }
 
   Future<void> connectDevice(BluetoothDevice device) async {

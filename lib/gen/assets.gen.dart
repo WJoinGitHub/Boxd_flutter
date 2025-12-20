@@ -88,8 +88,8 @@ class $AssetsDeviceImagesGen {
   /// File path: assets/device/images/dev_heat.png
   AssetGenImage get devHeat => const AssetGenImage('assets/device/images/dev_heat.png');
 
-  /// File path: assets/device/images/dev_heat_work.png
-  AssetGenImage get devHeatWork => const AssetGenImage('assets/device/images/dev_heat_work.png');
+  /// File path: assets/device/images/dev_heat_time.png
+  AssetGenImage get devHeatTime => const AssetGenImage('assets/device/images/dev_heat_time.png');
 
   /// File path: assets/device/images/dev_help_msg.png
   AssetGenImage get devHelpMsg => const AssetGenImage('assets/device/images/dev_help_msg.png');
@@ -111,7 +111,7 @@ class $AssetsDeviceImagesGen {
 
   /// List of all assets
   List<AssetGenImage> get values =>
-      [devBtnRotate, devEye, devHeat, devHeatWork, devHelpMsg, devIns, devNextGray, devOpenBle, devOpenBleTop, hotRice];
+      [devBtnRotate, devEye, devHeat, devHeatTime, devHelpMsg, devIns, devNextGray, devOpenBle, devOpenBleTop, hotRice];
 }
 
 class $AssetsHomeImagesGen {

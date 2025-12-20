@@ -13,24 +13,48 @@ class KeepWarmPage extends StatefulWidget {
 }
 
 class _KeepWarmPageState extends State<KeepWarmPage> {
-  int hours = 2;
-  int minutes = 0;
+  int minutes = 30;
+  int temperature = 0;
+  int batteryLevel = 0;
   final bleService = BleService();
 
-  void _sendCommand() async {
-    final totalMinutes = hours * 60 + minutes;
+  late final FixedExtentScrollController minutesController =
+      FixedExtentScrollController(initialItem: 10);
 
-    if (totalMinutes > 240) {
+  @override
+  void initState() {
+    super.initState();
+    bleService.statusStream.listen((status) {
+      if (mounted) {
+        setState(() {
+          if (status.temperature != null) temperature = status.temperature!;
+          if (status.batteryLevel != null) {
+            final level = status.batteryLevel!;
+            batteryLevel = (level >= 1 && level <= 4) ? level * 25 : level;
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    minutesController.dispose();
+    super.dispose();
+  }
+
+  void _sendCommand() async {
+    if (minutes < 20 || minutes > 50) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('时间不能超过4小时')),
+        const SnackBar(content: Text('加热时间必须在20-50分钟之间')),
       );
       return;
     }
 
     final success = await bleService.setWork(
-      mode: WorkMode.keepWarm,
-      temperature: 60,
-      heatingTime: totalMinutes,
+      mode: WorkMode.heating,
+      temperature: 25,
+      heatingTime: minutes,
       mealTime: 0,
     );
 
@@ -71,9 +95,9 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
                     ),
                     Positioned(
                       top: 54,
-                      child: const Text(
-                        '60',
-                        style: TextStyle(
+                      child: Text(
+                        temperature.toString(),
+                        style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w400,
                           color: Colors.black,
@@ -85,39 +109,52 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
               ),
               Padding(
                 padding: const EdgeInsets.only(right: 40),
-                child: Assets.home.images.homeDevice.image(
-                  width: 150,
-                  fit: BoxFit.contain,
+                child: Column(
+                  children: [
+                    Assets.home.images.homeDevice.image(
+                      width: 150,
+                      fit: BoxFit.contain,
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          batteryLevel > 20
+                              ? Icons.battery_std
+                              : Icons.battery_alert,
+                          color:
+                              batteryLevel > 20 ? Colors.green : Colors.red,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$batteryLevel%',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 40),
-          const Text('Keep Warm Heating ...',
+          const Text('Heating ...',
               style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic)),
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(
-                        width: 80,
-                        child: Center(
-                            child: Text('HOURS',
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.grey)))),
-                    const SizedBox(width: 40),
-                    const SizedBox(
-                        width: 80,
-                        child: Center(
-                            child: Text('MIN',
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.grey)))),
-                  ],
-                ),
+                const SizedBox(
+                    width: 120,
+                    child: Center(
+                        child: Text('MIN',
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.grey)))),
                 const SizedBox(height: 8),
                 Container(
                   height: 60,
@@ -130,10 +167,7 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildTimePicker(
-                          hours, (v) => setState(() => hours = v), 5),
-                      const Text(':', style: TextStyle(fontSize: 40)),
-                      _buildTimePicker(
-                          minutes, (v) => setState(() => minutes = v), 60),
+                          minutes, (v) => setState(() => minutes = v + 20)),
                     ],
                   ),
                 ),
@@ -160,26 +194,28 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
     );
   }
 
-  Widget _buildTimePicker(int value, Function(int) onChanged, int maxCount) {
+  Widget _buildTimePicker(int value, Function(int) onChanged) {
     return SizedBox(
-      width: 80,
+      width: 120,
       height: 60,
       child: ListWheelScrollView.useDelegate(
+        controller: minutesController,
         itemExtent: 40,
         diameterRatio: 1.5,
         physics: const FixedExtentScrollPhysics(),
         onSelectedItemChanged: onChanged,
         childDelegate: ListWheelChildBuilderDelegate(
           builder: (context, index) {
+            final displayValue = index + 20;
             return Center(
               child: Text(
-                index.toString().padLeft(2, '0'),
+                displayValue.toString().padLeft(2, '0'),
                 style:
                     const TextStyle(fontSize: 32, fontWeight: FontWeight.w300),
               ),
             );
           },
-          childCount: maxCount,
+          childCount: 31,
         ),
       ),
     );

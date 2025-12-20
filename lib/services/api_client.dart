@@ -195,18 +195,19 @@ class ApiClient {
   }
 
   // ==================== 用户管理 ====================
-  static Future<Map<String, dynamic>> getUserProfile() => get('/users/profile');
+  static Future<Map<String, dynamic>> getUserProfile() =>
+      put('/user/profile', {});
 
   static Future<Map<String, dynamic>> updateUserProfile(
           {String? email, String? phone}) =>
-      put('/users/profile', {
+      put('/user/profile', {
         if (email != null) 'email': email,
         if (phone != null) 'phone': phone
       });
 
   static Future<Map<String, dynamic>> changePassword(
           String oldPassword, String newPassword) =>
-      put('/users/password',
+      put('/user/password',
           {'old_password': oldPassword, 'new_password': newPassword});
 
   // ==================== 设备管理 ====================

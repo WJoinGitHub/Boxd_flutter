@@ -76,11 +76,11 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
               await UserService().saveTokens(
                 accessToken: tokens['access_token'] ?? '',
                 refreshToken: tokens['refresh_token'] ?? '',
-                expiresAt: tokens['expires_at'] ?? '',
+                expiresIn: tokens['expires_in'],
               );
               
               final userInfo = UserInfo.fromJson(user);
-              UserService().saveUserInfo(userInfo);
+              await UserService().saveUserInfo(userInfo);
             }
           }
           if (mounted) {

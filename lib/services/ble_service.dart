@@ -166,6 +166,8 @@ class BleService {
       }
 
       // _startHeartbeatMonitor();
+      _startHeartbeatMonitor();
+      await syncTime();
       await getDeviceStatus();
     }
 
@@ -253,18 +255,25 @@ class BleService {
     _missedHeartbeats = 0;
     _lastHeartbeatTime = DateTime.now();
 
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (timer) async {
+      print('[BLE] 发送心跳指令...');
+      try {
+        await getDeviceStatus();
+      } catch (e) {
+        print('[BLE] 心跳指令发送失败: $e');
+      }
+
       if (_lastHeartbeatTime != null) {
         final elapsed =
             DateTime.now().difference(_lastHeartbeatTime!).inSeconds;
-        if (elapsed > 1) {
+        if (elapsed > 30) {
           _missedHeartbeats++;
-          print('[BLE] 心跳超时: $_missedHeartbeats/5');
+          print('[BLE] 心跳超时: $_missedHeartbeats/3');
 
-          if (_missedHeartbeats >= 5) {
-            print('[BLE] 心跳失败，重新连接...');
+          if (_missedHeartbeats >= 3) {
+            print('[BLE] 心跳失败，断开连接...');
             timer.cancel();
-            _reconnect();
+            await disconnect();
           }
         }
       }
@@ -300,6 +309,15 @@ class BleService {
   Future<void> getDeviceStatus() async {
     final data = BleProtocolHelper.getDeviceStatusCommand();
     await _writeCharacteristic!.write(data, withoutResponse: false);
+  }
+
+  /// 同步时间
+  Future<void> syncTime() async {
+    final now = DateTime.now();
+    final data = BleProtocolHelper.syncTimeCommand(now);
+    await _writeCharacteristic!.write(data, withoutResponse: false);
+    print('[BLE] 时间同步指令已发送: ${now.hour}:${now.minute}:${now.second} (总分钟数: ${now.hour * 60 + now.minute})');
+    print('[BLE] 时间同步数据: $data');
   }
 
   /// 设置工作模式

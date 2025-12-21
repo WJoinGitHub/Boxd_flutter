@@ -1,7 +1,10 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
+import 'package:flutter_boxd_app_flow/pages/device/device_connecting_page.dart';
+import 'package:flutter_boxd_app_flow/pages/device/device_help_page.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
@@ -26,11 +29,20 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
 
   bool scanning = false;
   List<BluetoothDevice> devices = [];
+  bool showRetryButton = false;
+  bool hasScannedOnce = false;
+  Timer? _retryTimer;
 
   @override
   void initState() {
     super.initState();
     checkStatus();
+  }
+
+  @override
+  void dispose() {
+    _retryTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> checkStatus() async {
@@ -73,7 +85,15 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       locationOn = true;
     }
 
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {});
+      // 如果所有条件都满足，自动开始扫描
+      if (bluetoothOn && bluetoothGranted && (Platform.isIOS || (locationOn && locationGranted))) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) startScan();
+        });
+      }
+    }
   }
 
   Future<int> _getAndroidVersion() async {
@@ -93,8 +113,10 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       setState(() {
         scanning = true;
         devices.clear();
+        showRetryButton = false;
       });
     }
+    _retryTimer?.cancel();
 
     try {
       // 先检查已连接的设备
@@ -137,15 +159,30 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       print('[SCAN] 扫描失败: $e');
     }
 
-    if (mounted) setState(() => scanning = false);
+    if (mounted) {
+      setState(() {
+        scanning = false;
+        hasScannedOnce = true;
+      });
+      _retryTimer?.cancel();
+      _retryTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) setState(() => showRetryButton = true);
+      });
+    }
   }
 
   Future<void> connectDevice(BluetoothDevice device) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => _ConnectDialog(device: device),
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DeviceConnectingPage(device: device),
+      ),
     );
+    if (result == true && mounted) {
+      Navigator.of(context).pop(true);
+    } else if (result == 'retry' && mounted) {
+      startScan();
+    }
   }
 
   Widget _buildStatusSection() {
@@ -189,23 +226,25 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
         checkStatus();
       };
     } else {
-      title = "Ready to connect";
-      desc = "Scanning for nearby devices...";
+      title = "Auto-detecting";
+      desc = "Nearby devices...";
       buttonText = scanning ? "Scanning..." : "Scan Devices";
       onPressed = scanning ? null : startScan;
     }
 
-    final showBluetoothIcon = bluetoothOn && bluetoothGranted;
+    final showBluetoothIcon = bluetoothOn && bluetoothGranted && (Platform.isIOS || (locationOn && locationGranted));
     
     return Column(
       children: [
         Expanded(
           child: Column(
             children: [
-              const SizedBox(height: 50),
-              Text(title,
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 7),
+              const SizedBox(height: 6),
+              if (!showBluetoothIcon) ...[
+                Text(title,
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 7),
+              ],
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 27),
                 child: Text(desc,
@@ -213,27 +252,72 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
                     style: const TextStyle(fontSize: 12, color: Colors.black54)),
               ),
               const SizedBox(height: 50),
-              if (showBluetoothIcon)
-                const Icon(Icons.bluetooth, size: 53, color: Colors.blueAccent)
-              else
-                Assets.device.images.devOpenBle.image(height: 400),
+              if (showBluetoothIcon) ...[
+                Center(child: Assets.device.images.devEye.image(height: 133)),
+                if (!scanning && hasScannedOnce) ...[
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 27),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Assets.device.images.devHelpMsg.image(width: 20, height: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text.rich(
+                            TextSpan(
+                              style: const TextStyle(fontSize: 12, color: Colors.black),
+                              children: [
+                                const TextSpan(text: 'Having trouble finding your device. Is it turned on? or Manually add.Or click on '),
+                                TextSpan(
+                                  text: 'Help',
+                                  style: TextStyle(color: Color(0xFFFF7622)),
+                                ),
+                                const TextSpan(text: ' to troubleshoot andresolve'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (showRetryButton) ...[
+                    const SizedBox(height: 20),
+                    Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() => showRetryButton = false);
+                          startScan();
+                        },
+                        child: Assets.device.images.devRetry.image(height: 50),
+                      ),
+                    ),
+                  ],
+                ],
+              ] else
+                Center(
+                  child: (Platform.isAndroid && (!locationGranted || !locationOn))
+                      ? Assets.device.images.devOpenLocation.image(height: 400)
+                      : Assets.device.images.devOpenBle.image(height: 400),
+                ),
             ],
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: ElevatedButton(
-            onPressed: onPressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              minimumSize: const Size(double.infinity, 47),
+        if (!showBluetoothIcon)
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: ElevatedButton(
+              onPressed: onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                shape:
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                minimumSize: const Size(double.infinity, 47),
+              ),
+              child: Text(buttonText,
+                  style: const TextStyle(color: Colors.white, fontSize: 13)),
             ),
-            child: Text(buttonText,
-                style: const TextStyle(color: Colors.white, fontSize: 13)),
           ),
-        ),
       ],
     );
   }
@@ -257,36 +341,49 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
     }
 
     if (devices.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child:
-              Text("No devices found", style: TextStyle(color: Colors.black45)),
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
-    return ListView.builder(
-      itemCount: devices.length,
-      itemBuilder: (context, index) {
-        final device = devices[index];
-        return ListTile(
-          title: Text(device.platformName.isNotEmpty
-              ? device.platformName
-              : "Unknown Device"),
-          subtitle: Text(device.remoteId.str),
-          trailing: ElevatedButton(
-            onPressed: () => connectDevice(device),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.orange,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(7)),
-            ),
-            child:
-                const Text("Connect", style: TextStyle(color: Colors.white)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 20, top: 10, bottom: 10),
+          child: Text(
+            'Manually adding',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
-        );
-      },
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: devices.length,
+            itemBuilder: (context, index) {
+              final device = devices[index];
+              return Container(
+                height: 60,
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  leading: Assets.device.images.hotRice.image(width: 40, height: 40),
+                  title: Text(
+                    device.platformName.isNotEmpty
+                        ? device.platformName
+                        : "Unknown Device",
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+                  onTap: () => connectDevice(device),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -295,9 +392,14 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: BxAppBar(
-        title: "Connect Device",
-        rightWidget: const Text('Help', style: TextStyle(color: Color(0xFF00C389), fontSize: 16, fontWeight: FontWeight.w500)),
-        onRightPressed: () {},
+        title: bluetoothOn && bluetoothGranted ? "Auto-detecting" : "Connect Device",
+        rightWidget: const Text('Help', style: TextStyle(color: Color(0xFFFF7622), fontSize: 16, fontWeight: FontWeight.w500)),
+        onRightPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const DeviceHelpPage()),
+          );
+        },
       ),
       body: Column(
         children: [
@@ -314,120 +416,4 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
   }
 }
 
-class _ConnectDialog extends StatefulWidget {
-  final BluetoothDevice device;
-  const _ConnectDialog({required this.device});
 
-  @override
-  State<_ConnectDialog> createState() => _ConnectDialogState();
-}
-
-class _ConnectDialogState extends State<_ConnectDialog> {
-  String status = 'connecting';
-  final bleService = BleService();
-
-  @override
-  void initState() {
-    super.initState();
-    _connect();
-  }
-
-  Future<void> _connect() async {
-    try {
-      final success = await bleService.connect(widget.device);
-      if (mounted) {
-        setState(() => status = success ? 'success' : 'failed');
-        if (success) {
-          await Future.delayed(const Duration(seconds: 1));
-          if (mounted) {
-            Navigator.of(context).pop(); // 关闭弹窗
-            Navigator.of(context).pop(true); // 返回上一页
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted) setState(() => status = 'failed');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Connect',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Assets.device.images.hotRice.image(height: 120),
-            const SizedBox(height: 16),
-            Text('HotRice',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.black)),
-            const SizedBox(height: 24),
-            if (status == 'connecting')
-              CircularProgressIndicator(color: AppColors.orange)
-            else if (status == 'success')
-              Icon(Icons.check_circle, size: 48, color: AppColors.orange)
-            else
-              Column(
-                children: [
-                  Icon(Icons.error_outline, size: 48, color: AppColors.orange),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Connect failed. Please try restarting your phone\'s\nBluetooth or power off and then power on the device',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: Colors.black54),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() => status = 'connecting');
-                      _connect();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.orange,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      minimumSize: const Size(120, 40),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.refresh, size: 18, color: Colors.white),
-                        SizedBox(width: 4),
-                        Text('Retry',
-                            style:
-                                TextStyle(color: Colors.white, fontSize: 14)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    if (status != 'success') bleService.disconnect();
-    super.dispose();
-  }
-}

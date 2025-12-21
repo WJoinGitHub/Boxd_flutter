@@ -319,10 +319,15 @@ class _HomePageState extends State<HomePage> {
                           const SizedBox(height: 20),
 
                           // 🔥 新增：左右图片区域
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
                               // 左边温度仪表 + 文案
                               Stack(
                                 alignment: Alignment.center,
@@ -379,7 +384,13 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ],
                           ),
-
+                        ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 0, vertical: 7),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           const SizedBox(height: 33),
 
                           // 三个功能按钮

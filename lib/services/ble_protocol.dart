@@ -116,14 +116,14 @@ class BleProtocolHelper {
     return data.sublist(1, data.length - 2);
   }
 
-  /// uint16转字节（大端）
+  /// uint16转字节（小端）
   static List<int> uint16ToBytes(int value) {
-    return [(value >> 8) & 0xFF, value & 0xFF];
+    return [value & 0xFF, (value >> 8) & 0xFF];
   }
 
-  /// 字节转uint16（大端）
+  /// 字节转uint16（小端）
   static int bytesToUint16(List<int> bytes, int offset) {
-    return (bytes[offset] << 8) | bytes[offset + 1];
+    return bytes[offset] | (bytes[offset + 1] << 8);
   }
 
   /// 获取设备基本信息指令

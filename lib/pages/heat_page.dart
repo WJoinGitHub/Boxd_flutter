@@ -98,12 +98,13 @@ class _HeatPageState extends State<HeatPage> {
       body: Column(
         children: [
           const SizedBox(height: 40),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 40),
-                child: GestureDetector(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                GestureDetector(
                   onTap: () async {
                     final result = await showDialog<int>(
                       context: context,
@@ -136,10 +137,7 @@ class _HeatPageState extends State<HeatPage> {
                     ],
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(right: 40),
-                child: Column(
+                Column(
                   children: [
                     Assets.home.images.homeDevice.image(
                       width: 150,
@@ -168,12 +166,18 @@ class _HeatPageState extends State<HeatPage> {
                     ),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 40),
-          const Text('Heating ...',
-              style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic)),
+          const Padding(
+            padding: EdgeInsets.only(left: 20),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Heating ...',
+                  style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic)),
+            ),
+          ),
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),

@@ -38,6 +38,10 @@
 	<string>This app needs local network access for debugging</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs location access to find nearby Bluetooth devices</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>This app needs calendar access to create meal time reminders</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>This app needs reminders access to notify you when your meal is ready</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

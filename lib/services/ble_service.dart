@@ -16,7 +16,7 @@ class BleService {
 
   final _statusController = StreamController<DeviceStatusData>.broadcast();
   Stream<DeviceStatusData> get statusStream => _statusController.stream;
-  
+
   DeviceStatusData? _lastStatus;
   DeviceStatusData? get lastStatus => _lastStatus;
 
@@ -259,7 +259,8 @@ class BleService {
     _missedHeartbeats = 0;
     _lastHeartbeatTime = DateTime.now();
 
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (timer) async {
+    _heartbeatTimer =
+        Timer.periodic(const Duration(seconds: 30), (timer) async {
       print('[BLE] 发送心跳指令...');
       try {
         await getDeviceStatus();
@@ -320,7 +321,8 @@ class BleService {
     final now = DateTime.now();
     final data = BleProtocolHelper.syncTimeCommand(now);
     await _writeCharacteristic!.write(data, withoutResponse: false);
-    print('[BLE] 时间同步指令已发送: ${now.hour}:${now.minute}:${now.second} (总分钟数: ${now.hour * 60 + now.minute})');
+    print(
+        '[BLE] 时间同步指令已发送: ${now.hour}:${now.minute}:${now.second} (总分钟数: ${now.hour * 60 + now.minute})');
     print('[BLE] 时间同步数据: $data');
   }
 

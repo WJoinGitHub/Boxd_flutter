@@ -161,8 +161,8 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       onPressed = () => openAppSettings();
     } else if (Platform.isAndroid && !bluetoothGranted) {
       if (isAndroid12OrAbove) {
-        title = "Please allow access to nearby devices";
-        desc = "To search for nearby devices for pairing or connection.";
+        title = "Please enable Bluetooth permission";
+        desc = "MEDCURSOR needs permission to access the Bluetooth pairing hardware.";
         buttonText = "Grant Permission";
         onPressed = () async {
           await Permission.bluetoothScan.request();
@@ -201,13 +201,8 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       children: [
         Expanded(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (showBluetoothIcon)
-                const Icon(Icons.bluetooth, size: 53, color: Colors.blueAccent)
-              else
-                Assets.device.images.devOpenBle.image(height: 200),
-              const SizedBox(height: 17),
+              const SizedBox(height: 50),
               Text(title,
                   style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
               const SizedBox(height: 7),
@@ -217,6 +212,11 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 12, color: Colors.black54)),
               ),
+              const SizedBox(height: 50),
+              if (showBluetoothIcon)
+                const Icon(Icons.bluetooth, size: 53, color: Colors.blueAccent)
+              else
+                Assets.device.images.devOpenBle.image(height: 400),
             ],
           ),
         ),

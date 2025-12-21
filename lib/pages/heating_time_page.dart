@@ -6,6 +6,9 @@ import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/widgets/temperature_picker_dialog.dart';
+import 'package:device_calendar/device_calendar.dart';
+import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 
 class HeatingTimePage extends StatefulWidget {
   const HeatingTimePage({super.key});
@@ -37,6 +40,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
   @override
   void initState() {
     super.initState();
+    tz_data.initializeTimeZones();
     final lastStatus = bleService.lastStatus;
     if (lastStatus != null) {
       if (lastStatus.temperature != null) temperature = lastStatus.temperature!;
@@ -77,9 +81,10 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
 
     final heatingTotalMinutes = heatingHours * 60 + heatingMinutes;
 
-    if (heatingTotalMinutes < 20 || heatingTotalMinutes > 50) {
+    // 验证不超过5小时（300分钟）
+    if (heatingTotalMinutes > 300) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Heating time must be between 20-50 minutes')),
+        const SnackBar(content: Text('Heating time cannot exceed 5 hours')),
       );
       return;
     }
@@ -134,11 +139,89 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     if (mounted) {
       if (success) {
         setState(() => isHeating = true);
+        await _createCalendarReminder();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to send command, please try again')),
         );
       }
+    }
+  }
+
+  Future<void> _createCalendarReminder() async {
+    print('[CALENDAR] 开始创建日历提醒');
+    try {
+      final plugin = DeviceCalendarPlugin();
+      print('[CALENDAR] 检查日历权限');
+      final permissionGranted = await plugin.hasPermissions();
+      print('[CALENDAR] 权限检查结果: ${permissionGranted.data}');
+      
+      if (permissionGranted.isSuccess && !permissionGranted.data!) {
+        print('[CALENDAR] 请求日历权限');
+        try {
+          final result = await plugin.requestPermissions();
+          print('[CALENDAR] 权限请求结果: ${result.data}');
+          if (!result.isSuccess || !result.data!) {
+            print('[CALENDAR] Permission denied');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Calendar permission denied. Please enable it in settings to use reminder feature.')),
+              );
+            }
+            return;
+          }
+        } catch (e) {
+          print('[CALENDAR] 权限请求异常: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Calendar permission denied. Please enable it in settings to use reminder feature.')),
+            );
+          }
+          return;
+        }
+      }
+
+      print('[CALENDAR] 获取日历列表');
+      final calendarsResult = await plugin.retrieveCalendars();
+      print('[CALENDAR] 日历数量: ${calendarsResult.data?.length}');
+      if (!calendarsResult.isSuccess || calendarsResult.data == null || calendarsResult.data!.isEmpty) {
+        print('[CALENDAR] No calendars found');
+        return;
+      }
+
+      final calendar = calendarsResult.data!.first;
+      print('[CALENDAR] 使用日历: ${calendar.name}');
+      final now = DateTime.now();
+      final mealDateTime = DateTime(now.year, now.month, now.day, mealHours, mealMinutes);
+      final actualMealTime = mealDateTime.isBefore(now) ? mealDateTime.add(const Duration(days: 1)) : mealDateTime;
+      print('[CALENDAR] 用餐时间: $actualMealTime');
+
+      final tzActualMealTime = tz.TZDateTime.from(actualMealTime, tz.local);
+      final tzEndTime = tz.TZDateTime.from(actualMealTime.add(const Duration(minutes: 15)), tz.local);
+
+      final event = Event(
+        calendar.id,
+        title: 'HotRice - Meal Ready',
+        description: 'Your meal will be ready at ${mealHours.toString().padLeft(2, '0')}:${mealMinutes.toString().padLeft(2, '0')}',
+        start: tzActualMealTime,
+        end: tzEndTime,
+      );
+
+      event.reminders = [Reminder(minutes: 0)];
+
+      print('[CALENDAR] 创建日历事件');
+      final createResult = await plugin.createOrUpdateEvent(event);
+      print('[CALENDAR] 创建结果: ${createResult?.isSuccess}');
+      if (createResult?.isSuccess == true) {
+        print('[CALENDAR] Reminder created successfully');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Calendar reminder created successfully')),
+          );
+        }
+      }
+    } catch (e) {
+      print('[CALENDAR] Failed to create reminder: $e');
     }
   }
 
@@ -154,15 +237,15 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
         ),
         title: "QIMI\nHotRice",
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 40),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 40),
-                child: GestureDetector(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 40),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                GestureDetector(
                   onTap: () async {
                     final result = await showDialog<int>(
                       context: context,
@@ -195,10 +278,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                     ],
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(right: 40),
-                child: Column(
+                Column(
                   children: [
                     Assets.home.images.homeDevice.image(
                       width: 150,
@@ -227,9 +307,8 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           const SizedBox(height: 40),
           if (isHeating)
             Column(
@@ -339,7 +418,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
               ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(height: 40),
           Padding(
             padding: const EdgeInsets.all(20),
             child: isHeating
@@ -367,6 +446,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                   ),
           ),
         ],
+        ),
       ),
     );
   }

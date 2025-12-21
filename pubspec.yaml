@@ -23,6 +23,8 @@ dependencies:
   location: ^6.0.2
   device_info_plus: ^11.1.0
   shared_preferences: ^2.3.2
+  device_calendar: ^4.3.2
+  timezone: ^0.9.2
 
 dev_dependencies:
   flutter_test:

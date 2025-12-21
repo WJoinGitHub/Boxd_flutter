@@ -58,7 +58,7 @@ class _UnitSwitchingPageState extends State<UnitSwitchingPage> {
                       Text('Unit switching',
                           style: TextStyle(
                               fontWeight: FontWeight.w600, fontSize: 17)),
-                      SizedBox(height: 7),
+                      SizedBox(height: 12),
                       Text('You can set the display unit for temperature here',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: Colors.black, fontSize: 12)),

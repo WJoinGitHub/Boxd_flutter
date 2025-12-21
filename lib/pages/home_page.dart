@@ -214,29 +214,11 @@ class _HomePageState extends State<HomePage> {
                                   shape: const CircleBorder(),
                                 ),
                                 child: Center(
-                                  child: UserService().isLoggedIn
-                                      ? CircleAvatar(
-                                          radius: 16.5,
-                                          backgroundColor: AppColors.orange,
-                                          child: Text(
-                                            UserService()
-                                                    .currentUser
-                                                    ?.nickname
-                                                    .substring(0, 1)
-                                                    .toUpperCase() ??
-                                                'U',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        )
-                                      : Assets.home.images.homeAvatar.image(
-                                          width: 23,
-                                          height: 27,
-                                          fit: BoxFit.contain,
-                                        ),
+                                  child: Assets.user.images.userAvatar.image(
+                                    width: 33,
+                                    height: 33,
+                                    fit: BoxFit.contain,
+                                  ),
                                 ),
                               ),
                             ],

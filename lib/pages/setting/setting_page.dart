@@ -162,10 +162,10 @@ class _SettingsPageState extends State<SettingsPage> {
   // ------------------------- Components ----------------------------
 
   Widget _buildProfile() => Row(
-        children: const [
-          CircleAvatar(radius: 20, backgroundColor: Colors.black12),
-          SizedBox(width: 10),
-          Text(
+        children: [
+          Assets.user.images.userAvatar.image(width: 40, height: 40),
+          const SizedBox(width: 10),
+          const Text(
             'HotRice',
             style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
           ),

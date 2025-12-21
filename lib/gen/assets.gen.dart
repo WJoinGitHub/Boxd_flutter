@@ -226,11 +226,14 @@ class $AssetsSettingImagesGen {
 class $AssetsUserImagesGen {
   const $AssetsUserImagesGen();
 
+  /// File path: assets/user/images/temperature_change.png
+  AssetGenImage get temperatureChange => const AssetGenImage('assets/user/images/temperature_change.png');
+
   /// File path: assets/user/images/user_avatar.png
   AssetGenImage get userAvatar => const AssetGenImage('assets/user/images/user_avatar.png');
 
   /// List of all assets
-  List<AssetGenImage> get values => [userAvatar];
+  List<AssetGenImage> get values => [temperatureChange, userAvatar];
 }
 
 class Assets {

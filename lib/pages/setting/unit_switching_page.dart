@@ -42,36 +42,37 @@ class _UnitSwitchingPageState extends State<UnitSwitchingPage> {
         title: "Settings",
       ),
       backgroundColor: Colors.white,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('45°C',
-                  style: TextStyle(
-                      color: Colors.black26,
-                      fontSize: 33,
-                      fontWeight: FontWeight.bold)),
-              const Text('113°F',
-                  style: TextStyle(
-                      color: Colors.black26,
-                      fontSize: 33,
-                      fontWeight: FontWeight.bold)),
-              const SizedBox(height: 20),
-              const Text('Unit switching',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 17)),
-              const SizedBox(height: 7),
-              const Text('You can set the display unit for temperature here',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.black54, fontSize: 12)),
-              const SizedBox(height: 27),
-              _buildUnitButton('°F', 'Fahrenheit'),
-              const SizedBox(height: 10),
-              _buildUnitButton('°C', 'Centigrade'),
-            ],
+      body: Column(
+        children: [
+          const SizedBox(height: 50),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Assets.user.images.temperatureChange.image(width: 250),
+                const SizedBox(height: 20),
+                const SizedBox(
+                  width: 220,
+                  child: Column(
+                    children: [
+                      Text('Unit switching',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 17)),
+                      SizedBox(height: 7),
+                      Text('You can set the display unit for temperature here',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.black, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 27),
+                _buildUnitButton('°F', 'Fahrenheit'),
+                const SizedBox(height: 10),
+                _buildUnitButton('°C', 'Centigrade'),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

@@ -202,6 +202,9 @@ class $AssetsSettingImagesGen {
   /// File path: assets/setting/images/privacy_policy_setting.png
   AssetGenImage get privacyPolicySetting => const AssetGenImage('assets/setting/images/privacy_policy_setting.png');
 
+  /// File path: assets/setting/images/set_support.png
+  AssetGenImage get setSupport => const AssetGenImage('assets/setting/images/set_support.png');
+
   /// File path: assets/setting/images/share_setting.png
   AssetGenImage get shareSetting => const AssetGenImage('assets/setting/images/share_setting.png');
 
@@ -217,6 +220,7 @@ class $AssetsSettingImagesGen {
         feedbackSetting,
         notiSetting,
         privacyPolicySetting,
+        setSupport,
         shareSetting,
         temperatureUnitSetting,
         termsSetting

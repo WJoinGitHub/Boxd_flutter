@@ -193,15 +193,20 @@ class _SettingsPageState extends State<SettingsPage> {
       );
 
   Widget _buildSupportTile() => Container(
-        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.orange.shade200),
+          color: const Color(0xFFE8E8E8).withOpacity(0.3),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: const ListTile(
-          title: Text('Support'),
-          subtitle: Text('Help and Troubleshooting'),
-          trailing: Icon(Icons.arrow_forward_ios, size: 13),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+          leading: Assets.setting.images.setSupport.image(
+            width: 18,
+            height: 18,
+            fit: BoxFit.contain,
+          ),
+          title: Text('Support', style: TextStyle(color: AppColors.orange, fontWeight: FontWeight.w700)),
+          subtitle: const Text('Help and Troubleshooting'),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 13),
         ),
       );
 

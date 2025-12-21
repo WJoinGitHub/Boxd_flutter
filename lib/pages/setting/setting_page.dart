@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/unit_switching_page.dart';
+import 'package:flutter_boxd_app_flow/services/api_client.dart';
+import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  final Map<String, dynamic>? deviceDetail;
+  
+  const SettingsPage({super.key, this.deviceDetail});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -15,16 +20,33 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool allowNotifications = true;
   String temperatureUnit = '°C';
+  String? privacyPolicyUrl;
+  String? termsUrl;
 
   @override
   void initState() {
     super.initState();
     _loadUnit();
+    _loadPolicies();
   }
 
   Future<void> _loadUnit() async {
     final unit = await AppStorage.loadUnit();
     setState(() => temperatureUnit = unit);
+  }
+
+  Future<void> _loadPolicies() async {
+    try {
+      final result = await ApiClient.getPolicies();
+      if (result['code'] == 200 && result['data'] != null) {
+        setState(() {
+          privacyPolicyUrl = result['data']['privacy_policy']?['url'];
+          termsUrl = result['data']['terms_of_service']?['url'];
+        });
+      }
+    } catch (e) {
+      print('Failed to load policies: $e');
+    }
   }
 
   @override
@@ -52,16 +74,6 @@ class _SettingsPageState extends State<SettingsPage> {
           /// Device Section
           _buildSectionTitle('Device'),
           _buildSectionContainer([
-            _buildRowTile(
-              'Firmware update',
-              leading: Assets.setting.images.appVersionSetting.image(
-                width: 18,
-                height: 18,
-                fit: BoxFit.contain,
-              ),
-              trailing: 'V1.0.1',
-              onTap: () {},
-            ),
             _buildRowTile(
               'Unit switching',
               leading: Assets.setting.images.temperatureUnitSetting.image(
@@ -97,6 +109,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 height: 18,
                 fit: BoxFit.contain,
               ),
+              onTap: () => _openUrl(privacyPolicyUrl),
             ),
             _buildRowTile(
               'Terms & Conditions',
@@ -105,6 +118,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 height: 18,
                 fit: BoxFit.contain,
               ),
+              onTap: () => _openUrl(termsUrl),
             ),
           ]),
 
@@ -145,14 +159,25 @@ class _SettingsPageState extends State<SettingsPage> {
 
           const SizedBox(height: 20),
 
-          Center(
-            child: TextButton(
-              onPressed: () {},
-              child: const Text(
-                'Logout',
-                style: TextStyle(color: Colors.black54, fontSize: 13),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: _handleLogout,
+                child: const Text(
+                  'Logout',
+                  style: TextStyle(color: Colors.black54, fontSize: 14, fontWeight: FontWeight.w500),
+                ),
               ),
-            ),
+              const SizedBox(width: 20),
+              TextButton(
+                onPressed: _handleDeleteAccount,
+                child: const Text(
+                  'Delete Account',
+                  style: TextStyle(color: Colors.black54, fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -284,5 +309,86 @@ class _SettingsPageState extends State<SettingsPage> {
       // 左侧图片
       secondary: leading,
     );
+  }
+
+  Future<void> _handleLogout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await ApiClient.logout();
+        await UserService().logout();
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Logout failed: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _handleDeleteAccount() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text('Are you sure you want to delete your account? This action cannot be undone!'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await ApiClient.deleteAccount();
+        await UserService().logout();
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Delete account failed: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _openUrl(String? url) async {
+    if (url == null) return;
+    final fullUrl = url.startsWith('http') ? url : '${ApiClient.baseUrl}$url';
+    final uri = Uri.parse(fullUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.inAppWebView);
+    }
   }
 }

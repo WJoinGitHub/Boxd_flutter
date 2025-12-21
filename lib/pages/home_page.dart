@@ -12,6 +12,7 @@ import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_boxd_app_flow/pages/heat_page.dart';
 import 'package:flutter_boxd_app_flow/pages/heating_time_page.dart';
+import 'package:flutter_boxd_app_flow/pages/setting/meal_time_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,6 +25,7 @@ class _HomePageState extends State<HomePage> {
   bool connected = false;
   int temperature = 0;
   int batteryLevel = 0;
+  Map<String, dynamic>? deviceDetail;
 
   final bleService = BleService();
 
@@ -125,6 +127,16 @@ class _HomePageState extends State<HomePage> {
             if (success && mounted) {
               setState(() => connected = true);
               print('[HOME] 自动连接成功');
+              // 获取设备详情
+              try {
+                final detail = await ApiClient.getDeviceDetail(deviceUuid);
+                if (detail['code'] == 200 && detail['data'] != null && mounted) {
+                  setState(() => deviceDetail = detail['data']);
+                  print('[HOME] 设备详情: $deviceDetail');
+                }
+              } catch (e) {
+                print('[HOME] 获取设备详情失败: $e');
+              }
             }
           }
         }
@@ -192,7 +204,7 @@ class _HomePageState extends State<HomePage> {
                                     Navigator.of(context).push(
                                       PageRouteBuilder(
                                         pageBuilder: (_, __, ___) =>
-                                            const SettingsPage(),
+                                            SettingsPage(deviceDetail: deviceDetail),
                                       ),
                                     );
                                   } else {

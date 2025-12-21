@@ -210,6 +210,12 @@ class ApiClient {
       put('/user/password',
           {'old_password': oldPassword, 'new_password': newPassword});
 
+  static Future<Map<String, dynamic>> deleteAccount() async {
+    final result = await delete('/user/account');
+    clearToken();
+    return result;
+  }
+
   // ==================== 设备管理 ====================
   static Future<Map<String, dynamic>> bindDevice(String deviceUuid,
           {String? deviceName}) =>

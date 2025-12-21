@@ -213,7 +213,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
-                height: 42,
+                height: 44,
                 child: ElevatedButton(
                   onPressed: validate(_pwdCtrl.text) && !_loading
                       ? _savePassword
@@ -221,10 +221,10 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: validate(_pwdCtrl.text)
                         ? AppColors.orange
-                        : AppColors.gray2, // 灰色禁用状态
+                        : AppColors.gray2,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
                   ),
@@ -240,11 +240,9 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                       : const Text(
                           'Save',
                           style: TextStyle(
-                            fontFamily: 'SF Pro',
-                            fontWeight: FontWeight.w500,
-                            fontSize: 13,
-                            height: 1.0,
-                            letterSpacing: 0,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.white,
                           ),
                         ),
                 ),

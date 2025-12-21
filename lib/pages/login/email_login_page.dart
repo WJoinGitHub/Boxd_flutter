@@ -174,30 +174,26 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  minimumSize: const Size(double.infinity, 44),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 42,
-                  child: Center(
-                    child: _loading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text(
-                            'Sign In',
-                            style: TextStyle(
-                                fontSize: 15, fontWeight: FontWeight.w600),
+                child: Center(
+                  child: _loading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
                           ),
-                  ),
+                        )
+                      : const Text(
+                          'Sign In',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w400, color: Colors.white),
+                        ),
                 ),
               ),
               const SizedBox(height: 20),

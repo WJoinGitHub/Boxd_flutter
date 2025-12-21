@@ -134,16 +134,15 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              height: 42,
+              height: 44,
               child: ElevatedButton(
                 onPressed: _emailCtrl.text.isNotEmpty ? _sendCode : null,
                 style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(42),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Next'),
+                child: const Text('Next', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.white)),
               ),
             ),
           ],

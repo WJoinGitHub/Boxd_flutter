@@ -307,14 +307,19 @@ class _VerificationPageState extends State<VerificationPage> {
             const SizedBox(height: 20),
 
             // 下一步按钮
-            ElevatedButton(
-              onPressed: _controllers.every((c) => c.text.isNotEmpty)
-                  ? _verifyCode
-                  : null,
-              child: const SizedBox(
-                width: double.infinity,
-                height: 42,
-                child: Center(child: Text('VERTICAL')),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: ElevatedButton(
+                onPressed: _controllers.every((c) => c.text.isNotEmpty)
+                    ? _verifyCode
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('VERTICAL', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.white)),
               ),
             ),
           ],

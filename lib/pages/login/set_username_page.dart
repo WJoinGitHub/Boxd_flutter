@@ -53,12 +53,19 @@ class _SetUsernamePageState extends State<SetUsernamePage> {
                   decoration: const InputDecoration(labelText: 'UserName'),
                   onChanged: (_) => setState(() => {})),
               const SizedBox(height: 20),
-              ElevatedButton(
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: ElevatedButton(
                   onPressed: _nameCtrl.text.isNotEmpty ? _next : null,
-                  child: const SizedBox(
-                      width: double.infinity,
-                      height: 42,
-                      child: Center(child: Text('下一步')))),
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('下一步', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.white)),
+                ),
+              ),
             ])));
   }
 }

@@ -136,6 +136,13 @@ class BleProtocolHelper {
     return buildPacket(0x50, [0x01]);
   }
 
+  /// 获取UUID数据指令（根据协议：0x02, 0x50, 0x02, XX, 0x03）
+  static Uint8List getUuidDataCommand([int param = 0x00]) {
+    // 根据协议，这个命令格式特殊：没有FCS校验码，直接是 [0x02, 0x50, 0x02, XX, 0x03]
+    return Uint8List.fromList(
+        [BleProtocol.startCode, 0x50, 0x02, param, BleProtocol.endCode]);
+  }
+
   /// 设备状态同步指令
   static Uint8List getDeviceStatusCommand() {
     return buildPacket(0x51);
@@ -164,14 +171,19 @@ class BleProtocolHelper {
   }
 
   /// 时间同步指令
-  static Uint8List syncTimeCommand(DateTime time) {
+  /// [time] 要设置的时间
+  /// [temperatureUnit] 温度单位：0x00=摄氏度，0x01=华氏度
+  static Uint8List syncTimeCommand(DateTime time,
+      {int temperatureUnit = 0x00}) {
+    // 根据协议：0x02, 0x40, 0x01, 小时分钟(2字节), 秒(1字节), 温度单位(1字节), 0x00, 0x00, 0x23, 0x03
     // 将时分转换为分钟数，然后转为uint16
     final totalMinutes = time.hour * 60 + time.minute;
     final data = [
       0x01, // 子指令码
       ...uint16ToBytes(totalMinutes), // 总分钟数(小端)
       time.second, // 秒
-      0x00, 0x00, 0x00, // 填充字节
+      temperatureUnit, // 温度单位：0x00为摄氏度，0x01为华氏度
+      0x00, 0x00, // 无功能数据
     ];
     return buildPacket(0x40, data);
   }

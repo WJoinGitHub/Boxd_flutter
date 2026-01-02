@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
+import 'user_service.dart';
 
 enum CodeType {
   register,
@@ -40,6 +40,15 @@ class ApiClient {
 
   static void setToken(String token) => _token = token;
   static void clearToken() => _token = null;
+
+  static const Set<String> _ignore401Paths = {
+    '/auth/login',
+    '/auth/register',
+    '/auth/send-code',
+    '/auth/verify-code',
+    '/auth/reset-password',
+    '/auth/refresh-token',
+  };
 
   /// 生成签名
   static String _generateSignature(
@@ -112,6 +121,22 @@ class ApiClient {
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
+    } else if (response.statusCode == 401) {
+      // 清除token
+      _token = null;
+      clearToken();
+
+      // 如果不在忽略列表中，清除登录状态（避免登录/注册接口触发登出）
+      if (!_ignore401Paths.contains(path)) {
+        print('[API] 收到401状态码，清除登录状态: $path');
+        try {
+          await UserService().logout();
+        } catch (e) {
+          print('[API] 清除登录状态失败: $e');
+        }
+      }
+
+      throw Exception('HTTP ${response.statusCode}: ${response.body}');
     } else {
       throw Exception('HTTP ${response.statusCode}: ${response.body}');
     }
@@ -174,8 +199,7 @@ class ApiClient {
   }
 
   static Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
-    final result =
-        await post('/auth/refresh-token', {'refresh_token': refreshToken});
+    final result = await post('/auth/refresh', {'refresh_token': refreshToken});
     if (result['code'] == 200 &&
         result['data']?['tokens']?['access_token'] != null) {
       setToken(result['data']['tokens']['access_token']);

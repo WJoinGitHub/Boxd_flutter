@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
-import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
-import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/widgets/temperature_picker_dialog.dart';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 
 class HeatingTimePage extends StatefulWidget {
   const HeatingTimePage({super.key});
@@ -25,6 +24,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
   int temperature = 0;
   int? selectedTemperature;
   int batteryLevel = 0;
+  String temperatureUnit = '°C';
   final bleService = BleService();
   bool isHeating = false;
 
@@ -41,6 +41,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
   void initState() {
     super.initState();
     tz_data.initializeTimeZones();
+    _loadTemperatureUnit();
     final lastStatus = bleService.lastStatus;
     if (lastStatus != null) {
       if (lastStatus.temperature != null) temperature = lastStatus.temperature!;
@@ -60,6 +61,13 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
         });
       }
     });
+  }
+
+  Future<void> _loadTemperatureUnit() async {
+    final unit = await AppStorage.loadUnit();
+    if (mounted) {
+      setState(() => temperatureUnit = unit);
+    }
   }
 
   @override
@@ -266,13 +274,26 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                       ),
                       Positioned(
                         top: 54,
-                        child: Text(
-                          selectedTemperature?.toString() ?? temperature.toString(),
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.black,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              selectedTemperature?.toString() ?? temperature.toString(),
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.black,
+                              ),
+                            ),
+                            Text(
+                              temperatureUnit,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

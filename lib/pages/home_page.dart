@@ -12,7 +12,7 @@ import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_boxd_app_flow/pages/heat_page.dart';
 import 'package:flutter_boxd_app_flow/pages/heating_time_page.dart';
-import 'package:flutter_boxd_app_flow/pages/setting/meal_time_page.dart';
+import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -26,6 +26,7 @@ class _HomePageState extends State<HomePage> {
   int temperature = 0;
   int batteryLevel = 0;
   Map<String, dynamic>? deviceDetail;
+  String temperatureUnit = '°C';
 
   final bleService = BleService();
 
@@ -33,6 +34,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     print("HomePage initState start");
+    _loadTemperatureUnit();
     _init();
     bleService.statusStream.listen((status) {
       if (mounted) {
@@ -58,6 +60,13 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> _loadTemperatureUnit() async {
+    final unit = await AppStorage.loadUnit();
+    if (mounted) {
+      setState(() => temperatureUnit = unit);
+    }
+  }
+
   Future<void> _init() async {
     await _autoLogin();
     await _autoConnect();
@@ -68,9 +77,14 @@ class _HomePageState extends State<HomePage> {
     final hasToken = await UserService().loadFromLocal();
     print('[HOME] loadFromLocal 结果: $hasToken');
     if (hasToken) {
-      await UserService().fetchUserInfo();
-      print('[HOME] 用户信息: ${UserService().currentUser?.email}');
-      print('[HOME] isLoggedIn: ${UserService().isLoggedIn}');
+      try {
+        await UserService().fetchUserInfo();
+        print('[HOME] 用户信息: ${UserService().currentUser?.email}');
+        print('[HOME] isLoggedIn: ${UserService().isLoggedIn}');
+      } catch (e) {
+        print('[HOME] 获取用户信息失败: $e');
+        // 如果获取用户信息失败（可能是401），确保UI更新
+      }
       if (mounted) {
         setState(() {});
       }
@@ -332,13 +346,26 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   Positioned(
                                     top: 54,
-                                    child: Text(
-                                      temperature.toString(),
-                                      style: const TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w400,
-                                        color: Colors.black,
-                                      ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          temperature.toString(),
+                                          style: const TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w400,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                        Text(
+                                          temperatureUnit,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w400,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],

@@ -9,9 +9,9 @@ class AppStorage {
     await prefs.setString(_unitKey, unit);
   }
 
-  /// 读取温度单位，默认为 °C
+  /// 读取温度单位，默认为 °F
   static Future<String> loadUnit() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_unitKey) ?? '°C';
+    return prefs.getString(_unitKey) ?? '°F';
   }
 }

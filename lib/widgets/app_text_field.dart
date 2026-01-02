@@ -23,40 +23,56 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      textInputAction: textInputAction,
-      decoration: InputDecoration(
-        labelText: labelText,
-        floatingLabelBehavior: FloatingLabelBehavior.auto,
-        labelStyle: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w500,
-          color: AppColors.gray3,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        /// 👇 顶部固定说明文字（不会动）
+        Padding(
+          padding: const EdgeInsets.only(left: 16, bottom: 6),
+          child: Text(
+            labelText,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: AppColors.gray3,
+            ),
+          ),
         ),
-        floatingLabelStyle: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w500,
-          color: AppColors.gray3,
+
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          textInputAction: textInputAction,
+          maxLines: 1,
+          decoration: InputDecoration(
+            hintText: labelText,
+            hintStyle: TextStyle(
+              fontSize: 13,
+              color: AppColors.gray3,
+            ),
+            filled: true,
+            fillColor: AppColors.white,
+            contentPadding: EdgeInsets.fromLTRB(
+              16,
+              18,
+              suffixIcon != null ? 56 : 16,
+              18,
+            ),
+            constraints: const BoxConstraints(minHeight: 56),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: BorderSide.none,
+            ),
+            suffixIcon: suffixIcon,
+          ),
+          style: TextStyle(
+            fontSize: 13,
+            color: AppColors.black1,
+          ),
+          onChanged: onChanged,
         ),
-        filled: true,
-        fillColor: AppColors.white,
-        contentPadding: const EdgeInsets.fromLTRB(13, 30, 13, 10),
-        constraints: const BoxConstraints(minHeight: 64),
-        alignLabelWithHint: true,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(13),
-          borderSide: BorderSide.none,
-        ),
-        suffixIcon: suffixIcon,
-      ),
-      style: TextStyle(
-        fontSize: 13,
-        color: AppColors.black1,
-      ),
-      onChanged: onChanged,
+      ],
     );
   }
 }

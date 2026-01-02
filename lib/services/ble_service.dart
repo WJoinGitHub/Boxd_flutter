@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'api_client.dart';
 import 'ble_protocol.dart';
+import '../utils/app_storage.dart';
 
 class BleService {
   static final BleService _instance = BleService._internal();
@@ -319,10 +320,13 @@ class BleService {
   /// 同步时间
   Future<void> syncTime() async {
     final now = DateTime.now();
-    final data = BleProtocolHelper.syncTimeCommand(now);
+    // 读取温度单位设置
+    final unit = await AppStorage.loadUnit();
+    final temperatureUnit = unit == '°F' ? 0x01 : 0x00;
+    final data = BleProtocolHelper.syncTimeCommand(now, temperatureUnit: temperatureUnit);
     await _writeCharacteristic!.write(data, withoutResponse: false);
     print(
-        '[BLE] 时间同步指令已发送: ${now.hour}:${now.minute}:${now.second} (总分钟数: ${now.hour * 60 + now.minute})');
+        '[BLE] 时间同步指令已发送: ${now.hour}:${now.minute}:${now.second} (总分钟数: ${now.hour * 60 + now.minute}, 温度单位: $unit)');
     print('[BLE] 时间同步数据: $data');
   }
 

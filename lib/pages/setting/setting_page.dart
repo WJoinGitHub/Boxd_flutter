@@ -3,6 +3,7 @@ import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/unit_switching_page.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
+import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
@@ -10,7 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatefulWidget {
   final Map<String, dynamic>? deviceDetail;
-  
+
   const SettingsPage({super.key, this.deviceDetail});
 
   @override
@@ -22,6 +23,7 @@ class _SettingsPageState extends State<SettingsPage> {
   String temperatureUnit = '°C';
   String? privacyPolicyUrl;
   String? termsUrl;
+  final bleService = BleService();
 
   @override
   void initState() {
@@ -83,16 +85,14 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               trailing: temperatureUnit,
               onTap: () async {
-                final result = await Navigator.push(
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => const UnitSwitchingPage(),
                   ),
                 );
-                if (result != null) {
-                  setState(() => temperatureUnit = result);
-                  await AppStorage.saveUnit(result);
-                }
+                // 重新加载单位（因为单位可能已经在UnitSwitchingPage中保存了）
+                await _loadUnit();
               },
             ),
           ]),
@@ -128,14 +128,6 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildSectionTitle('App'),
           _buildSectionContainer([
             _buildRowTile(
-              'Share App',
-              leading: Assets.setting.images.shareSetting.image(
-                width: 18,
-                height: 18,
-                fit: BoxFit.contain,
-              ),
-            ),
-            _buildRowTile(
               'Feedback',
               leading: Assets.setting.images.feedbackSetting.image(
                 width: 18,
@@ -166,7 +158,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 onPressed: _handleLogout,
                 child: const Text(
                   'Logout',
-                  style: TextStyle(color: Colors.black54, fontSize: 14, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500),
                 ),
               ),
               const SizedBox(width: 20),
@@ -174,7 +169,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 onPressed: _handleDeleteAccount,
                 child: const Text(
                   'Delete Account',
-                  style: TextStyle(color: Colors.black54, fontSize: 14, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500),
                 ),
               ),
             ],
@@ -223,13 +221,16 @@ class _SettingsPageState extends State<SettingsPage> {
           borderRadius: BorderRadius.circular(10),
         ),
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
           leading: Assets.setting.images.setSupport.image(
             width: 18,
             height: 18,
             fit: BoxFit.contain,
           ),
-          title: Text('Support', style: TextStyle(color: AppColors.orange, fontWeight: FontWeight.w700)),
+          title: Text('Support',
+              style: TextStyle(
+                  color: AppColors.orange, fontWeight: FontWeight.w700)),
           subtitle: const Text('Help and Troubleshooting'),
           trailing: const Icon(Icons.arrow_forward_ios, size: 13),
         ),
@@ -332,6 +333,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (confirm == true) {
       try {
+        // 断开设备连接
+        if (bleService.isConnected) {
+          await bleService.disconnect();
+        }
+        // 登出
         await ApiClient.logout();
         await UserService().logout();
         if (mounted) {
@@ -352,7 +358,8 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Account'),
-        content: const Text('Are you sure you want to delete your account? This action cannot be undone!'),
+        content: const Text(
+            'Are you sure you want to delete your account? This action cannot be undone!'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -368,6 +375,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (confirm == true) {
       try {
+        // 断开设备连接
+        if (bleService.isConnected) {
+          await bleService.disconnect();
+        }
+        // 删除账号
         await ApiClient.deleteAccount();
         await UserService().logout();
         if (mounted) {

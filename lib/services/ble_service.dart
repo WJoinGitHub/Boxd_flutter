@@ -32,7 +32,10 @@ class BleService {
   int? _pendingCommand;
   int? _pendingSubCommand;
 
-  /// 获取设备 MAC 地址
+  Completer<String>? _uuidCompleter;
+
+  /// 获取设备 MAC 地址（已废弃，现在使用UUID绑定）
+  @Deprecated('使用 getDeviceUuid() 获取设备UUID进行绑定')
   String _getDeviceMacAddress(BluetoothDevice device) {
     if (Platform.isAndroid) {
       return device.remoteId.str.replaceAll(':', '').toUpperCase();
@@ -138,7 +141,16 @@ class BleService {
 
     if (success) {
       if (!skipBind) {
-        final deviceUuid = _getDeviceMacAddress(device);
+        // 获取设备UUID
+        print('[BLE] 开始获取设备UUID...');
+        final deviceUuid = await getDeviceUuid();
+
+        if (deviceUuid == null || deviceUuid.isEmpty) {
+          print('[BLE] 获取设备UUID失败，断开连接');
+          await disconnect();
+          return false;
+        }
+
         final deviceName = device.platformName.isNotEmpty
             ? device.platformName
             : 'Boxd-${deviceUuid.substring(deviceUuid.length - 4)}';
@@ -233,6 +245,30 @@ class BleService {
     _lastHeartbeatTime = DateTime.now();
     _missedHeartbeats = 0;
 
+    // 处理UUID数据响应 (0x02, 0x50, 0x02, ...)
+    // 协议格式：0x02, 0x50, 0x02, [UUID 11字节], 0x23, 0x03
+    if (data.length >= 16 &&
+        data[0] == 0x02 &&
+        data[1] == 0x50 &&
+        data[2] == 0x02 &&
+        data[data.length - 1] == 0x03) {
+      // 解析UUID：字节3-13 (共11字节)
+      // 字节3-6: 4字节批次随机码
+      // 字节7-11: 5字节递增序号
+      // 字节12-13: 2字节防伪校验码
+      if (_uuidCompleter != null) {
+        final uuidBytes = data.sublist(3, 14); // 11字节
+        final uuid = uuidBytes
+            .map((b) => b.toRadixString(16).padLeft(2, '0'))
+            .join()
+            .toUpperCase();
+        print('[BLE] 解析到UUID: $uuid (长度: ${uuid.length})');
+        _uuidCompleter!.complete(uuid);
+        _uuidCompleter = null;
+        return;
+      }
+    }
+
     if (data.length >= 5 && data[0] == 0x02 && data[data.length - 1] == 0x03) {
       final command = data[1];
       final subCommand = data[2];
@@ -311,6 +347,33 @@ class BleService {
     await _writeCharacteristic!.write(data, withoutResponse: false);
   }
 
+  /// 获取设备UUID
+  Future<String?> getDeviceUuid() async {
+    if (_writeCharacteristic == null) throw Exception('未连接设备');
+
+    _uuidCompleter = Completer<String>();
+
+    try {
+      final data = BleProtocolHelper.getUuidDataCommand();
+      await _writeCharacteristic!.write(data, withoutResponse: false);
+      print('[BLE] 已发送获取UUID命令: $data');
+
+      final uuid = await _uuidCompleter!.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          _uuidCompleter = null;
+          throw Exception('获取UUID超时');
+        },
+      );
+
+      return uuid;
+    } catch (e) {
+      print('[BLE] 获取UUID失败: $e');
+      _uuidCompleter = null;
+      return null;
+    }
+  }
+
   /// 获取设备状态
   Future<void> getDeviceStatus() async {
     final data = BleProtocolHelper.getDeviceStatusCommand();
@@ -323,7 +386,8 @@ class BleService {
     // 读取温度单位设置
     final unit = await AppStorage.loadUnit();
     final temperatureUnit = unit == '°F' ? 0x01 : 0x00;
-    final data = BleProtocolHelper.syncTimeCommand(now, temperatureUnit: temperatureUnit);
+    final data = BleProtocolHelper.syncTimeCommand(now,
+        temperatureUnit: temperatureUnit);
     await _writeCharacteristic!.write(data, withoutResponse: false);
     print(
         '[BLE] 时间同步指令已发送: ${now.hour}:${now.minute}:${now.second} (总分钟数: ${now.hour * 60 + now.minute}, 温度单位: $unit)');

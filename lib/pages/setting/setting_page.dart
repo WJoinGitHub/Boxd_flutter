@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/unit_switching_page.dart';
+import 'package:flutter_boxd_app_flow/pages/setting/feedback_page.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
@@ -134,6 +135,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 height: 18,
                 fit: BoxFit.contain,
               ),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const FeedbackPage(),
+                  ),
+                );
+              },
             ),
             _buildSwitchTile(
               title: "Allow Notifications",

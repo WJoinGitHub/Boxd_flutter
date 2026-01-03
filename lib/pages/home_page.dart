@@ -640,7 +640,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               children: [
                                 // 状态图片
                                 _getModeImage(),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 20),
                                 // 模式文案
                                 Text(
                                   _getModeText(),
@@ -650,7 +650,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     color: Colors.black,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 15),
                                 // 温度显示（类似keepwarmpage样式）
                                 Row(
                                   children: [
@@ -660,7 +660,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      '${_getDisplayTemperature()}$temperatureUnit',
+                                      '${_getDisplayTemperature()}  $temperatureUnit',
                                       style: const TextStyle(
                                         fontSize: 30,
                                         fontWeight: FontWeight.w400,

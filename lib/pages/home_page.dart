@@ -6,12 +6,12 @@ import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/pages/login/email_login_page.dart';
 import 'dart:io';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
-import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_boxd_app_flow/pages/heat_page.dart';
 import 'package:flutter_boxd_app_flow/pages/heating_time_page.dart';
+import 'package:flutter_boxd_app_flow/pages/keep_warm_page.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 
 class HomePage extends StatefulWidget {
@@ -21,7 +21,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool connected = false;
   int temperature = 0;
   int batteryLevel = 0;
@@ -29,6 +29,8 @@ class _HomePageState extends State<HomePage> {
   String temperatureUnit = '°C';
   List<Map<String, dynamic>> _devices = [];
   Map<String, dynamic>? _currentDevice;
+  bool _wasLoggedIn = false;
+  bool _isInitialized = false;
 
   final bleService = BleService();
 
@@ -36,8 +38,11 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     print("HomePage initState start");
+    WidgetsBinding.instance.addObserver(this);
+    _wasLoggedIn = UserService().isLoggedIn;
     _loadTemperatureUnit();
     _init();
+    _isInitialized = true;
     bleService.statusStream.listen((status) {
       if (mounted) {
         setState(() {
@@ -79,14 +84,17 @@ class _HomePageState extends State<HomePage> {
     final hasToken = await UserService().loadFromLocal();
     print('[HOME] loadFromLocal 结果: $hasToken');
     if (hasToken) {
-      try {
-        await UserService().fetchUserInfo();
-        print('[HOME] 用户信息: ${UserService().currentUser?.email}');
-        print('[HOME] isLoggedIn: ${UserService().isLoggedIn}');
-      } catch (e) {
-        print('[HOME] 获取用户信息失败: $e');
-        // 如果获取用户信息失败（可能是401），确保UI更新
+      // 只有在本地没有用户信息时才获取
+      if (UserService().currentUser == null) {
+        try {
+          await UserService().fetchUserInfo();
+          print('[HOME] 用户信息: ${UserService().currentUser?.email}');
+        } catch (e) {
+          print('[HOME] 获取用户信息失败: $e');
+          // 如果获取用户信息失败（可能是401），确保UI更新
+        }
       }
+      print('[HOME] isLoggedIn: ${UserService().isLoggedIn}');
       if (mounted) {
         setState(() {});
       }
@@ -360,8 +368,43 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     bleService.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 页面恢复时检查登录状态（跳过初始化时的调用）
+    if (_isInitialized) {
+      _checkLoginStatusAndRefresh();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      _checkLoginStatusAndRefresh();
+    }
+  }
+
+  Future<void> _checkLoginStatusAndRefresh() async {
+    final isLoggedIn = UserService().isLoggedIn;
+    // 如果从未登录变为已登录，刷新设备列表
+    if (!_wasLoggedIn && isLoggedIn) {
+      print('[HOME] 检测到登录状态变化，刷新设备列表');
+      _wasLoggedIn = isLoggedIn;
+      await _loadDevices();
+      await _autoConnect();
+      if (mounted) {
+        setState(() {});
+      }
+    } else if (_wasLoggedIn != isLoggedIn) {
+      // 更新状态，但不刷新（登出情况）
+      _wasLoggedIn = isLoggedIn;
+    }
   }
 
   @override
@@ -712,17 +755,9 @@ class _HomePageState extends State<HomePage> {
         if (!connected) return;
 
         if (label == "Ins") {
-          final success = await bleService.setWork(
-            mode: WorkMode.keepWarm,
-            temperature: 60,
-            heatingTime: 0,
-            mealTime: 0,
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const KeepWarmPage()),
           );
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(success ? '指令发送成功' : '发送指令失败，请稍后重试')),
-            );
-          }
         } else if (label == "Heat") {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const HeatPage()),

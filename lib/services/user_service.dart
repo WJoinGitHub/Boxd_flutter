@@ -137,17 +137,24 @@ class UserService {
       if (expiresAtStr != null) {
         _expiresAt = DateTime.parse(expiresAtStr);
 
-        // 检查是否需要刷新 token
+        // 检查是否需要刷新 token：只有当今天过期或已过期时才刷新
         final now = DateTime.now();
-        final daysUntilExpiry = _expiresAt!.difference(now).inDays;
-
-        if (daysUntilExpiry <= 3 && _refreshToken != null) {
-          print('[USER] Token 将在 $daysUntilExpiry 天后过期，刷新 token...');
-          await refreshAccessToken();
+        final expiryDate = DateTime(_expiresAt!.year, _expiresAt!.month, _expiresAt!.day);
+        final today = DateTime(now.year, now.month, now.day);
+        
+        // 如果过期日期是今天或更早，则刷新token
+        if (expiryDate.isBefore(today) || expiryDate.isAtSameMomentAs(today)) {
+          if (_refreshToken != null) {
+            print('[USER] Token 今天过期或已过期，刷新 token...');
+            await refreshAccessToken();
+          }
+        } else {
+          final daysUntilExpiry = expiryDate.difference(today).inDays;
+          print('[USER] Token 将在 $daysUntilExpiry 天后过期，无需刷新');
         }
       }
 
-      await fetchUserInfo();
+      // 不在这里调用fetchUserInfo，让调用方决定是否需要获取用户信息
       return true;
     } catch (e) {
       print('[USER] 加载本地数据失败: $e');

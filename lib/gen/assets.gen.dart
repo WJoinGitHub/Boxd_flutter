@@ -79,6 +79,9 @@ class $AssetsCommonImagesGen {
 class $AssetsDeviceImagesGen {
   const $AssetsDeviceImagesGen();
 
+  /// File path: assets/device/images/btn_start.png
+  AssetGenImage get btnStart => const AssetGenImage('assets/device/images/btn_start.png');
+
   /// File path: assets/device/images/dev_btn_rotate.png
   AssetGenImage get devBtnRotate => const AssetGenImage('assets/device/images/dev_btn_rotate.png');
 
@@ -115,8 +118,18 @@ class $AssetsDeviceImagesGen {
   /// File path: assets/device/images/hot_rice.png
   AssetGenImage get hotRice => const AssetGenImage('assets/device/images/hot_rice.png');
 
+  /// File path: assets/device/images/remain_bell.png
+  AssetGenImage get remainBell => const AssetGenImage('assets/device/images/remain_bell.png');
+
+  /// File path: assets/device/images/temperature.png
+  AssetGenImage get temperature => const AssetGenImage('assets/device/images/temperature.png');
+
+  /// File path: assets/device/images/temperature_change.png
+  AssetGenImage get temperatureChange => const AssetGenImage('assets/device/images/temperature_change.png');
+
   /// List of all assets
   List<AssetGenImage> get values => [
+        btnStart,
         devBtnRotate,
         devEye,
         devHeat,
@@ -128,7 +141,10 @@ class $AssetsDeviceImagesGen {
         devOpenBleTop,
         devOpenLocation,
         devRetry,
-        hotRice
+        hotRice,
+        remainBell,
+        temperature,
+        temperatureChange
       ];
 }
 

@@ -33,9 +33,9 @@ class _HeatPageState extends State<HeatPage> {
       FlutterLocalNotificationsPlugin();
   final DeviceCalendarPlugin _calendarPlugin = DeviceCalendarPlugin();
 
-  late final FixedExtentScrollController minutesController;
   late final FixedExtentScrollController hourController;
   late final FixedExtentScrollController minuteController;
+  FixedExtentScrollController? _minutesPickerController;
 
   @override
   void initState() {
@@ -49,7 +49,6 @@ class _HeatPageState extends State<HeatPage> {
     selectedHour = targetTime.hour;
     selectedMinute = targetTime.minute;
 
-    minutesController = FixedExtentScrollController(initialItem: minutes - 20);
     hourController = FixedExtentScrollController(initialItem: selectedHour);
     minuteController = FixedExtentScrollController(initialItem: selectedMinute);
 
@@ -114,10 +113,119 @@ class _HeatPageState extends State<HeatPage> {
 
   @override
   void dispose() {
-    minutesController.dispose();
     hourController.dispose();
     minuteController.dispose();
+    _minutesPickerController?.dispose();
     super.dispose();
+  }
+
+  Future<void> _showMinutesPicker() async {
+    // 初始化控制器
+    _minutesPickerController?.dispose();
+    _minutesPickerController = FixedExtentScrollController(
+      initialItem: minutes - 20, // 20-50分钟，索引从0开始
+    );
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: 300,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                'Select Duration',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildMinutesPickerInDialog(),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'MIN',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  minimumSize: const Size(double.infinity, 44),
+                ),
+                child: const Text(
+                  'Confirm',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMinutesPickerInDialog() {
+    if (_minutesPickerController == null) {
+      return const SizedBox(width: 80, height: 200);
+    }
+    return SizedBox(
+      width: 80,
+      height: 200,
+      child: ListWheelScrollView.useDelegate(
+        controller: _minutesPickerController!,
+        itemExtent: 40,
+        diameterRatio: 1.5,
+        physics: const FixedExtentScrollPhysics(),
+        onSelectedItemChanged: (index) {
+          setState(() {
+            minutes = index + 20; // 20-50分钟
+          });
+        },
+        childDelegate: ListWheelChildBuilderDelegate(
+          builder: (context, index) {
+            final displayValue = index + 20;
+            return Center(
+              child: Text(
+                displayValue.toString().padLeft(2, '0'),
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w300,
+                ),
+              ),
+            );
+          },
+          childCount: 31, // 20-50分钟，共31个值
+        ),
+      ),
+    );
   }
 
   Future<void> _showTimePicker() async {
@@ -464,12 +572,12 @@ class _HeatPageState extends State<HeatPage> {
                 children: [
                   GestureDetector(
                     onTap: () async {
-                      final result = await showDialog<int>(
-                        context: context,
-                        builder: (context) => TemperaturePickerDialog(
-                          initialTemperature:
-                              selectedTemperature ?? temperature,
-                        ),
+                      // 如果温度是0或无效值，使用默认值90
+                      final initialTemp = selectedTemperature ??
+                          (temperature > 0 ? temperature : 90);
+                      final result = await showTemperaturePicker(
+                        context,
+                        initialTemp,
                       );
                       if (result != null) {
                         setState(() => selectedTemperature = result);
@@ -528,18 +636,27 @@ class _HeatPageState extends State<HeatPage> {
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                height: 60,
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFF7F8489), width: 1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildMinutesPicker(
-                        minutes, (v) => setState(() => minutes = v + 20)),
-                  ],
+              child: GestureDetector(
+                onTap: _showMinutesPicker,
+                child: Container(
+                  height: 60,
+                  decoration: BoxDecoration(
+                    border:
+                        Border.all(color: const Color(0xFF7F8489), width: 1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        minutes.toString().padLeft(2, '0'),
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w300,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -622,33 +739,6 @@ class _HeatPageState extends State<HeatPage> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMinutesPicker(int value, Function(int) onChanged) {
-    return SizedBox(
-      width: 120,
-      height: 60,
-      child: ListWheelScrollView.useDelegate(
-        controller: minutesController,
-        itemExtent: 40,
-        diameterRatio: 1.5,
-        physics: const FixedExtentScrollPhysics(),
-        onSelectedItemChanged: onChanged,
-        childDelegate: ListWheelChildBuilderDelegate(
-          builder: (context, index) {
-            final displayValue = index + 20;
-            return Center(
-              child: Text(
-                displayValue.toString().padLeft(2, '0'),
-                style:
-                    const TextStyle(fontSize: 32, fontWeight: FontWeight.w300),
-              ),
-            );
-          },
-          childCount: 31,
         ),
       ),
     );

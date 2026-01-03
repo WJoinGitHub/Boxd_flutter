@@ -255,11 +255,9 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
               children: [
                 GestureDetector(
                   onTap: () async {
-                    final result = await showDialog<int>(
-                      context: context,
-                      builder: (context) => TemperaturePickerDialog(
-                        initialTemperature: selectedTemperature ?? 90,
-                      ),
+                    final result = await showTemperaturePicker(
+                      context,
+                      selectedTemperature ?? 90,
                     );
                     if (result != null) {
                       setState(() => selectedTemperature = result);

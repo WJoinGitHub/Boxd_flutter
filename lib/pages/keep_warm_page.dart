@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
-import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
+import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -23,9 +23,10 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
   bool remindEnabled = false;
   int selectedHour = 0;
   int selectedMinute = 0;
+  String temperatureUnit = '°C'; // 温度单位
 
   // 固定值
-  static const int temperature = 60; // 60°C
+  static const int temperature = 60; // 60°C（内部存储，发送给设备时使用）
   static const int durationHours = 2; // 2小时
 
   final FlutterLocalNotificationsPlugin _notifications =
@@ -52,6 +53,7 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
 
     _initNotifications();
     _loadBatteryLevel();
+    _loadTemperatureUnit();
 
     bleService.statusStream.listen((status) {
       if (mounted && status.batteryLevel != null) {
@@ -95,6 +97,24 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
       final level = lastStatus!.batteryLevel!;
       batteryLevel = (level >= 1 && level <= 4) ? level * 25 : level;
     }
+  }
+
+  Future<void> _loadTemperatureUnit() async {
+    final unit = await AppStorage.loadUnit();
+    if (mounted) {
+      setState(() {
+        temperatureUnit = unit;
+      });
+    }
+  }
+
+  /// 获取显示的温度（根据单位转换）
+  int getDisplayTemperature() {
+    if (temperatureUnit == '°F') {
+      // 摄氏度转华氏度: F = C * 9/5 + 32
+      return (temperature * 9 / 5 + 32).round();
+    }
+    return temperature;
   }
 
   @override
@@ -307,7 +327,8 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
       final event = Event(
         calendar.id,
         title: 'Keep Warm',
-        description: 'Keep warm at $temperature°C for $durationHours hours',
+        description:
+            'Keep warm at ${getDisplayTemperature()}$temperatureUnit for $durationHours hours',
         start: tzStartTime,
         end: tzEndTime,
       );
@@ -454,7 +475,7 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '$temperature °C',
+                    '${getDisplayTemperature()}$temperatureUnit',
                     style: const TextStyle(
                         fontSize: 30, fontWeight: FontWeight.w400),
                   ),

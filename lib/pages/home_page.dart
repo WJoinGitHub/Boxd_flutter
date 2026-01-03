@@ -1,11 +1,13 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/device/device_connect_page.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/setting_page.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/pages/login/email_login_page.dart';
-import 'dart:io';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
+import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -31,6 +33,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Map<String, dynamic>? _currentDevice;
   bool _wasLoggedIn = false;
   bool _isInitialized = false;
+  DeviceState? _deviceState;
+  Timer? _connectionCheckTimer;
 
   final bleService = BleService();
 
@@ -46,6 +50,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     bleService.statusStream.listen((status) {
       if (mounted) {
         setState(() {
+          // 更新设备状态
+          _deviceState = status.state;
+
           // 更新电量
           if (status.batteryLevel != null) {
             print('[HOME] 原始电量值: ${status.batteryLevel}');
@@ -61,6 +68,28 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           if (status.temperature != null) {
             temperature = status.temperature!;
             print('[HOME] 更新温度: $temperature°C');
+          }
+        });
+      }
+    });
+
+    // 定期检查连接状态，如果断开则清除数据
+    _connectionCheckTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      final isConnected = bleService.isConnected;
+      if (connected != isConnected) {
+        setState(() {
+          connected = isConnected;
+          if (!isConnected) {
+            // 断开连接时清除所有数据
+            print('[HOME] 设备已断开，清除数据');
+            temperature = 0;
+            batteryLevel = 0;
+            _deviceState = null;
+            deviceDetail = null;
           }
         });
       }
@@ -368,6 +397,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _connectionCheckTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     bleService.dispose();
     super.dispose();
@@ -473,15 +503,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                 ],
                               ),
                               ElevatedButton(
-                                onPressed: () {
+                                onPressed: () async {
                                   if (UserService().isLoggedIn) {
-                                    Navigator.of(context).push(
+                                    final result =
+                                        await Navigator.of(context).push(
                                       PageRouteBuilder(
                                         pageBuilder: (_, __, ___) =>
                                             SettingsPage(
                                                 deviceDetail: deviceDetail),
                                       ),
                                     );
+                                    // 如果从设置页返回时设备列表有变化，刷新设备列表
+                                    if (result == true && mounted) {
+                                      print('[HOME] 设备列表已变化，刷新列表');
+                                      await _loadDevices();
+                                    }
                                   } else {
                                     Navigator.of(context).push(
                                       PageRouteBuilder(
@@ -597,40 +633,45 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // 左边温度仪表 + 文案
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Assets.home.images.devTemperatureF.image(
-                                width: 117,
-                                fit: BoxFit.contain,
-                              ),
-                              Positioned(
-                                top: 54,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                          // 左边：状态图片 + 模式文案 + 温度（仅在连接时显示）
+                          if (connected)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // 状态图片
+                                _getModeImage(),
+                                const SizedBox(height: 8),
+                                // 模式文案
+                                Text(
+                                  _getModeText(),
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                // 温度显示（类似keepwarmpage样式）
+                                Row(
                                   children: [
-                                    Text(
-                                      temperature.toString(),
-                                      style: const TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w400,
-                                        color: Colors.black,
-                                      ),
+                                    Assets.device.images.temperature.image(
+                                      width: 31,
+                                      fit: BoxFit.contain,
                                     ),
+                                    const SizedBox(width: 8),
                                     Text(
-                                      temperatureUnit,
+                                      '${_getDisplayTemperature()}$temperatureUnit',
                                       style: const TextStyle(
-                                        fontSize: 12,
+                                        fontSize: 30,
                                         fontWeight: FontWeight.w400,
-                                        color: Colors.black,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            )
+                          else
+                            const SizedBox.shrink(),
 
                           // 右边设备图片 + 电量
                           Column(
@@ -716,7 +757,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                            content: Text(success ? '设备已关机' : '关机失败，请稍后重试')),
+                            content: Text(success
+                                ? 'Device powered off'
+                                : 'Failed to power off, please try again')),
                       );
                     }
                   },
@@ -748,11 +791,99 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
   }
 
+  /// 获取显示温度（根据单位转换）
+  int _getDisplayTemperature() {
+    if (temperatureUnit == '°F') {
+      // 摄氏度转华氏度: F = C * 9/5 + 32
+      return (temperature * 9 / 5 + 32).round();
+    }
+    return temperature;
+  }
+
+  /// 获取模式图片（根据设备状态）
+  Widget _getModeImage() {
+    // 根据设备状态显示对应图片
+    if (_deviceState == null) {
+      // 默认显示Ins图片
+      return Assets.home.images.homeIns.image(
+        width: 52,
+        height: 30,
+        fit: BoxFit.contain,
+      );
+    }
+
+    switch (_deviceState!) {
+      case DeviceState.keepWarm:
+        return Assets.home.images.homeIns.image(
+          width: 52,
+          height: 30,
+          fit: BoxFit.contain,
+        );
+      case DeviceState.heating:
+        return Assets.home.images.homeHeat.image(
+          width: 39,
+          height: 28,
+          fit: BoxFit.contain,
+        );
+      case DeviceState.timing:
+        return Assets.home.images.homeTime.image(
+          width: 32,
+          height: 39,
+          fit: BoxFit.contain,
+        );
+      case DeviceState.ready:
+      default:
+        // 待机状态或未知状态，默认显示Ins图片
+        return Assets.home.images.homeIns.image(
+          width: 52,
+          height: 30,
+          fit: BoxFit.contain,
+        );
+    }
+  }
+
+  /// 获取模式文案（根据设备状态）
+  String _getModeText() {
+    // 根据设备状态显示对应文案
+    if (_deviceState == null) {
+      return 'Keep\nWarm';
+    }
+
+    switch (_deviceState!) {
+      case DeviceState.keepWarm:
+        return 'Keep\nWarm';
+      case DeviceState.heating:
+        return 'Heat';
+      case DeviceState.timing:
+        return 'Timer';
+      case DeviceState.ready:
+      default:
+        // 待机状态或未知状态，默认显示Keep Warm
+        return 'Keep\nWarm';
+    }
+  }
+
   /// 构建功能按钮（带图片 + 文字）
   Widget _buildModeButton(String label, Widget icon, Color color) {
     return GestureDetector(
       onTap: () async {
         if (!connected) return;
+
+        // TODO: 硬件有bug，暂时注释掉设备状态判断，后续再启用
+        // 检查设备状态，如果不是待机状态，则提示用户
+        // final lastStatus = bleService.lastStatus;
+        // if (lastStatus != null && lastStatus.state != DeviceState.ready) {
+        //   final stateName = lastStatus.state.displayName;
+        //   if (mounted) {
+        //     ScaffoldMessenger.of(context).showSnackBar(
+        //       SnackBar(
+        //         content: Text('Device is currently in $stateName mode'),
+        //         duration: const Duration(seconds: 2),
+        //       ),
+        //     );
+        //   }
+        //   return;
+        // }
 
         if (label == "Ins") {
           Navigator.of(context).push(

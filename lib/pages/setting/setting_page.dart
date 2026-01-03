@@ -80,12 +80,16 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildSectionContainer([
             _buildRowTile(
               'My Device',
-              onTap: () {
-                Navigator.of(context).push(
+              onTap: () async {
+                final result = await Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => const MyDevicesPage(),
                   ),
                 );
+                // 如果设备列表有变化，返回true通知首页刷新
+                if (result == true && mounted) {
+                  Navigator.of(context).pop(true);
+                }
               },
             ),
             _buildRowTile(

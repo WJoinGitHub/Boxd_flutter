@@ -23,20 +23,66 @@ class BleCommand {
 
 /// 设备状态
 enum DeviceState {
-  ready(0x00),
-  stopped(0x01),
-  starting(0x02),
-  running(0x03),
-  paused(0x0A),
-  fault(0x05),
-  disabled(0x06);
+  ready(0x00),        // 待机
+  keepWarm(0x01),     // 保温
+  heating(0x02),     // 加热
+  timing(0x03),       // 设定开饭
+  stopped(0x01),      // 已停止（兼容旧值）
+  starting(0x02),     // 启动中（兼容旧值）
+  running(0x03),     // 运行中（兼容旧值）
+  paused(0x0A),      // 暂停
+  fault(0x05),       // 故障
+  disabled(0x06);    // 已禁用
 
   final int value;
   const DeviceState(this.value);
 
   static DeviceState fromValue(int value) {
-    return DeviceState.values
-        .firstWhere((e) => e.value == value, orElse: () => DeviceState.ready);
+    // 根据协议，状态值0-3对应：待机/保温/加热/设定开饭
+    switch (value) {
+      case 0x00:
+        return DeviceState.ready;
+      case 0x01:
+        return DeviceState.keepWarm;
+      case 0x02:
+        return DeviceState.heating;
+      case 0x03:
+        return DeviceState.timing;
+      case 0x0A:
+        return DeviceState.paused;
+      case 0x05:
+        return DeviceState.fault;
+      case 0x06:
+        return DeviceState.disabled;
+      default:
+        return DeviceState.ready;
+    }
+  }
+
+  /// 获取状态的英文描述（用于用户界面显示）
+  String get displayName {
+    switch (this) {
+      case DeviceState.ready:
+        return 'Standby';
+      case DeviceState.keepWarm:
+        return 'Keep Warm';
+      case DeviceState.heating:
+        return 'Heating';
+      case DeviceState.timing:
+        return 'Scheduled Meal';
+      case DeviceState.stopped:
+        return 'Stopped';
+      case DeviceState.starting:
+        return 'Starting';
+      case DeviceState.running:
+        return 'Running';
+      case DeviceState.paused:
+        return 'Paused';
+      case DeviceState.fault:
+        return 'Fault';
+      case DeviceState.disabled:
+        return 'Disabled';
+    }
   }
 }
 
@@ -195,12 +241,33 @@ class BleProtocolHelper {
 
     final state = DeviceState.fromValue(parsed[1]);
 
+    // 根据协议，状态0-3对应：待机/保温/加热/设定开饭
+    // 状态0（待机）时，数据格式可能不同
+    // 状态1-3（保温/加热/设定开饭）时，包含完整的状态信息
     switch (state) {
       case DeviceState.ready:
+        // 待机状态，可能只有基本状态信息
         if (parsed.length < 3) return null;
         return DeviceStatusData(
           state: state,
           mode: WorkMode.fromValue(parsed[2]),
+        );
+
+      case DeviceState.keepWarm:
+      case DeviceState.heating:
+      case DeviceState.timing:
+        // 保温/加热/设定开饭状态，包含完整信息
+        // 根据协议：指令码(1) + 状态(1) + 加热时间(2) + 温度(1) + 开饭时间(2) + 电池(1) + 充电(1) + 锁定(1) = 10字节
+        if (parsed.length < 10) return null;
+        print('[PROTOCOL] 解析电量: parsed[7]=${parsed[7]}');
+        return DeviceStatusData(
+          state: state,
+          heatingTime: bytesToUint16(parsed, 2),
+          temperature: parsed[4],
+          mealTime: bytesToUint16(parsed, 5),
+          batteryLevel: parsed[7],
+          chargingState: parsed[8],
+          lockState: parsed[9],
         );
 
       case DeviceState.starting:

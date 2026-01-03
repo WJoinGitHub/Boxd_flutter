@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/device/device_connect_page.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
@@ -19,6 +17,7 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
   bool _loading = false;
   final bleService = BleService();
   Set<String> _connectedDeviceUuids = {};
+  bool _deviceListChanged = false; // 标记设备列表是否有变化
 
   @override
   void initState() {
@@ -54,10 +53,11 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
     try {
       final connectedUuids = <String>{};
 
-      // 如果BleService已连接，尝试获取当前连接的设备UUID
+      // 只检查BleService的真实连接状态，不依赖系统连接列表
+      // 因为系统可能保留多个设备的连接状态，但只有通过BleService连接的才是真正活跃的
       if (bleService.isConnected) {
         try {
-          // 尝试从BleService获取当前连接的设备UUID
+          // 从BleService获取当前连接的设备UUID
           final deviceUuid = await bleService.getDeviceUuid();
           if (deviceUuid != null && deviceUuid.isNotEmpty) {
             print('[MY_DEVICES] 当前连接的设备UUID: $deviceUuid');
@@ -67,28 +67,6 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
           }
         } catch (e) {
           print('[MY_DEVICES] 获取设备UUID失败: $e');
-        }
-
-        // 同时检查系统已连接的设备（MAC地址格式）
-        final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
-        for (var device in connectedDevices) {
-          final macUuid = Platform.isAndroid
-              ? device.remoteId.str.replaceAll(':', '').toUpperCase()
-              : device.remoteId.str.replaceAll('-', '').toUpperCase();
-          connectedUuids.add(macUuid);
-
-          // 尝试通过设备名称匹配设备列表中的设备
-          for (var deviceData in _devices) {
-            final deviceName = deviceData['device_name'] as String? ?? '';
-            if (device.platformName.isNotEmpty &&
-                device.platformName == deviceName) {
-              final deviceUuid = deviceData['device_uuid'] as String?;
-              if (deviceUuid != null) {
-                connectedUuids.add(deviceUuid);
-                connectedUuids.add(deviceUuid.toUpperCase());
-              }
-            }
-          }
         }
       }
 
@@ -130,6 +108,7 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
         // 刷新设备列表
         await _loadDevices();
         await _checkConnectedDevices();
+        _deviceListChanged = true; // 标记列表已变化
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -159,6 +138,7 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
     if (result == true && mounted) {
       await _loadDevices();
       await _checkConnectedDevices();
+      _deviceListChanged = true; // 标记列表已变化
     }
   }
 
@@ -170,9 +150,15 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: BxAppBar(
+    return WillPopScope(
+      onWillPop: () async {
+        // 返回时传递设备列表是否变化的标志
+        Navigator.of(context).pop(_deviceListChanged);
+        return false; // 阻止默认返回行为，因为我们手动pop了
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: BxAppBar(
         title: 'My Devices',
         rightWidget: IconButton(
           icon: const Icon(Icons.add, color: Colors.black),
@@ -211,6 +197,7 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                   onRefresh: () async {
                     await _loadDevices();
                     await _checkConnectedDevices();
+                    _deviceListChanged = true; // 标记列表已变化
                   },
                   child: ListView.builder(
                     padding: const EdgeInsets.all(20),
@@ -232,15 +219,22 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                         child: ListTile(
                           contentPadding:
                               const EdgeInsets.symmetric(horizontal: 12),
-                          leading: Stack(
+                          leading: Assets.device.images.hotRice
+                              .image(width: 40, height: 40),
+                          title: Stack(
                             clipBehavior: Clip.none,
-                            alignment: Alignment.centerLeft,
                             children: [
-                              Assets.device.images.hotRice
-                                  .image(width: 40, height: 40),
+                              Text(
+                                deviceName,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                               if (isConnected)
                                 Positioned(
-                                  left: -16,
+                                  top: -4,
+                                  right: -4,
                                   child: Container(
                                     width: 8,
                                     height: 8,
@@ -251,13 +245,6 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                                   ),
                                 ),
                             ],
-                          ),
-                          title: Text(
-                            deviceName,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
                           ),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete_outline,
@@ -270,6 +257,7 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                     },
                   ),
                 ),
+      ),
     );
   }
 }

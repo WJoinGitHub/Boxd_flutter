@@ -27,6 +27,8 @@ class _HomePageState extends State<HomePage> {
   int batteryLevel = 0;
   Map<String, dynamic>? deviceDetail;
   String temperatureUnit = '°C';
+  List<Map<String, dynamic>> _devices = [];
+  Map<String, dynamic>? _currentDevice;
 
   final bleService = BleService();
 
@@ -91,72 +93,268 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _loadDevices() async {
+    try {
+      final result = await ApiClient.getDevices(page: 1, pageSize: 100);
+      if (result['code'] == 200 && result['data'] != null) {
+        final devices = List<Map<String, dynamic>>.from(result['data']);
+        if (mounted) {
+          setState(() {
+            _devices = devices;
+            // 设置当前设备（优先使用已连接的设备，否则使用第一个）
+            if (_currentDevice == null && devices.isNotEmpty) {
+              _currentDevice = devices.first;
+            }
+          });
+        }
+      }
+    } catch (e) {
+      print('[HOME] 加载设备列表失败: $e');
+    }
+  }
+
   Future<void> _autoConnect() async {
     print('[HOME] 尝试自动连接...');
+    await _loadDevices();
     try {
-      final result = await ApiClient.getDevices(page: 1, pageSize: 1);
-      if (result['code'] == 200 && result['data'] != null) {
-        final devices = result['data'] as List;
-        if (devices.isNotEmpty) {
-          final deviceUuid = devices[0]['device_uuid'];
-          print('[HOME] 找到绑定设备: $deviceUuid');
+      if (_currentDevice != null) {
+        final deviceUuid = _currentDevice!['device_uuid'];
+        print('[HOME] 找到绑定设备: $deviceUuid');
 
-          final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
-          BluetoothDevice? targetDevice;
+        final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
+        BluetoothDevice? targetDevice;
 
-          for (var device in connectedDevices) {
-            final currentUuid = Platform.isAndroid
-                ? device.remoteId.str.replaceAll(':', '').toUpperCase()
-                : device.remoteId.str.replaceAll('-', '').toUpperCase();
-            if (currentUuid == deviceUuid) {
-              targetDevice = device;
-              break;
-            }
+        for (var device in connectedDevices) {
+          final currentUuid = Platform.isAndroid
+              ? device.remoteId.str.replaceAll(':', '').toUpperCase()
+              : device.remoteId.str.replaceAll('-', '').toUpperCase();
+          if (currentUuid == deviceUuid) {
+            targetDevice = device;
+            break;
           }
+        }
 
-          if (targetDevice == null) {
-            print('[HOME] 开始扫描设备...');
-            await FlutterBluePlus.startScan(
-                timeout: const Duration(seconds: 5));
-            await for (var results in FlutterBluePlus.scanResults) {
-              for (var r in results) {
-                final currentUuid = Platform.isAndroid
-                    ? r.device.remoteId.str.replaceAll(':', '').toUpperCase()
-                    : r.device.remoteId.str.replaceAll('-', '').toUpperCase();
-                print(
-                    '[HOME] 扫描到设备: ${r.device.platformName} UUID: $currentUuid');
-                if (currentUuid == deviceUuid) {
-                  targetDevice = r.device;
-                  break;
-                }
+        if (targetDevice == null) {
+          print('[HOME] 开始扫描设备...');
+          await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
+          await for (var results in FlutterBluePlus.scanResults) {
+            for (var r in results) {
+              final currentUuid = Platform.isAndroid
+                  ? r.device.remoteId.str.replaceAll(':', '').toUpperCase()
+                  : r.device.remoteId.str.replaceAll('-', '').toUpperCase();
+              print(
+                  '[HOME] 扫描到设备: ${r.device.platformName} UUID: $currentUuid');
+              if (currentUuid == deviceUuid) {
+                targetDevice = r.device;
+                break;
               }
-              if (targetDevice != null) break;
             }
-            await FlutterBluePlus.stopScan();
+            if (targetDevice != null) break;
           }
+          await FlutterBluePlus.stopScan();
+        }
 
-          if (targetDevice != null && mounted) {
-            final success =
-                await bleService.connect(targetDevice, skipBind: true);
-            if (success && mounted) {
-              setState(() => connected = true);
-              print('[HOME] 自动连接成功');
-              // 获取设备详情
-              try {
-                final detail = await ApiClient.getDeviceDetail(deviceUuid);
-                if (detail['code'] == 200 && detail['data'] != null && mounted) {
-                  setState(() => deviceDetail = detail['data']);
-                  print('[HOME] 设备详情: $deviceDetail');
-                }
-              } catch (e) {
-                print('[HOME] 获取设备详情失败: $e');
+        if (targetDevice != null && mounted) {
+          final success =
+              await bleService.connect(targetDevice, skipBind: true);
+          if (success && mounted) {
+            setState(() => connected = true);
+            print('[HOME] 自动连接成功');
+            // 获取设备详情
+            try {
+              final detail = await ApiClient.getDeviceDetail(deviceUuid);
+              if (detail['code'] == 200 && detail['data'] != null && mounted) {
+                setState(() => deviceDetail = detail['data']);
+                print('[HOME] 设备详情: $deviceDetail');
               }
+            } catch (e) {
+              print('[HOME] 获取设备详情失败: $e');
             }
           }
         }
       }
     } catch (e) {
       print('[HOME] 自动连接失败: $e');
+    }
+  }
+
+  Future<void> _showDeviceSelector() async {
+    if (_devices.isEmpty) return;
+
+    final selectedDevice = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                'Select Device',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ListView.builder(
+              shrinkWrap: true,
+              itemCount: _devices.length,
+              itemBuilder: (context, index) {
+                final device = _devices[index];
+                final deviceUuid = device['device_uuid'] as String? ?? '';
+                final deviceName =
+                    device['device_name'] as String? ?? 'Unknown Device';
+                final isCurrent = _currentDevice?['device_uuid'] == deviceUuid;
+                final isDeviceConnected = connected && isCurrent;
+
+                return ListTile(
+                  title: Text(deviceName),
+                  trailing: isCurrent
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isDeviceConnected)
+                              const Padding(
+                                padding: EdgeInsets.only(right: 8),
+                                child: Text(
+                                  'Connected',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ),
+                            const Icon(Icons.check, color: Colors.green),
+                          ],
+                        )
+                      : null,
+                  selected: isCurrent,
+                  onTap: () {
+                    Navigator.pop(context, device);
+                  },
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+
+    if (selectedDevice != null &&
+        selectedDevice['device_uuid'] != _currentDevice?['device_uuid']) {
+      await _switchDevice(selectedDevice);
+    }
+  }
+
+  Future<void> _switchDevice(Map<String, dynamic> newDevice) async {
+    // 断开当前设备
+    if (connected && bleService.isConnected) {
+      await bleService.disconnect();
+      if (mounted) {
+        setState(() => connected = false);
+      }
+    }
+
+    // 设置新设备为当前设备
+    if (mounted) {
+      setState(() {
+        _currentDevice = newDevice;
+      });
+    }
+
+    // 连接新设备
+    await _connectToDevice(newDevice);
+  }
+
+  Future<void> _connectToDevice(Map<String, dynamic> device) async {
+    try {
+      final deviceUuid = device['device_uuid'] as String;
+      print('[HOME] 连接设备: $deviceUuid');
+
+      final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
+      BluetoothDevice? targetDevice;
+
+      for (var d in connectedDevices) {
+        // 尝试通过UUID匹配
+        final currentUuid = Platform.isAndroid
+            ? d.remoteId.str.replaceAll(':', '').toUpperCase()
+            : d.remoteId.str.replaceAll('-', '').toUpperCase();
+        if (currentUuid == deviceUuid) {
+          targetDevice = d;
+          break;
+        }
+      }
+
+      if (targetDevice == null) {
+        print('[HOME] 开始扫描设备...');
+        await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
+        await for (var results in FlutterBluePlus.scanResults) {
+          for (var r in results) {
+            // 尝试通过UUID匹配
+            final currentUuid = Platform.isAndroid
+                ? r.device.remoteId.str.replaceAll(':', '').toUpperCase()
+                : r.device.remoteId.str.replaceAll('-', '').toUpperCase();
+            if (currentUuid == deviceUuid) {
+              targetDevice = r.device;
+              break;
+            }
+            // 尝试通过设备名称匹配
+            final deviceName = device['device_name'] as String? ?? '';
+            if (deviceName.isNotEmpty && r.device.platformName == deviceName) {
+              targetDevice = r.device;
+              break;
+            }
+          }
+          if (targetDevice != null) break;
+        }
+        await FlutterBluePlus.stopScan();
+      }
+
+      if (targetDevice != null && mounted) {
+        final success = await bleService.connect(targetDevice, skipBind: true);
+        if (success && mounted) {
+          setState(() => connected = true);
+          print('[HOME] 设备连接成功');
+          // 获取设备详情
+          try {
+            final detail = await ApiClient.getDeviceDetail(deviceUuid);
+            if (detail['code'] == 200 && detail['data'] != null && mounted) {
+              setState(() => deviceDetail = detail['data']);
+            }
+          } catch (e) {
+            print('[HOME] 获取设备详情失败: $e');
+          }
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Device not found. Please make sure the device is powered on and nearby.')),
+        );
+      }
+    } catch (e) {
+      print('[HOME] 连接设备失败: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to connect device: $e')),
+        );
+      }
     }
   }
 
@@ -202,12 +400,31 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   ),
                                   const SizedBox(height: 3),
-                                  const Text(
-                                    "HotRice",
-                                    style: TextStyle(
-                                      fontSize: 25,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.black,
+                                  GestureDetector(
+                                    onTap: _devices.length > 1
+                                        ? _showDeviceSelector
+                                        : null,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          _currentDevice?['device_name'] ??
+                                              'HotRice',
+                                          style: const TextStyle(
+                                            fontSize: 25,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                        if (_devices.length > 1) ...[
+                                          const SizedBox(width: 4),
+                                          const Icon(
+                                            Icons.arrow_drop_down,
+                                            color: Colors.black,
+                                            size: 20,
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -218,7 +435,8 @@ class _HomePageState extends State<HomePage> {
                                     Navigator.of(context).push(
                                       PageRouteBuilder(
                                         pageBuilder: (_, __, ___) =>
-                                            SettingsPage(deviceDetail: deviceDetail),
+                                            SettingsPage(
+                                                deviceDetail: deviceDetail),
                                       ),
                                     );
                                   } else {
@@ -336,76 +554,76 @@ class _HomePageState extends State<HomePage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                              // 左边温度仪表 + 文案
-                              Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  Assets.home.images.devTemperatureF.image(
-                                    width: 117,
-                                    fit: BoxFit.contain,
-                                  ),
-                                  Positioned(
-                                    top: 54,
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          temperature.toString(),
-                                          style: const TextStyle(
-                                            fontSize: 17,
-                                            fontWeight: FontWeight.w400,
-                                            color: Colors.black,
-                                          ),
-                                        ),
-                                        Text(
-                                          temperatureUnit,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w400,
-                                            color: Colors.black,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                          // 左边温度仪表 + 文案
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Assets.home.images.devTemperatureF.image(
+                                width: 117,
+                                fit: BoxFit.contain,
                               ),
-
-                              // 右边设备图片 + 电量
-                              Column(
-                                children: [
-                                  Assets.home.images.homeDevice.image(
-                                    width: 150,
-                                    fit: BoxFit.contain,
-                                  ),
-                                  if (connected)
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          batteryLevel > 20
-                                              ? Icons.battery_std
-                                              : Icons.battery_alert,
-                                          color: batteryLevel > 20
-                                              ? Colors.green
-                                              : Colors.red,
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '$batteryLevel%',
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
+                              Positioned(
+                                top: 54,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      temperature.toString(),
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.black,
+                                      ),
                                     ),
-                                ],
+                                    Text(
+                                      temperatureUnit,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
-                        ),
+
+                          // 右边设备图片 + 电量
+                          Column(
+                            children: [
+                              Assets.home.images.homeDevice.image(
+                                width: 150,
+                                fit: BoxFit.contain,
+                              ),
+                              if (connected)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      batteryLevel > 20
+                                          ? Icons.battery_std
+                                          : Icons.battery_alert,
+                                      color: batteryLevel > 20
+                                          ? Colors.green
+                                          : Colors.red,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '$batteryLevel%',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                     Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 0, vertical: 7),

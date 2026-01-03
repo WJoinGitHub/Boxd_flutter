@@ -246,23 +246,22 @@ class BleService {
     _missedHeartbeats = 0;
 
     // 处理UUID数据响应 (0x02, 0x50, 0x02, ...)
-    // 协议格式：0x02, 0x50, 0x02, [UUID 11字节], 0x23, 0x03
+    // 协议格式：0x02, 0x50, 0x02, [UUID 11字节], 校验码, 0x03
+    // UUID组成：字节3-6(4字节批次随机码) + 字节7-11(5字节递增序号) + 字节12-13(2字节防伪校验码)
     if (data.length >= 16 &&
         data[0] == 0x02 &&
         data[1] == 0x50 &&
         data[2] == 0x02 &&
         data[data.length - 1] == 0x03) {
-      // 解析UUID：字节3-13 (共11字节)
-      // 字节3-6: 4字节批次随机码
-      // 字节7-11: 5字节递增序号
-      // 字节12-13: 2字节防伪校验码
-      if (_uuidCompleter != null) {
-        final uuidBytes = data.sublist(3, 14); // 11字节
-        final uuid = uuidBytes
-            .map((b) => b.toRadixString(16).padLeft(2, '0'))
-            .join()
-            .toUpperCase();
-        print('[BLE] 解析到UUID: $uuid (长度: ${uuid.length})');
+      // 解析UUID：字节3-11 (共9字节)，每个字节代表一个ASCII字符
+      // 字节3-6: 4字节批次随机码（ASCII字符）
+      // 字节7-11: 5字节递增序号（ASCII字符）
+      if (_uuidCompleter != null && data.length >= 12) {
+        final uuidBytes = data.sublist(3, 12); // 9字节: 索引3到11
+        // 将每个字节转换为ASCII字符
+        final uuid = String.fromCharCodes(uuidBytes);
+        print('[BLE] 解析到UUID: $uuid (长度: ${uuid.length}, 原始字节: $uuidBytes)');
+        print('[BLE] UUID字节详情 - 字节3-11: ${data.sublist(3, 12)}');
         _uuidCompleter!.complete(uuid);
         _uuidCompleter = null;
         return;
@@ -297,7 +296,7 @@ class BleService {
     _lastHeartbeatTime = DateTime.now();
 
     _heartbeatTimer =
-        Timer.periodic(const Duration(seconds: 30), (timer) async {
+        Timer.periodic(const Duration(seconds: 10), (timer) async {
       print('[BLE] 发送心跳指令...');
       try {
         await getDeviceStatus();

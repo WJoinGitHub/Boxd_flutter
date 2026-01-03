@@ -25,6 +25,13 @@ class _DeviceConnectingPageState extends State<DeviceConnectingPage> {
 
   Future<void> _connect() async {
     try {
+      // 如果已有设备连接，先断开
+      if (bleService.isConnected) {
+        print('[CONNECT] 断开已连接的设备...');
+        await bleService.disconnect();
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+      
       final success = await bleService.connect(widget.device);
       if (mounted) {
         setState(() => status = success ? 'success' : 'failed');

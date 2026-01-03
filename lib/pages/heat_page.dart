@@ -205,8 +205,14 @@ class _HeatPageState extends State<HeatPage> {
         diameterRatio: 1.5,
         physics: const FixedExtentScrollPhysics(),
         onSelectedItemChanged: (index) {
+          final newMinutes = index + 20; // 20-50分钟
           setState(() {
-            minutes = index + 20; // 20-50分钟
+            minutes = newMinutes;
+            // 更新 remind 时间：当前时间 + 新选择的时长
+            final now = DateTime.now();
+            final targetTime = now.add(Duration(minutes: newMinutes));
+            selectedHour = targetTime.hour;
+            selectedMinute = targetTime.minute;
           });
         },
         childDelegate: ListWheelChildBuilderDelegate(

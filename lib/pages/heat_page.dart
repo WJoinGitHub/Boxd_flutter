@@ -434,7 +434,6 @@ class _HeatPageState extends State<HeatPage> {
                     children: [
                       Assets.device.images.devHeat.image(
                         width: 99,
-                        height: 56,
                         fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 30),
@@ -478,21 +477,16 @@ class _HeatPageState extends State<HeatPage> {
                     },
                     child: Row(
                       children: [
-                        Assets.device.images.temperature.image(
-                          width: 31,
-                          fit: BoxFit.contain,
-                        ),
-                        const SizedBox(width: 8),
                         Text(
-                          '${_getDisplayTemperature()}$temperatureUnit',
+                          '${_getDisplayTemperature()}  $temperatureUnit',
                           style: const TextStyle(
                               fontSize: 30, fontWeight: FontWeight.w400),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 15),
                         const Text(
                           '±',
                           style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.w400),
+                              fontSize: 30, fontWeight: FontWeight.w400),
                         ),
                       ],
                     ),

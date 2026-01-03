@@ -440,7 +440,6 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
                     children: [
                       Assets.device.images.devIns.image(
                         width: 56,
-                        height: 52,
                         fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 30),
@@ -473,9 +472,9 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
                     width: 31,
                     fit: BoxFit.contain,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 15),
                   Text(
-                    '${getDisplayTemperature()}$temperatureUnit',
+                    '${getDisplayTemperature()}   $temperatureUnit',
                     style: const TextStyle(
                         fontSize: 30, fontWeight: FontWeight.w400),
                   ),

@@ -26,30 +26,7 @@ class DeviceHelpPage extends StatelessWidget {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Assets.device.images.hotRice.image(width: 120, height: 120),
-                const Spacer(),
-                SizedBox(
-                  height: 32,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF7622),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                    ),
-                    child: const Text(
-                      'Check Compatibility',
-                      style: TextStyle(color: Colors.white, fontSize: 14),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            Assets.device.images.hotRice.image(width: 120, height: 120),
             const SizedBox(height: 30),
             const Text(
               '2. Connection issue? A simple restart of your device often helps. Then try to connect again.',

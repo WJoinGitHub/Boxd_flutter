@@ -146,6 +146,82 @@ class ApiClient {
           String path, Map<String, dynamic> body) =>
       _request('POST', path, body: body);
 
+  /// 发送 multipart/form-data 请求
+  static Future<Map<String, dynamic>> postMultipart(
+    String path,
+    Map<String, String> fields, {
+    Map<String, http.MultipartFile>? files,
+  }) async {
+    final uri = Uri.parse('$baseUrl$basePath$path');
+    final timestamp =
+        (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
+
+    // 构建 multipart request
+    final request = http.MultipartRequest('POST', uri);
+
+    // 添加字段
+    request.fields.addAll(fields);
+
+    // 添加文件（如果有）
+    if (files != null) {
+      request.files.addAll(files.values);
+    }
+
+    // 对于 multipart 请求，签名需要使用 fields 的 JSON 格式
+    // 将 fields 转换为 JSON 字符串用于签名（按照 key 排序以确保一致性）
+    final sortedFields = Map.fromEntries(
+      fields.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    );
+    final bodyStr = jsonEncode(sortedFields);
+
+    // 添加 headers
+    final headers = {
+      'X-App-ID': appId,
+      'X-Timestamp': timestamp,
+      'User-Agent': userAgent,
+      if (_token != null) 'Authorization': 'Bearer $_token',
+    };
+    request.headers.addAll(headers);
+
+    // 生成签名（使用 fields 的 JSON 格式）
+    final signature =
+        _generateSignature('POST', basePath + path, timestamp, bodyStr);
+    request.headers['X-Signature'] = signature;
+
+    print('Request POST (multipart): $uri');
+    print('Headers: ${request.headers}');
+    print('Fields: ${request.fields}');
+    print('[API] Multipart body for signature: $bodyStr');
+    if (files != null) print('Files: ${files.keys}');
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    print('Response: $uri');
+    print('Status: ${response.statusCode}');
+    print('Data: ${response.body}');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 401) {
+      _token = null;
+      clearToken();
+
+      if (!_ignore401Paths.contains(path)) {
+        print('[API] 收到401状态码，清除登录状态: $path');
+        try {
+          await UserService().logout();
+        } catch (e) {
+          print('[API] 清除登录状态失败: $e');
+        }
+      }
+
+      throw Exception('HTTP ${response.statusCode}: ${response.body}');
+    } else {
+      throw Exception('HTTP ${response.statusCode}: ${response.body}');
+    }
+  }
+
   static Future<Map<String, dynamic>> get(String path,
           {Map<String, dynamic>? queryParams}) =>
       _request('GET', path, queryParams: queryParams);
@@ -261,6 +337,37 @@ class ApiClient {
 
   static Future<Map<String, dynamic>> unbindDevice(String deviceUuid) =>
       delete('/devices/$deviceUuid');
+
+  // ==================== 反馈 ====================
+  static Future<Map<String, dynamic>> getFeedbackCategories({
+    int page = 1,
+    int limit = 20,
+    String isEnabled = 'all',
+  }) =>
+      get('/feedback/categories', queryParams: {
+        'page': page,
+        'limit': limit,
+        'is_enabled': isEnabled,
+      });
+
+  static Future<Map<String, dynamic>> submitFeedback({
+    required String category,
+    required String content,
+    required String appVersion,
+    required String deviceInfo,
+    required String systemVersion,
+    String? attachmentUrl,
+  }) =>
+      post('/feedback', {
+        'category': category,
+        'title': 'feedback',
+        'content': content,
+        'app_version': appVersion,
+        'device_info': deviceInfo,
+        'system_version': systemVersion,
+        if (attachmentUrl != null && attachmentUrl.isNotEmpty)
+          'attachment_url': attachmentUrl,
+      });
 
   // ==================== 定时任务 ====================
   static Future<Map<String, dynamic>> createTimer({

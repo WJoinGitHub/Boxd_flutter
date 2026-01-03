@@ -207,6 +207,10 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                       final deviceUuid = device['device_uuid'] as String? ?? '';
                       final deviceName =
                           device['device_name'] as String? ?? 'Unknown Device';
+                      // 如果有多个设备，添加序列号
+                      final displayName = _devices.length > 1
+                          ? '$deviceName ${index + 1}'
+                          : deviceName;
                       final isConnected = _isDeviceConnected(deviceUuid);
 
                       return Container(
@@ -225,7 +229,7 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                             clipBehavior: Clip.none,
                             children: [
                               Text(
-                                deviceName,
+                                displayName,
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,

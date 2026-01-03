@@ -617,8 +617,8 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Assets.home.images.homeTime.image(
-                        width: 78,
+                      Assets.device.images.devHeatTime.image(
+                        width: 60,
                         fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 30),

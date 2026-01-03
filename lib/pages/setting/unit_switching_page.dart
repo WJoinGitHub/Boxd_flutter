@@ -118,28 +118,28 @@ class _UnitSwitchingPageState extends State<UnitSwitchingPage> {
       onTap: _isSending ? null : () => _selectUnit(symbol),
       child: Opacity(
         opacity: _isSending ? 0.5 : 1.0,
-        child: Container(
-          width: 133,
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(7),
-            border: Border.all(
-              color: selected ? AppColors.orange : Colors.black26,
-              width: selected ? 2 : 1,
-            ),
+      child: Container(
+        width: 133,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(7),
+          border: Border.all(
+            color: selected ? AppColors.orange : Colors.black26,
+            width: selected ? 2 : 1,
           ),
-          child: Column(
-            children: [
-              Text(symbol,
-                  style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                      color: selected ? AppColors.orange : Colors.black)),
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: selected ? AppColors.orange : Colors.black54)),
-            ],
+        ),
+        child: Column(
+          children: [
+            Text(symbol,
+                style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: selected ? AppColors.orange : Colors.black)),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 12,
+                    color: selected ? AppColors.orange : Colors.black54)),
+          ],
           ),
         ),
       ),

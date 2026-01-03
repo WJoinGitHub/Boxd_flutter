@@ -34,6 +34,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _wasLoggedIn = false;
   bool _isInitialized = false;
   DeviceState? _deviceState;
+  int? _mealTime; // 设备工作结束时间（从00:00开始的总分钟数）
   Timer? _connectionCheckTimer;
 
   final bleService = BleService();
@@ -52,6 +53,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         setState(() {
           // 更新设备状态
           _deviceState = status.state;
+
+          // 更新结束时间（mealTime）
+          if (status.mealTime != null) {
+            _mealTime = status.mealTime;
+            print('[HOME] 更新结束时间: $_mealTime 分钟（从00:00开始）');
+          }
 
           // 更新电量
           if (status.batteryLevel != null) {
@@ -89,6 +96,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             temperature = 0;
             batteryLevel = 0;
             _deviceState = null;
+            _mealTime = null;
             deviceDetail = null;
           }
         });
@@ -197,6 +205,27 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           if (success && mounted) {
             setState(() => connected = true);
             print('[HOME] 自动连接成功');
+            // 从 lastStatus 加载设备状态数据
+            final lastStatus = bleService.lastStatus;
+            if (lastStatus != null) {
+              setState(() {
+                _deviceState = lastStatus.state;
+                if (lastStatus.mealTime != null) {
+                  _mealTime = lastStatus.mealTime;
+                }
+                if (lastStatus.temperature != null) {
+                  temperature = lastStatus.temperature!;
+                }
+                if (lastStatus.batteryLevel != null) {
+                  final level = lastStatus.batteryLevel!;
+                  if (level >= 1 && level <= 4) {
+                    batteryLevel = level * 25;
+                  } else {
+                    batteryLevel = level;
+                  }
+                }
+              });
+            }
             // 获取设备详情
             try {
               final detail = await ApiClient.getDeviceDetail(deviceUuid);
@@ -213,6 +242,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     } catch (e) {
       print('[HOME] 自动连接失败: $e');
     }
+  }
+
+  /// 获取显示设备名（如果有多个设备，添加序列号）
+  String _getDisplayDeviceName() {
+    if (_currentDevice == null) return 'HotRice';
+    final deviceName = _currentDevice!['device_name'] as String? ?? 'HotRice';
+    if (_devices.length > 1) {
+      // 找到当前设备在列表中的索引
+      final index = _devices.indexWhere(
+        (device) => device['device_uuid'] == _currentDevice!['device_uuid'],
+      );
+      if (index >= 0) {
+        return '$deviceName ${index + 1}';
+      }
+    }
+    return deviceName;
   }
 
   Future<void> _showDeviceSelector() async {
@@ -256,11 +301,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 final deviceUuid = device['device_uuid'] as String? ?? '';
                 final deviceName =
                     device['device_name'] as String? ?? 'Unknown Device';
+                // 如果有多个设备，添加序列号
+                final displayName = _devices.length > 1
+                    ? '$deviceName ${index + 1}'
+                    : deviceName;
                 final isCurrent = _currentDevice?['device_uuid'] == deviceUuid;
                 final isDeviceConnected = connected && isCurrent;
 
                 return ListTile(
-                  title: Text(deviceName),
+                  title: Text(displayName),
                   trailing: isCurrent
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
@@ -481,8 +530,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
-                                          _currentDevice?['device_name'] ??
-                                              'HotRice',
+                                          _getDisplayDeviceName(),
                                           style: const TextStyle(
                                             fontSize: 25,
                                             fontWeight: FontWeight.w900,
@@ -668,6 +716,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     ),
                                   ],
                                 ),
+                                // 结束时间显示（仅在保温、加热、定时状态时显示）
+                                if (_shouldShowEndTime() &&
+                                    _getEndTimeText() != null) ...[
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Device work ends at ${_getEndTimeText()}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ],
                               ],
                             )
                           else
@@ -798,6 +859,25 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       return (temperature * 9 / 5 + 32).round();
     }
     return temperature;
+  }
+
+  /// 获取结束时间显示文本（将分钟数转换为时:分格式）
+  String? _getEndTimeText() {
+    if (_mealTime == null) return null;
+
+    // mealTime 是从00:00开始的总分钟数
+    final hours = _mealTime! ~/ 60;
+    final minutes = _mealTime! % 60;
+
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+  }
+
+  /// 是否应该显示结束时间（仅在保温、加热、定时状态时显示）
+  bool _shouldShowEndTime() {
+    if (_deviceState == null) return false;
+    return _deviceState == DeviceState.keepWarm ||
+        _deviceState == DeviceState.heating ||
+        _deviceState == DeviceState.timing;
   }
 
   /// 获取模式图片（根据设备状态）

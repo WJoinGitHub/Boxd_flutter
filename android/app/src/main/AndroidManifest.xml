@@ -13,7 +13,7 @@
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
 
     <application
-        android:label="flutter_boxd_app_flow"
+        android:label="HotRice"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

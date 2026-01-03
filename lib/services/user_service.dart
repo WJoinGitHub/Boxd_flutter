@@ -141,12 +141,12 @@ class UserService {
         final now = DateTime.now();
         final expiryDate = DateTime(_expiresAt!.year, _expiresAt!.month, _expiresAt!.day);
         final today = DateTime(now.year, now.month, now.day);
-        
+
         // 如果过期日期是今天或更早，则刷新token
         if (expiryDate.isBefore(today) || expiryDate.isAtSameMomentAs(today)) {
           if (_refreshToken != null) {
             print('[USER] Token 今天过期或已过期，刷新 token...');
-            await refreshAccessToken();
+          await refreshAccessToken();
           }
         } else {
           final daysUntilExpiry = expiryDate.difference(today).inDays;

@@ -422,7 +422,7 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: BxAppBar(
-        title: 'Keep Warm',
+        title: '',
       ),
       body: SingleChildScrollView(
         child: Column(

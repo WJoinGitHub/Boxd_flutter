@@ -497,7 +497,14 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     if (mounted) {
       if (success) {
         setState(() => isHeating = true);
-        await _createCalendarReminder();
+        // 只有当开关打开时，才处理日历相关操作
+        if (remindEnabled) {
+          await _createCalendarReminder();
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Timing heating started successfully')),
+        );
+        Navigator.of(context).pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
@@ -224,50 +225,6 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
     );
   }
 
-  Future<void> _scheduleNotification() async {
-    final scheduledTime = DateTime(
-      DateTime.now().year,
-      DateTime.now().month,
-      DateTime.now().day,
-      selectedHour,
-      selectedMinute,
-    );
-
-    // 如果选择的时间已过，则设置为明天
-    final now = DateTime.now();
-    final targetDateTime = scheduledTime.isBefore(now)
-        ? scheduledTime.add(const Duration(days: 1))
-        : scheduledTime;
-
-    final targetTime = tz.TZDateTime.from(targetDateTime, tz.local);
-
-    final androidDetails = AndroidNotificationDetails(
-      'keep_warm_channel',
-      'Keep Warm',
-      channelDescription: 'Notifications for keep warm reminders',
-      importance: Importance.high,
-      priority: Priority.high,
-    );
-
-    const iosDetails = DarwinNotificationDetails();
-
-    final notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
-    await _notifications.zonedSchedule(
-      0,
-      'Keep Warm Reminder',
-      'Your food will be ready to keep warm at ${selectedHour.toString().padLeft(2, '0')}:${selectedMinute.toString().padLeft(2, '0')}',
-      tz.TZDateTime.from(targetTime, tz.local),
-      notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-    );
-  }
-
   Future<void> _saveToCalendar() async {
     try {
       final permissionsGranted = await _calendarPlugin.requestPermissions();
@@ -389,28 +346,44 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
     }
 
     // 命令发送成功后，根据remindEnabled决定处理方式
-    try {
-      if (remindEnabled) {
+    if (remindEnabled) {
+      // 只有当开关打开时，才处理提醒相关操作
+      try {
         // 保存到日历
         await _saveToCalendar();
-      } else {
-        // 只做本地通知
-        await _scheduleNotification();
-      }
 
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Keep warm started successfully')),
+          );
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        print('[KEEP_WARM] 处理提醒失败: $e');
+        // 如果是精确闹钟权限错误，静默处理，不显示提示
+        if (e is PlatformException && e.code == 'exact_alarms_not_permitted') {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Keep warm started successfully')),
+            );
+            Navigator.of(context).pop();
+          }
+        } else {
+          // 其他错误，显示提示
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Keep warm started, but reminder setup failed')),
+            );
+            Navigator.of(context).pop();
+          }
+        }
+      }
+    } else {
+      // 开关没打开，不做任何日历相关操作，直接成功返回
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Keep warm started successfully')),
-        );
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      print('[KEEP_WARM] 处理提醒失败: $e');
-      // 即使提醒处理失败，命令已发送成功，仍然返回成功
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Keep warm started, but reminder setup failed')),
         );
         Navigator.of(context).pop();
       }

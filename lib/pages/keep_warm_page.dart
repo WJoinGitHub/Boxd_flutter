@@ -314,7 +314,6 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
   }
 
   Future<void> _startKeepWarm() async {
-    // 检查设备是否连接
     if (!bleService.isConnected) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -326,65 +325,21 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
       return;
     }
 
-    // 发送BLE命令启动保温功能
-    // 保温模式：60°C，2小时（120分钟）
     final success = await bleService.setWork(
       mode: WorkMode.keepWarm,
       temperature: temperature,
-      heatingTime: durationHours * 60, // 转换为分钟
-      mealTime: 0, // 保温模式不需要用餐时间
+      heatingTime: durationHours * 60,
+      mealTime: 0,
     );
 
-    if (!success) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Failed to send command. Please try again.')),
-        );
-      }
-      return;
-    }
-
-    // 命令发送成功后，根据remindEnabled决定处理方式
-    if (remindEnabled) {
-      // 只有当开关打开时，才处理提醒相关操作
-      try {
-        // 保存到日历
-        await _saveToCalendar();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Keep warm started successfully')),
-          );
-          Navigator.of(context).pop();
-        }
-      } catch (e) {
-        print('[KEEP_WARM] 处理提醒失败: $e');
-        // 如果是精确闹钟权限错误，静默处理，不显示提示
-        if (e is PlatformException && e.code == 'exact_alarms_not_permitted') {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Keep warm started successfully')),
-            );
-            Navigator.of(context).pop();
-          }
-        } else {
-          // 其他错误，显示提示
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Keep warm started, but reminder setup failed')),
-            );
-            Navigator.of(context).pop();
-          }
-        }
-      }
-    } else {
-      // 开关没打开，不做任何日历相关操作，直接成功返回
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Keep warm started successfully')),
-        );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(success
+                ? 'Keep warm started successfully'
+                : 'Failed to send command. Please try again.')),
+      );
+      if (success) {
         Navigator.of(context).pop();
       }
     }
@@ -452,15 +407,6 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
                         fontSize: 30, fontWeight: FontWeight.w400),
                   ),
                   const Spacer(),
-                  const Icon(Icons.battery_charging_full,
-                      size: 20, color: Colors.green),
-                  const SizedBox(width: 4),
-                  Text(
-                    '$batteryLevel%',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(width: 20),
                 ],
               ),
             ),
@@ -487,68 +433,6 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
                 ),
               ),
             ),
-
-            const SizedBox(height: 30),
-
-            // Remind开关
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Assets.device.images.remainBell.image(
-                    width: 33,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Remind',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                  const Spacer(),
-                  Switch(
-                    value: remindEnabled,
-                    onChanged: (value) {
-                      setState(() => remindEnabled = value);
-                    },
-                    activeColor: Colors.green,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // 时间选择
-            if (remindEnabled)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0x20A9E88B),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Assets.device.images.devHeatTime.image(
-                        width: 71,
-                        fit: BoxFit.contain,
-                      ),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: _showTimePicker,
-                        child: Text(
-                          '${selectedHour.toString().padLeft(2, '0')} : ${selectedMinute.toString().padLeft(2, '0')}',
-                          style: const TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
 
             const SizedBox(height: 40),
 

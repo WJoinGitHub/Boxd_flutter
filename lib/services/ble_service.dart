@@ -48,6 +48,9 @@ class BleService {
 
   /// 连接设备
   Future<bool> connect(BluetoothDevice device, {bool skipBind = false}) async {
+    // 在连接新设备前，先停止旧的心跳定时器
+    _stopHeartbeatMonitor();
+    
     _device = device;
     print('[BLE] 开始连接设备: ${device.platformName} (${device.remoteId})');
 
@@ -406,13 +409,37 @@ class BleService {
       heatingTime: heatingTime,
       mealTime: mealTime,
     );
-    return await _writeWithResponse(data, 0x40, 0x00);
+    final success = await _writeWithResponse(data, 0x40, 0x00);
+    
+    // 命令发送成功后，立即发送一次心跳命令获取设备状态
+    if (success) {
+      try {
+        await getDeviceStatus();
+        print('[BLE] 工作命令发送成功，已发送心跳命令');
+      } catch (e) {
+        print('[BLE] 发送心跳命令失败: $e');
+      }
+    }
+    
+    return success;
   }
 
   /// 停止设备
   Future<bool> stopDevice() async {
-    final data = BleProtocolHelper.stopDeviceCommand();
-    return await _writeWithResponse(data, 0x53, 0x03);
+    if (_writeCharacteristic == null) return false;
+    
+    try {
+      final data = BleProtocolHelper.stopDeviceCommand();
+      await _writeCharacteristic!.write(data, withoutResponse: false);
+      print('[BLE] 关机命令已发送: $data');
+      
+      // 立即断开连接，不等待回复
+      await disconnect();
+      return true;
+    } catch (e) {
+      print('[BLE] 发送关机命令失败: $e');
+      return false;
+    }
   }
 
   /// 获取第一个绑定的设备

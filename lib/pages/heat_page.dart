@@ -544,51 +544,33 @@ class _HeatPageState extends State<HeatPage> {
               ),
             ),
 
-            // 温度和电量
+            // 温度
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () async {
-                      // 如果温度是0或无效值，使用默认值90
-                      final initialTemp = selectedTemperature ??
-                          (temperature > 0 ? temperature : 90);
-                      final result = await showTemperaturePicker(
-                        context,
-                        initialTemp,
-                      );
-                      if (result != null) {
-                        setState(() => selectedTemperature = result);
-                      }
-                    },
-                    child: Row(
-                      children: [
-                        Text(
-                          '${_getDisplayTemperature()}  $temperatureUnit',
-                          style: const TextStyle(
-                              fontSize: 30, fontWeight: FontWeight.w400),
-                        ),
-                        const SizedBox(width: 15),
-                        const Text(
-                          '±',
-                          style: TextStyle(
-                              fontSize: 30, fontWeight: FontWeight.w400),
-                        ),
-                      ],
-                    ),
+              child: GestureDetector(
+                onTap: () async {
+                  final initialTemp = selectedTemperature ??
+                      (temperature > 0 ? temperature : 90);
+                  final result = await showTemperaturePicker(
+                    context,
+                    initialTemp,
+                  );
+                  if (result != null) {
+                    setState(() => selectedTemperature = result);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFF7F8489), width: 1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const Spacer(),
-                  const Icon(Icons.battery_charging_full,
-                      size: 20, color: Colors.green),
-                  const SizedBox(width: 4),
-                  Text(
-                    '$batteryLevel%',
+                  child: Text(
+                    '${_getDisplayTemperature()}  $temperatureUnit',
                     style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w500),
+                        fontSize: 30, fontWeight: FontWeight.w400),
                   ),
-                  const SizedBox(width: 20),
-                ],
+                ),
               ),
             ),
 

@@ -458,6 +458,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     // 页面恢复时检查登录状态（跳过初始化时的调用）
     if (_isInitialized) {
       _checkLoginStatusAndRefresh();
+      // 每次页面显示时刷新设备列表
+      if (UserService().isLoggedIn) {
+        _loadDevices();
+      }
     }
   }
 
@@ -708,10 +712,31 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      '${_getDisplayTemperature()}  $temperatureUnit',
+                                      '${_getDisplayTemperature()}  ',
                                       style: const TextStyle(
                                         fontSize: 30,
                                         fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: _toggleTemperatureUnit,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                              color: const Color(0xFF7F8489),
+                                              width: 1),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          temperatureUnit,
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -785,19 +810,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                 "Ins",
                                 Assets.home.images.homeIns
                                     .image(width: 52, height: 30),
-                                AppColors.black,
                               ),
                               _buildModeButton(
                                 "Heat",
                                 Assets.home.images.homeHeat
                                     .image(width: 39, height: 28),
-                                AppColors.black,
                               ),
                               _buildModeButton(
                                 "Timer",
                                 Assets.home.images.homeTime
                                     .image(width: 32, height: 39),
-                                AppColors.black,
                               ),
                             ],
                           ),
@@ -850,6 +872,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         ),
       ),
     );
+  }
+
+  /// 切换温度单位
+  Future<void> _toggleTemperatureUnit() async {
+    if (!connected) return;
+
+    final newUnit = temperatureUnit == '°C' ? '°F' : '°C';
+    await AppStorage.saveUnit(newUnit);
+    setState(() => temperatureUnit = newUnit);
+
+    // 发送切换温度单位命令
+    await bleService.syncTime();
   }
 
   /// 获取显示温度（根据单位转换）
@@ -944,26 +978,27 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   /// 构建功能按钮（带图片 + 文字）
-  Widget _buildModeButton(String label, Widget icon, Color color) {
+  Widget _buildModeButton(String label, Widget icon) {
+    // 判断当前按钮是否激活
+    bool isActive = false;
+    if (connected && _deviceState != null) {
+      if (label == "Ins" && _deviceState == DeviceState.keepWarm) {
+        isActive = true;
+      } else if (label == "Heat" && _deviceState == DeviceState.heating) {
+        isActive = true;
+      } else if (label == "Timer" && _deviceState == DeviceState.timing) {
+        isActive = true;
+      }
+    }
+
+    // 根据连接状态和激活状态确定颜色
+    final color = !connected
+        ? Colors.grey
+        : (isActive ? Colors.orange : AppColors.black);
+
     return GestureDetector(
       onTap: () async {
         if (!connected) return;
-
-        // TODO: 硬件有bug，暂时注释掉设备状态判断，后续再启用
-        // 检查设备状态，如果不是待机状态，则提示用户
-        // final lastStatus = bleService.lastStatus;
-        // if (lastStatus != null && lastStatus.state != DeviceState.ready) {
-        //   final stateName = lastStatus.state.displayName;
-        //   if (mounted) {
-        //     ScaffoldMessenger.of(context).showSnackBar(
-        //       SnackBar(
-        //         content: Text('Device is currently in $stateName mode'),
-        //         duration: const Duration(seconds: 2),
-        //       ),
-        //     );
-        //   }
-        //   return;
-        // }
 
         if (label == "Ins") {
           Navigator.of(context).push(

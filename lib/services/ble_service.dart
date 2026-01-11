@@ -428,14 +428,10 @@ class BleService {
     );
     final success = await _writeWithResponse(data, 0x40, 0x00);
 
-    // 命令发送成功后，立即发送一次心跳命令获取设备状态
     if (success) {
-      try {
-        await getDeviceStatus();
-        print('[BLE] 工作命令发送成功，已发送心跳命令');
-      } catch (e) {
-        print('[BLE] 发送心跳命令失败: $e');
-      }
+      await getDeviceStatus();
+      _lastHeartbeatTime = DateTime.now();
+      print('[BLE] 工作命令发送成功，已更新心跳时间');
     }
 
     return success;

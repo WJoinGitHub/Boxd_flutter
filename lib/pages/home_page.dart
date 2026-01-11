@@ -174,6 +174,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       final result = await ApiClient.getDevices(page: 1, pageSize: 100);
       if (result['code'] == 200 && result['data'] != null) {
         final devices = List<Map<String, dynamic>>.from(result['data']);
+        
+        // 从本地匹配保存的设备名称
+        final userId = UserService().currentUser?.userId;
+        if (userId != null) {
+          for (var device in devices) {
+            final deviceUuid = device['device_uuid'] as String?;
+            if (deviceUuid != null) {
+              final localName = await AppStorage.loadDeviceLocalName(userId, deviceUuid);
+              if (localName != null && localName.isNotEmpty) {
+                device['local_name'] = localName;
+              }
+            }
+          }
+        }
+        
         if (mounted) {
           setState(() {
             _devices = devices;
@@ -284,7 +299,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   /// 获取显示设备名（如果有多个设备，添加序列号）
   String _getDisplayDeviceName() {
     if (_currentDevice == null) return 'HotRice';
-    final deviceName = _currentDevice!['device_name'] as String? ?? 'HotRice';
+    
+    // 优先使用本地保存的名称
+    final localName = _currentDevice!['local_name'] as String?;
+    final deviceName = localName ?? (_currentDevice!['device_name'] as String? ?? 'HotRice');
+    
     if (_devices.length > 1) {
       // 找到当前设备在列表中的索引
       final index = _devices.indexWhere(
@@ -295,6 +314,54 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       }
     }
     return deviceName;
+  }
+
+  Future<void> _showEditDeviceNameDialog() async {
+    if (_currentDevice == null) return;
+
+    final currentName = _getDisplayDeviceName().replaceAll(RegExp(r' \d+$'), ''); // 移除序列号
+    final controller = TextEditingController(text: currentName);
+
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Device Name'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Enter device name',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (newName != null && newName.isNotEmpty && newName != currentName) {
+      final userId = UserService().currentUser?.userId;
+      final deviceUuid = _currentDevice!['device_uuid'] as String?;
+      
+      if (userId != null && deviceUuid != null) {
+        await AppStorage.saveDeviceLocalName(userId, deviceUuid, newName);
+        _currentDevice!['local_name'] = newName;
+        setState(() {});
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Device name saved')),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _showDeviceSelector() async {
@@ -583,31 +650,46 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     ),
                                   ),
                                   const SizedBox(height: 3),
-                                  GestureDetector(
-                                    onTap: _devices.length > 1
-                                        ? _showDeviceSelector
-                                        : null,
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          _getDisplayDeviceName(),
-                                          style: const TextStyle(
-                                            fontSize: 25,
-                                            fontWeight: FontWeight.w900,
-                                            color: Colors.black,
+                                  Row(
+                                    children: [
+                                      GestureDetector(
+                                        onTap: _devices.length > 1
+                                            ? _showDeviceSelector
+                                            : null,
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              _getDisplayDeviceName(),
+                                              style: const TextStyle(
+                                                fontSize: 25,
+                                                fontWeight: FontWeight.w900,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                            if (_devices.length > 1) ...[
+                                              const SizedBox(width: 4),
+                                              const Icon(
+                                                Icons.arrow_drop_down,
+                                                color: Colors.black,
+                                                size: 20,
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                      if (_currentDevice != null) ...[
+                                        const SizedBox(width: 8),
+                                        GestureDetector(
+                                          onTap: _showEditDeviceNameDialog,
+                                          child: Icon(
+                                            Icons.edit,
+                                            size: 18,
+                                            color: Colors.grey[600],
                                           ),
                                         ),
-                                        if (_devices.length > 1) ...[
-                                          const SizedBox(width: 4),
-                                          const Icon(
-                                            Icons.arrow_drop_down,
-                                            color: Colors.black,
-                                            size: 20,
-                                          ),
-                                        ],
                                       ],
-                                    ),
+                                    ],
                                   ),
                                   // 已登录且未连接且有设备时，显示连接按钮
                                   if (!connected && UserService().isLoggedIn && _currentDevice != null) ...[

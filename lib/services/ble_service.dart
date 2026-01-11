@@ -14,6 +14,7 @@ class BleService {
   BluetoothCharacteristic? _writeCharacteristic;
   BluetoothCharacteristic? _notifyCharacteristic;
   String? _deviceMacAddress;
+  StreamSubscription<List<int>>? _notifySubscription;
 
   final _statusController = StreamController<DeviceStatusData>.broadcast();
   Stream<DeviceStatusData> get statusStream => _statusController.stream;
@@ -124,7 +125,9 @@ class BleService {
           while (!notifySet && notifyRetries < 3) {
             try {
               await characteristic.setNotifyValue(true);
-              characteristic.value.listen(_onDataReceived);
+              // 取消旧的订阅
+              await _notifySubscription?.cancel();
+              _notifySubscription = characteristic.value.listen(_onDataReceived);
               notifySet = true;
               print('[BLE] 通知已开启');
             } catch (e) {
@@ -202,6 +205,8 @@ class BleService {
   /// 断开连接
   Future<void> disconnect() async {
     _stopHeartbeatMonitor();
+    await _notifySubscription?.cancel();
+    _notifySubscription = null;
     try {
       if (_device != null) {
         print('[BLE] 断开连接...');
@@ -522,6 +527,7 @@ class BleService {
   /// 释放资源
   void dispose() {
     _stopHeartbeatMonitor();
+    _notifySubscription?.cancel();
     _statusController.close();
   }
 }

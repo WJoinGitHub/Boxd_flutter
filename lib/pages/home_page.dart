@@ -1199,6 +1199,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return GestureDetector(
       onTap: () async {
         if (!connected) return;
+        
+        // 检查设备是否已关机
+        if (_isPoweredOff) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Device is powered off')),
+          );
+          return;
+        }
 
         if (label == "Ins") {
           Navigator.of(context).push(

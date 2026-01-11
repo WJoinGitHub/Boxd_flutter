@@ -3,6 +3,8 @@ import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/device/device_connect_page.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
+import 'package:flutter_boxd_app_flow/services/user_service.dart';
+import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 
 class MyDevicesPage extends StatefulWidget {
@@ -31,8 +33,24 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
     try {
       final result = await ApiClient.getDevices(page: 1, pageSize: 100);
       if (result['code'] == 200 && result['data'] != null) {
+        final devices = List<Map<String, dynamic>>.from(result['data']);
+        
+        // 从本地匹配保存的设备名称
+        final userId = UserService().currentUser?.userId;
+        if (userId != null) {
+          for (var device in devices) {
+            final deviceUuid = device['device_uuid'] as String?;
+            if (deviceUuid != null) {
+              final localName = await AppStorage.loadDeviceLocalName(userId, deviceUuid);
+              if (localName != null && localName.isNotEmpty) {
+                device['local_name'] = localName;
+              }
+            }
+          }
+        }
+        
         setState(() {
-          _devices = List<Map<String, dynamic>>.from(result['data']);
+          _devices = devices;
         });
       }
     } catch (e) {
@@ -205,8 +223,9 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                     itemBuilder: (context, index) {
                       final device = _devices[index];
                       final deviceUuid = device['device_uuid'] as String? ?? '';
-                      final deviceName =
-                          device['device_name'] as String? ?? 'Unknown Device';
+                      // 优先使用本地保存的名称
+                      final localName = device['local_name'] as String?;
+                      final deviceName = localName ?? (device['device_name'] as String? ?? 'Unknown Device');
                       // 如果有多个设备，添加序列号
                       final displayName = _devices.length > 1
                           ? '$deviceName ${index + 1}'

@@ -3,6 +3,7 @@ import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/unit_switching_page.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/feedback_page.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/my_devices_page.dart';
+import 'package:flutter_boxd_app_flow/pages/device/faq_page.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
@@ -69,8 +70,6 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.all(13),
         children: [
           _buildProfile(),
-          const SizedBox(height: 10),
-          _buildCouponCard(),
           const SizedBox(height: 10),
           _buildSupportTile(),
           const SizedBox(height: 17),
@@ -238,24 +237,33 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       );
 
-  Widget _buildSupportTile() => Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFE8E8E8).withOpacity(0.3),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-          leading: Assets.setting.images.setSupport.image(
-            width: 18,
-            height: 18,
-            fit: BoxFit.contain,
+  Widget _buildSupportTile() => GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const FaqPage(),
+            ),
+          );
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8E8E8).withOpacity(0.3),
+            borderRadius: BorderRadius.circular(10),
           ),
-          title: Text('Support',
-              style: TextStyle(
-                  color: AppColors.orange, fontWeight: FontWeight.w700)),
-          subtitle: const Text('Help and Troubleshooting'),
-          trailing: const Icon(Icons.arrow_forward_ios, size: 13),
+          child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+            leading: Assets.setting.images.setSupport.image(
+              width: 18,
+              height: 18,
+              fit: BoxFit.contain,
+            ),
+            title: Text('Support',
+                style: TextStyle(
+                    color: AppColors.orange, fontWeight: FontWeight.w700)),
+            subtitle: const Text('Help and Troubleshooting'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 13),
+          ),
         ),
       );
 

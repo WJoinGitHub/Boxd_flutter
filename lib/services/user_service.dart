@@ -51,6 +51,9 @@ class UserService {
   String? _accessToken;
   String? _refreshToken;
   DateTime? _expiresAt;
+  
+  // 401错误回调，用于通知UI清空设备列表
+  void Function()? onUnauthorized;
 
   UserInfo? get currentUser => _currentUser;
   String? get accessToken => _accessToken;
@@ -227,5 +230,8 @@ class UserService {
     await prefs.remove('expires_at');
     await prefs.remove('user_info');
     print('[USER] 已登出');
+    
+    // 触发401回调，通知UI清空设备列表
+    onUnauthorized?.call();
   }
 }

@@ -57,6 +57,7 @@ flutter:
 flutter_native_splash:
   color: "#FFFFFF"
   image: assets/launch/images/wel_launch.png
+  android_gravity: center
   fullscreen: false
   android_12:
     color: "#FFFFFF"

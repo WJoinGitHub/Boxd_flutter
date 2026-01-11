@@ -216,6 +216,11 @@ class BleProtocolHelper {
     return buildPacket(0x53, [0x03]);
   }
 
+  /// 设备开机指令（根据协议：0x02, 0x53, 0x04, XX, 0x03）
+  static Uint8List startDeviceCommand() {
+    return buildPacket(0x53, [0x04]);
+  }
+
   /// 时间同步指令
   /// [time] 要设置的时间
   /// [temperatureUnit] 温度单位：0x00=摄氏度，0x01=华氏度

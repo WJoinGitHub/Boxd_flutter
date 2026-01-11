@@ -50,7 +50,7 @@ class BleService {
   Future<bool> connect(BluetoothDevice device, {bool skipBind = false}) async {
     // 在连接新设备前，先停止旧的心跳定时器
     _stopHeartbeatMonitor();
-    
+
     _device = device;
     print('[BLE] 开始连接设备: ${device.platformName} (${device.remoteId})');
 
@@ -144,6 +144,12 @@ class BleService {
 
     if (success) {
       if (!skipBind) {
+        // 先创建 UUID completer，以便接收设备主动发送的 UUID 数据
+        _uuidCompleter = Completer<String>();
+        
+        // 等待一下，让设备有机会发送数据
+        await Future.delayed(const Duration(milliseconds: 500));
+        
         // 获取设备UUID
         print('[BLE] 开始获取设备UUID...');
         final deviceUuid = await getDeviceUuid();
@@ -259,14 +265,20 @@ class BleService {
       // 解析UUID：字节3-11 (共9字节)，每个字节代表一个ASCII字符
       // 字节3-6: 4字节批次随机码（ASCII字符）
       // 字节7-11: 5字节递增序号（ASCII字符）
-      if (_uuidCompleter != null && data.length >= 12) {
+      if (data.length >= 12) {
         final uuidBytes = data.sublist(3, 12); // 9字节: 索引3到11
         // 将每个字节转换为ASCII字符
         final uuid = String.fromCharCodes(uuidBytes);
         print('[BLE] 解析到UUID: $uuid (长度: ${uuid.length}, 原始字节: $uuidBytes)');
         print('[BLE] UUID字节详情 - 字节3-11: ${data.sublist(3, 12)}');
-        _uuidCompleter!.complete(uuid);
-        _uuidCompleter = null;
+        
+        // 只有当 completer 存在且未完成时才 complete
+        if (_uuidCompleter != null && !_uuidCompleter!.isCompleted) {
+          _uuidCompleter!.complete(uuid);
+          _uuidCompleter = null;
+        } else {
+          print('[BLE] UUID completer 不存在或已完成，忽略此 UUID 数据');
+        }
         return;
       }
     }
@@ -298,8 +310,7 @@ class BleService {
     _missedHeartbeats = 0;
     _lastHeartbeatTime = DateTime.now();
 
-    _heartbeatTimer =
-        Timer.periodic(const Duration(seconds: 10), (timer) async {
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
       print('[BLE] 发送心跳指令...');
       try {
         await getDeviceStatus();
@@ -353,14 +364,20 @@ class BleService {
   Future<String?> getDeviceUuid() async {
     if (_writeCharacteristic == null) throw Exception('未连接设备');
 
-    _uuidCompleter = Completer<String>();
+    // 如果 completer 还没有创建，则创建一个
+    if (_uuidCompleter == null || _uuidCompleter!.isCompleted) {
+      _uuidCompleter = Completer<String>();
+    }
+    
+    // 保存 future 引用，避免在 complete 后访问 null
+    final uuidFuture = _uuidCompleter!.future;
 
     try {
       final data = BleProtocolHelper.getUuidDataCommand();
       await _writeCharacteristic!.write(data, withoutResponse: false);
       print('[BLE] 已发送获取UUID命令: $data');
 
-      final uuid = await _uuidCompleter!.future.timeout(
+      final uuid = await uuidFuture.timeout(
         const Duration(seconds: 5),
         onTimeout: () {
           _uuidCompleter = null;
@@ -410,7 +427,7 @@ class BleService {
       mealTime: mealTime,
     );
     final success = await _writeWithResponse(data, 0x40, 0x00);
-    
+
     // 命令发送成功后，立即发送一次心跳命令获取设备状态
     if (success) {
       try {
@@ -420,24 +437,36 @@ class BleService {
         print('[BLE] 发送心跳命令失败: $e');
       }
     }
-    
+
     return success;
   }
 
   /// 停止设备
   Future<bool> stopDevice() async {
     if (_writeCharacteristic == null) return false;
-    
+
     try {
       final data = BleProtocolHelper.stopDeviceCommand();
       await _writeCharacteristic!.write(data, withoutResponse: false);
       print('[BLE] 关机命令已发送: $data');
-      
-      // 立即断开连接，不等待回复
-      await disconnect();
       return true;
     } catch (e) {
       print('[BLE] 发送关机命令失败: $e');
+      return false;
+    }
+  }
+
+  /// 开启设备
+  Future<bool> startDevice() async {
+    if (_writeCharacteristic == null) return false;
+
+    try {
+      final data = BleProtocolHelper.startDeviceCommand();
+      await _writeCharacteristic!.write(data, withoutResponse: false);
+      print('[BLE] 开机命令已发送: $data');
+      return true;
+    } catch (e) {
+      print('[BLE] 发送开机命令失败: $e');
       return false;
     }
   }

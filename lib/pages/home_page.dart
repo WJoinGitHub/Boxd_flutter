@@ -36,6 +36,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   DeviceState? _deviceState;
   int? _mealTime; // 设备工作结束时间（从00:00开始的总分钟数）
   Timer? _connectionCheckTimer;
+  bool _isPoweredOff = false; // 设备是否已关机
+  bool _isConnecting = false; // 是否正在连接设备
 
   final bleService = BleService();
 
@@ -48,11 +50,34 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _loadTemperatureUnit();
     _init();
     _isInitialized = true;
+    
+    // 注册401错误回调，用于清空设备列表
+    UserService().onUnauthorized = () {
+      if (mounted) {
+        setState(() {
+          _devices = [];
+          _currentDevice = null;
+          _wasLoggedIn = false;
+        });
+        print('[HOME] 401错误，已清空设备列表');
+      }
+    };
+    
     bleService.statusStream.listen((status) {
       if (mounted) {
         setState(() {
           // 更新设备状态
           _deviceState = status.state;
+          
+          // 根据设备状态更新开关机状态
+          if (status.state == DeviceState.disabled) {
+            // 设备关机状态
+            _isPoweredOff = true;
+            print('[HOME] 设备已关机');
+          } else if (status.state != DeviceState.ready) {
+            // 设备不是待机状态，说明已开机
+            _isPoweredOff = false;
+          }
 
           // 更新结束时间（mealTime）
           if (status.mealTime != null) {
@@ -113,6 +138,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Future<void> _init() async {
     await _autoLogin();
+    // 登录后检查状态是否变化
+    final isLoggedIn = UserService().isLoggedIn;
+    if (!_wasLoggedIn && isLoggedIn) {
+      print('[HOME] _init 检测到登录状态变化，更新 _wasLoggedIn');
+      _wasLoggedIn = isLoggedIn;
+    }
     await _autoConnect();
   }
 
@@ -160,6 +191,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Future<void> _autoConnect() async {
     print('[HOME] 尝试自动连接...');
+    // 只有在已登录状态下才加载设备列表
+    if (!UserService().isLoggedIn) {
+      print('[HOME] 未登录，跳过加载设备列表');
+      return;
+    }
+    
     await _loadDevices();
     try {
       if (_currentDevice != null) {
@@ -369,6 +406,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Future<void> _connectToDevice(Map<String, dynamic> device) async {
+    if (mounted) {
+      setState(() => _isConnecting = true);
+    }
+    
     try {
       final deviceUuid = device['device_uuid'] as String;
       print('[HOME] 连接设备: $deviceUuid');
@@ -441,6 +482,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           SnackBar(content: Text('Failed to connect device: $e')),
         );
       }
+    } finally {
+      if (mounted) {
+        setState(() => _isConnecting = false);
+      }
     }
   }
 
@@ -449,25 +494,30 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _connectionCheckTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     bleService.dispose();
+    // 移除401错误回调
+    UserService().onUnauthorized = null;
     super.dispose();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    print('[HOME] didChangeDependencies - _isInitialized: $_isInitialized');
     // 页面恢复时检查登录状态（跳过初始化时的调用）
     if (_isInitialized) {
-      _checkLoginStatusAndRefresh();
-      // 每次页面显示时刷新设备列表
-      if (UserService().isLoggedIn) {
-        _loadDevices();
-      }
+      // 延迟执行，确保登录状态已更新
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _checkLoginStatusAndRefresh();
+        }
+      });
     }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
+    print('[HOME] didChangeAppLifecycleState: $state');
     if (state == AppLifecycleState.resumed) {
       _checkLoginStatusAndRefresh();
     }
@@ -475,6 +525,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Future<void> _checkLoginStatusAndRefresh() async {
     final isLoggedIn = UserService().isLoggedIn;
+    print('[HOME] _checkLoginStatusAndRefresh - _wasLoggedIn: $_wasLoggedIn, isLoggedIn: $isLoggedIn');
+    
     // 如果从未登录变为已登录，刷新设备列表
     if (!_wasLoggedIn && isLoggedIn) {
       print('[HOME] 检测到登录状态变化，刷新设备列表');
@@ -486,7 +538,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       }
     } else if (_wasLoggedIn != isLoggedIn) {
       // 更新状态，但不刷新（登出情况）
+      print('[HOME] 登录状态变化（登出）');
       _wasLoggedIn = isLoggedIn;
+    } else if (isLoggedIn) {
+      // 已登录状态下，每次页面显示时刷新设备列表
+      print('[HOME] 已登录状态，刷新设备列表');
+      await _loadDevices();
     }
   }
 
@@ -552,6 +609,42 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       ],
                                     ),
                                   ),
+                                  // 已登录且未连接且有设备时，显示连接按钮
+                                  if (!connected && UserService().isLoggedIn && _currentDevice != null) ...[
+                                    const SizedBox(height: 8),
+                                    GestureDetector(
+                                      onTap: _isConnecting ? null : () async {
+                                        if (_currentDevice != null) {
+                                          await _connectToDevice(_currentDevice!);
+                                        }
+                                      },
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            'Connect Device',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: _isConnecting ? Colors.grey : AppColors.orange,
+                                              fontWeight: FontWeight.w500,
+                                              decoration: TextDecoration.underline,
+                                            ),
+                                          ),
+                                          if (_isConnecting) ...[
+                                            const SizedBox(width: 8),
+                                            SizedBox(
+                                              width: 14,
+                                              height: 14,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.orange),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                               ElevatedButton(
@@ -836,29 +929,56 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 padding: const EdgeInsets.all(20),
                 child: ElevatedButton(
                   onPressed: () async {
-                    final success = await bleService.stopDevice();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(success
-                                ? 'Device powered off'
-                                : 'Failed to power off, please try again')),
-                      );
+                    if (_isPoweredOff) {
+                      // 开机
+                      final success = await bleService.startDevice();
+                      if (mounted) {
+                        if (success) {
+                          setState(() => _isPoweredOff = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Device powered on')),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Failed to power on, please try again')),
+                          );
+                        }
+                      }
+                    } else {
+                      // 关机
+                      final success = await bleService.stopDevice();
+                      if (mounted) {
+                        if (success) {
+                          setState(() => _isPoweredOff = true);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Device powered off')),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Failed to power off, please try again')),
+                          );
+                        }
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: _isPoweredOff ? Colors.green : Colors.red,
                     minimumSize: const Size(double.infinity, 56),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(28)),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.power_settings_new, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text('POWER OFF',
-                          style: TextStyle(color: Colors.white, fontSize: 16)),
+                      Icon(
+                        _isPoweredOff ? Icons.power_settings_new : Icons.power_settings_new,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _isPoweredOff ? 'POWER ON' : 'POWER OFF',
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                      ),
                     ],
                   ),
                 ),
@@ -906,12 +1026,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
   }
 
-  /// 是否应该显示结束时间（仅在保温、加热、定时状态时显示）
+  /// 是否应该显示结束时间（仅在定时状态时显示）
   bool _shouldShowEndTime() {
     if (_deviceState == null) return false;
-    return _deviceState == DeviceState.keepWarm ||
-        _deviceState == DeviceState.heating ||
-        _deviceState == DeviceState.timing;
+    return _deviceState == DeviceState.timing;
   }
 
   /// 获取模式图片（根据设备状态）

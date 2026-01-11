@@ -44,6 +44,7 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
   }
 
   Future<void> checkStatus() async {
+    print('[SCAN] 开始检查状态...');
     // 蓝牙状态
     try {
       final btState = await FlutterBluePlus.adapterState.first.timeout(
@@ -51,7 +52,9 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
         onTimeout: () => BluetoothAdapterState.on,
       );
       bluetoothOn = btState == BluetoothAdapterState.on;
+      print('[SCAN] 蓝牙状态: $bluetoothOn');
     } catch (e) {
+      print('[SCAN] 检查蓝牙状态失败: $e');
       bluetoothOn = false;
     }
 
@@ -76,20 +79,28 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       locationOn = await locService.serviceEnabled();
     } else {
       // iOS 蓝牙权限检查
-      final btStatus = await Permission.bluetooth.status;
-      bluetoothGranted = btStatus.isGranted || btStatus.isLimited;
+      // iOS 上蓝牙权限在首次使用时自动请求，不需要通过 permission_handler 检查
+      // 只要蓝牙已打开，就认为有权限
+      print('[SCAN] iOS 平台，蓝牙已打开即视为有权限');
+      bluetoothGranted = bluetoothOn;
       nearbyGranted = true;
       locationGranted = true;
       locationOn = true;
+      print('[SCAN] iOS bluetoothGranted: $bluetoothGranted');
     }
+
+    print('[SCAN] 最终状态 - bluetoothOn: $bluetoothOn, bluetoothGranted: $bluetoothGranted, locationOn: $locationOn, locationGranted: $locationGranted');
 
     if (mounted) {
       setState(() {});
       // 如果所有条件都满足，自动开始扫描
       if (bluetoothOn && bluetoothGranted && (Platform.isIOS || (locationOn && locationGranted))) {
+        print('[SCAN] 条件满足，将自动开始扫描');
         Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) startScan();
         });
+      } else {
+        print('[SCAN] 条件不满足，不自动扫描');
       }
     }
   }
@@ -104,7 +115,13 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
   }
 
   Future<void> startScan() async {
-    if (!bluetoothOn || !bluetoothGranted) return;
+    print('[SCAN] startScan 被调用');
+    print('[SCAN] bluetoothOn: $bluetoothOn, bluetoothGranted: $bluetoothGranted');
+    
+    if (!bluetoothOn || !bluetoothGranted) {
+      print('[SCAN] 条件不满足，无法扫描');
+      return;
+    }
 
     print('[SCAN] 开始扫描设备...');
     if (mounted) {

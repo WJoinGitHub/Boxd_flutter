@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/device/device_connect_page.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
@@ -57,7 +58,7 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
       print('[MY_DEVICES] 加载设备列表失败: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load devices: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context).t('failed_to_load_devices')}: $e')),
         );
       }
     } finally {
@@ -95,19 +96,20 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
   }
 
   Future<void> _unbindDevice(String deviceUuid, String deviceName) async {
+    final l10n = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Unbind Device'),
-        content: Text('Are you sure you want to unbind "$deviceName"?'),
+        title: Text(l10n.t('unbind_device')),
+        content: Text('${l10n.t('unbind_device_confirm')} "$deviceName"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.t('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Unbind', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.t('unbind'), style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -120,7 +122,7 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
       if (result['code'] == 200) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Device unbound successfully')),
+            SnackBar(content: Text(AppLocalizations.of(context).t('device_unbound_successfully'))),
           );
         }
         // 刷新设备列表
@@ -168,6 +170,7 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return WillPopScope(
       onWillPop: () async {
         // 返回时传递设备列表是否变化的标志
@@ -177,7 +180,7 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: BxAppBar(
-        title: 'My Devices',
+        title: l10n.t('my_devices'),
         rightWidget: IconButton(
           icon: const Icon(Icons.add, color: Colors.black),
           onPressed: _addDevice,
@@ -192,9 +195,9 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'No devices',
-                        style: TextStyle(
+                      Text(
+                        l10n.t('no_devices'),
+                        style: const TextStyle(
                           fontSize: 16,
                           color: Colors.black54,
                         ),
@@ -206,7 +209,7 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                           backgroundColor: Colors.black,
                           foregroundColor: Colors.white,
                         ),
-                        child: const Text('Add Device'),
+                        child: Text(l10n.t('add_device')),
                       ),
                     ],
                   ),

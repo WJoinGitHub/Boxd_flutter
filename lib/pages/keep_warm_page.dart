@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
@@ -146,11 +147,11 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
               child: Text(
-                'Select Time',
-                style: TextStyle(
+                AppLocalizations.of(context).t('select_time'),
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -184,7 +185,7 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
                   backgroundColor: Colors.black,
                   minimumSize: const Size(double.infinity, 44),
                 ),
-                child: const Text('Confirm',
+                child: Text(AppLocalizations.of(context).t('confirm'),
                     style: TextStyle(color: Colors.white)),
               ),
             ),
@@ -317,9 +318,8 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
     if (!bleService.isConnected) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Device not connected. Please connect your device first.')),
+          SnackBar(
+              content: Text(AppLocalizations.of(context).t('device_not_connected'))),
         );
       }
       return;
@@ -336,8 +336,8 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(success
-                ? 'Keep warm started successfully'
-                : 'Failed to send command. Please try again.')),
+                ? AppLocalizations.of(context).t('keep_warm_started')
+                : AppLocalizations.of(context).t('command_failed'))),
       );
       if (success) {
         Navigator.of(context).pop();
@@ -414,18 +414,18 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
             const SizedBox(height: 20),
 
             // Warming Duration
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                'Warming Duration',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+                AppLocalizations.of(context).t('warming_duration'),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
               ),
             ),
             const SizedBox(height: 30),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                '$durationHours Hours',
+                '${durationHours} ${AppLocalizations.of(context).t('hours')}',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,

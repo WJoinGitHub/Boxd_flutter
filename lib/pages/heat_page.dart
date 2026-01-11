@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
@@ -147,11 +148,11 @@ class _HeatPageState extends State<HeatPage> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
               child: Text(
-                'Select Duration',
-                style: TextStyle(
+                AppLocalizations.of(context).t('select_duration'),
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -181,8 +182,8 @@ class _HeatPageState extends State<HeatPage> {
                   backgroundColor: Colors.black,
                   minimumSize: const Size(double.infinity, 44),
                 ),
-                child: const Text(
-                  'Confirm',
+                child: Text(
+                  AppLocalizations.of(context).t('confirm'),
                   style: TextStyle(color: Colors.white),
                 ),
               ),
@@ -256,11 +257,11 @@ class _HeatPageState extends State<HeatPage> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
               child: Text(
-                'Select Time',
-                style: TextStyle(
+                AppLocalizations.of(context).t('select_time'),
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -294,7 +295,7 @@ class _HeatPageState extends State<HeatPage> {
                   backgroundColor: Colors.black,
                   minimumSize: const Size(double.infinity, 44),
                 ),
-                child: const Text('Confirm',
+                child: Text(AppLocalizations.of(context).t('confirm'),
                     style: TextStyle(color: Colors.white)),
               ),
             ),
@@ -412,15 +413,18 @@ class _HeatPageState extends State<HeatPage> {
   void _sendCommand() async {
     if (selectedTemperature == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select temperature')),
+        SnackBar(
+            content: Text(
+                AppLocalizations.of(context).t('please_select_temperature'))),
       );
       return;
     }
 
     if (minutes < 20 || minutes > 50) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Heating time must be between 20-50 minutes')),
+        SnackBar(
+            content:
+                Text(AppLocalizations.of(context).t('heating_time_range'))),
       );
       return;
     }
@@ -428,9 +432,9 @@ class _HeatPageState extends State<HeatPage> {
     if (!bleService.isConnected) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Device not connected. Please connect your device first.')),
+          SnackBar(
+              content:
+                  Text(AppLocalizations.of(context).t('device_not_connected'))),
         );
       }
       return;
@@ -446,8 +450,8 @@ class _HeatPageState extends State<HeatPage> {
     if (!success) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Failed to send command. Please try again.')),
+          SnackBar(
+              content: Text(AppLocalizations.of(context).t('command_failed'))),
         );
       }
       return;
@@ -462,7 +466,8 @@ class _HeatPageState extends State<HeatPage> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Heat started successfully')),
+            SnackBar(
+                content: Text(AppLocalizations.of(context).t('heat_started'))),
           );
           Navigator.of(context).pop();
         }
@@ -472,7 +477,9 @@ class _HeatPageState extends State<HeatPage> {
         if (e is PlatformException && e.code == 'exact_alarms_not_permitted') {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Heat started successfully')),
+              SnackBar(
+                  content:
+                      Text(AppLocalizations.of(context).t('heat_started'))),
             );
             Navigator.of(context).pop();
           }
@@ -480,7 +487,7 @@ class _HeatPageState extends State<HeatPage> {
           // 其他错误，显示提示
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              SnackBar(
                   content: Text('Heat started, but reminder setup failed')),
             );
             Navigator.of(context).pop();
@@ -491,7 +498,8 @@ class _HeatPageState extends State<HeatPage> {
       // 开关没打开，不做任何日历相关操作，直接成功返回
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Heat started successfully')),
+          SnackBar(
+              content: Text(AppLocalizations.of(context).t('heat_started'))),
         );
         Navigator.of(context).pop();
       }
@@ -544,6 +552,17 @@ class _HeatPageState extends State<HeatPage> {
               ),
             ),
 
+            // Setting Temperature
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                AppLocalizations.of(context).t('setting_temperature'),
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+              ),
+            ),
+            const SizedBox(height: 10),
+
             // 温度
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -560,9 +579,11 @@ class _HeatPageState extends State<HeatPage> {
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    border: Border.all(color: const Color(0xFF7F8489), width: 1),
+                    border:
+                        Border.all(color: const Color(0xFF7F8489), width: 1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -577,11 +598,12 @@ class _HeatPageState extends State<HeatPage> {
             const SizedBox(height: 20),
 
             // Setting Heat Duration
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                'Setting Heat Duration',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+                AppLocalizations.of(context).t('setting_heat_duration'),
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
               ),
             ),
             const SizedBox(height: 10),
@@ -634,8 +656,8 @@ class _HeatPageState extends State<HeatPage> {
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'Remind',
+                  Text(
+                    AppLocalizations.of(context).t('remind'),
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                   const Spacer(),

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
@@ -139,11 +140,11 @@ class _FeedbackPageState extends State<FeedbackPage> {
   }
 
   Future<void> _sendFeedback() async {
+    final l10n = AppLocalizations.of(context);
     // 判断用户是否有输入
     if (_selectedTags.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please select at least one question type')),
+        SnackBar(content: Text(l10n.t('select_question_type'))),
       );
       return;
     }
@@ -151,7 +152,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
     final content = _contentController.text.trim();
     if (content.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter feedback content')),
+        SnackBar(content: Text(l10n.t('enter_feedback_content'))),
       );
       return;
     }
@@ -186,13 +187,13 @@ class _FeedbackPageState extends State<FeedbackPage> {
       if (mounted) {
         if (result['code'] == 200 || result['code'] == 201) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Feedback sent successfully')),
+            SnackBar(content: Text(l10n.t('feedback_submitted'))),
           );
           Navigator.of(context).pop();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result['message'] ?? 'Failed to send feedback'),
+              content: Text(result['message'] ?? l10n.t('feedback_failed')),
             ),
           );
         }
@@ -213,10 +214,11 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: BxAppBar(
-        title: 'Feedback',
+        title: l10n.t('feedback_title'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -224,8 +226,8 @@ class _FeedbackPageState extends State<FeedbackPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Question about section
-            const Text(
-              'Question about',
+            Text(
+              l10n.t('question_about'),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -303,8 +305,8 @@ class _FeedbackPageState extends State<FeedbackPage> {
             // Tell me more information section
             Row(
               children: [
-                const Text(
-                  'Tell me more information',
+                Text(
+                  l10n.t('tell_more_info'),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -334,7 +336,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                 maxLength: 200,
                 textInputAction: TextInputAction.newline,
                 decoration: InputDecoration(
-                  hintText: 'input content',
+                  hintText: l10n.t('input_content'),
                   hintStyle: TextStyle(
                     fontSize: 13,
                     color: AppColors.gray3,
@@ -374,8 +376,8 @@ class _FeedbackPageState extends State<FeedbackPage> {
                     onTap: () {
                       setState(() => _uploadLogs = !_uploadLogs);
                     },
-                    child: const Text(
-                      'Uploading logs helps us identify and fix the problem faster.',
+                    child: Text(
+                      l10n.t('upload_logs_help'),
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.black54,
@@ -414,8 +416,8 @@ class _FeedbackPageState extends State<FeedbackPage> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text(
-                        'Send',
+                    : Text(
+                        l10n.t('send'),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,

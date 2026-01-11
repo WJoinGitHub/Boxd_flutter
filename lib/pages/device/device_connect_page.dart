@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/pages/device/device_connecting_page.dart';
 import 'package:flutter_boxd_app_flow/pages/device/device_help_page.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
@@ -201,13 +202,14 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
   }
 
   Widget _buildStatusSection() {
+    final l10n = AppLocalizations.of(context);
     String title = "";
     String desc = "";
     String buttonText = "";
     VoidCallback? onPressed;
 
     if (!bluetoothOn) {
-      title = "Please turn on Bluetooth";
+      title = l10n.t('turn_on_bluetooth');
       desc = "Your phone’s Bluetooth is turned off. Please turn it on.";
       buttonText = "Open Settings";
       onPressed = () => openAppSettings();
@@ -241,9 +243,9 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
         checkStatus();
       };
     } else {
-      title = "Auto-detecting";
+      title = l10n.t('auto_detecting');
       desc = "Nearby devices...";
-      buttonText = scanning ? "Scanning..." : "Scan Devices";
+      buttonText = scanning ? l10n.t('scanning') : l10n.t('scan_devices');
       onPressed = scanning ? null : startScan;
     }
 
@@ -283,12 +285,12 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
                             TextSpan(
                               style: const TextStyle(fontSize: 12, color: Colors.black),
                               children: [
-                                const TextSpan(text: 'Having trouble finding your device. Is it turned on? or Manually add.Or click on '),
+                                TextSpan(text: AppLocalizations.of(context).t('device_trouble_msg')),
                                 TextSpan(
-                                  text: 'Help',
-                                  style: TextStyle(color: Color(0xFFFF7622)),
+                                  text: AppLocalizations.of(context).t('help'),
+                                  style: const TextStyle(color: Color(0xFFFF7622)),
                                 ),
-                                const TextSpan(text: ' to troubleshoot andresolve'),
+                                TextSpan(text: AppLocalizations.of(context).t('device_trouble_suffix')),
                               ],
                             ),
                           ),
@@ -299,12 +301,23 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
                   if (showRetryButton) ...[
                     const SizedBox(height: 20),
                     Center(
-                      child: GestureDetector(
-                        onTap: () {
+                      child: ElevatedButton.icon(
+                        onPressed: () {
                           setState(() => showRetryButton = false);
                           startScan();
                         },
-                        child: Assets.device.images.devRetry.image(height: 50),
+                        icon: const Icon(Icons.refresh, color: Colors.white),
+                        label: Text(
+                          AppLocalizations.of(context).t('retry'),
+                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF7622),
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -362,10 +375,10 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 20, top: 10, bottom: 10),
+        Padding(
+          padding: const EdgeInsets.only(left: 20, top: 10, bottom: 10),
           child: Text(
-            'Manually adding',
+            AppLocalizations.of(context).t('manually_adding'),
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
@@ -388,7 +401,7 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
                   title: Text(
                     device.platformName.isNotEmpty
                         ? device.platformName
-                        : "Unknown Device",
+                        : AppLocalizations.of(context).t('unknown_device'),
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                   trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
@@ -407,8 +420,8 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: BxAppBar(
-        title: bluetoothOn && bluetoothGranted ? "Auto-detecting" : "Connect Device",
-        rightWidget: const Text('Help', style: TextStyle(color: Color(0xFFFF7622), fontSize: 16, fontWeight: FontWeight.w500)),
+        title: bluetoothOn && bluetoothGranted ? AppLocalizations.of(context).t('auto_detecting') : AppLocalizations.of(context).t('connect_device_title'),
+        rightWidget: Text(AppLocalizations.of(context).t('help'), style: const TextStyle(color: Color(0xFFFF7622), fontSize: 16, fontWeight: FontWeight.w500)),
         onRightPressed: () {
           Navigator.push(
             context,

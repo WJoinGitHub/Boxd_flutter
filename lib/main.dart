@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'pages/home_page.dart';
 import 'utils/app_colors.dart';
 
@@ -28,6 +30,16 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Boxd App',
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', ''),
+        Locale('zh', ''),
+      ],
       theme: base.copyWith(
         scaffoldBackgroundColor: AppColors.pageBg,
       ),

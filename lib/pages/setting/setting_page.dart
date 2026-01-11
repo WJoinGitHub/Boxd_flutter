@@ -4,6 +4,7 @@ import 'package:flutter_boxd_app_flow/pages/setting/unit_switching_page.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/feedback_page.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/my_devices_page.dart';
 import 'package:flutter_boxd_app_flow/pages/device/faq_page.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
@@ -56,6 +57,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: BxAppBar(
@@ -64,7 +66,7 @@ class _SettingsPageState extends State<SettingsPage> {
           height: 35,
           fit: BoxFit.contain,
         ),
-        title: "Settings",
+        title: l10n.t('settings'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(13),
@@ -75,10 +77,10 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 17),
 
           /// Device Section
-          _buildSectionTitle('Device'),
+          _buildSectionTitle(l10n.t('device')),
           _buildSectionContainer([
             _buildRowTile(
-              'My Device',
+              l10n.t('my_device'),
               onTap: () async {
                 final result = await Navigator.of(context).push(
                   MaterialPageRoute(
@@ -92,7 +94,7 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
             _buildRowTile(
-              'Unit switching',
+              l10n.t('unit_switching'),
               leading: Assets.setting.images.temperatureUnitSetting.image(
                 width: 18,
                 height: 18,
@@ -115,10 +117,10 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 17),
 
           /// Info Section
-          _buildSectionTitle('Info'),
+          _buildSectionTitle(l10n.t('info')),
           _buildSectionContainer([
             _buildRowTile(
-              'Privacy Policy',
+              l10n.t('privacy_policy'),
               leading: Assets.setting.images.privacyPolicySetting.image(
                 width: 18,
                 height: 18,
@@ -127,7 +129,7 @@ class _SettingsPageState extends State<SettingsPage> {
               onTap: () => _openUrl(privacyPolicyUrl),
             ),
             _buildRowTile(
-              'Terms & Conditions',
+              l10n.t('terms_conditions'),
               leading: Assets.setting.images.termsSetting.image(
                 width: 18,
                 height: 18,
@@ -140,10 +142,10 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 17),
 
           /// App Section
-          _buildSectionTitle('App'),
+          _buildSectionTitle(l10n.t('app')),
           _buildSectionContainer([
             _buildRowTile(
-              'Feedback',
+              l10n.t('feedback'),
               leading: Assets.setting.images.feedbackSetting.image(
                 width: 18,
                 height: 18,
@@ -158,7 +160,7 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
             _buildSwitchTile(
-              title: "Allow Notifications",
+              title: l10n.t('allow_notifications'),
               leading: Assets.setting.images.feedbackSetting.image(
                 width: 18,
                 height: 18,
@@ -178,9 +180,9 @@ class _SettingsPageState extends State<SettingsPage> {
             children: [
               TextButton(
                 onPressed: _handleLogout,
-                child: const Text(
-                  'Logout',
-                  style: TextStyle(
+                child: Text(
+                  l10n.t('logout'),
+                  style: const TextStyle(
                       color: Colors.black54,
                       fontSize: 14,
                       fontWeight: FontWeight.w500),
@@ -189,9 +191,9 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(width: 20),
               TextButton(
                 onPressed: _handleDeleteAccount,
-                child: const Text(
-                  'Delete Account',
-                  style: TextStyle(
+                child: Text(
+                  l10n.t('delete_account'),
+                  style: const TextStyle(
                       color: Colors.black54,
                       fontSize: 14,
                       fontWeight: FontWeight.w500),
@@ -237,7 +239,9 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       );
 
-  Widget _buildSupportTile() => GestureDetector(
+  Widget _buildSupportTile() {
+    final l10n = AppLocalizations.of(context);
+    return GestureDetector(
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -258,14 +262,15 @@ class _SettingsPageState extends State<SettingsPage> {
               height: 18,
               fit: BoxFit.contain,
             ),
-            title: Text('Support',
+            title: Text(l10n.t('support'),
                 style: TextStyle(
                     color: AppColors.orange, fontWeight: FontWeight.w700)),
-            subtitle: const Text('Help and Troubleshooting'),
+            subtitle: Text(l10n.t('help_and_troubleshooting')),
             trailing: const Icon(Icons.arrow_forward_ios, size: 13),
           ),
         ),
       );
+  }
 
   Widget _buildSectionTitle(String title) => Padding(
         padding: const EdgeInsets.only(bottom: 7),
@@ -344,19 +349,20 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _handleLogout() async {
+    final l10n = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        title: Text(l10n.t('logout')),
+        content: Text(l10n.t('logout_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.t('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Confirm'),
+            child: Text(l10n.t('confirm')),
           ),
         ],
       ),
@@ -385,20 +391,20 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _handleDeleteAccount() async {
+    final l10n = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: const Text(
-            'Are you sure you want to delete your account? This action cannot be undone!'),
+        title: Text(l10n.t('delete_account')),
+        content: Text(l10n.t('delete_account_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.t('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.t('delete'), style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),

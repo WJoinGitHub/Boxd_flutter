@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/device/faq_page.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 
 class DeviceHelpPage extends StatelessWidget {
@@ -8,29 +9,30 @@ class DeviceHelpPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: BxAppBar(title: 'Help', backgroundColor: Colors.white),
+      appBar: BxAppBar(title: l10n.t('help'), backgroundColor: Colors.white),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "No worries, I'm here to help. Let's work through this together. Please try the following:",
-              style: TextStyle(fontSize: 14, color: Colors.black),
+            Text(
+              l10n.t('help_intro'),
+              style: const TextStyle(fontSize: 14, color: Colors.black),
             ),
             const SizedBox(height: 30),
-            const Text(
-              '1. Could you check if your device has Bluetooth?',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            Text(
+              l10n.t('help_step1'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
             Assets.device.images.hotRice.image(width: 120, height: 120),
             const SizedBox(height: 30),
-            const Text(
-              '2. Connection issue? A simple restart of your device often helps. Then try to connect again.',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            Text(
+              l10n.t('help_step2'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
             Row(
@@ -55,18 +57,18 @@ class DeviceHelpPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Press and hold the power button to shut down.',
-                        style: TextStyle(fontSize: 14, color: Colors.black),
+                        l10n.t('help_power_off'),
+                        style: const TextStyle(fontSize: 14, color: Colors.black),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Text(
-                        'Press the power button again to turn it back on.',
-                        style: TextStyle(fontSize: 14, color: Colors.black),
+                        l10n.t('help_power_on'),
+                        style: const TextStyle(fontSize: 14, color: Colors.black),
                       ),
                     ],
                   ),
@@ -74,9 +76,9 @@ class DeviceHelpPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 30),
-            const Text(
-              'Have trouble? A Quick Guide to Fixing Your [Device Name] Connection Issues.',
-              style: TextStyle(fontSize: 14, color: Colors.black),
+            Text(
+              l10n.t('help_trouble'),
+              style: const TextStyle(fontSize: 14, color: Colors.black),
             ),
             const SizedBox(height: 16),
             Container(
@@ -97,10 +99,10 @@ class DeviceHelpPage extends StatelessWidget {
             const SizedBox(height: 30),
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'More issues. Please check the  FAQ',
-                    style: TextStyle(fontSize: 14, color: Colors.black),
+                    l10n.t('more_issues_faq'),
+                    style: const TextStyle(fontSize: 14, color: Colors.black),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -121,9 +123,9 @@ class DeviceHelpPage extends StatelessWidget {
                       ),
                       padding: EdgeInsets.zero,
                     ),
-                    child: const Text(
-                      'FAQ',
-                      style: TextStyle(
+                    child: Text(
+                      l10n.t('faq'),
+                      style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w600),

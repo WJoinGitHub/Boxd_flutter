@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
@@ -131,11 +132,11 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
               child: Text(
-                'Select Duration',
-                style: TextStyle(
+                AppLocalizations.of(context).t('select_duration'),
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -240,11 +241,11 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
               child: Text(
-                'Select End Time',
-                style: TextStyle(
+                AppLocalizations.of(context).t('select_end_time'),
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -350,11 +351,11 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
               child: Text(
-                'Select Time',
-                style: TextStyle(
+                AppLocalizations.of(context).t('select_time'),
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -428,7 +429,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
   void _sendCommand() async {
     if (selectedTemperature == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select temperature')),
+        SnackBar(content: Text(AppLocalizations.of(context).t('please_select_temperature'))),
       );
       return;
     }
@@ -438,7 +439,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     // 验证不超过5小时（300分钟）
     if (heatingTotalMinutes > 300) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Heating time cannot exceed 5 hours')),
+        SnackBar(content: Text(AppLocalizations.of(context).t('heating_time_exceed'))),
       );
       return;
     }
@@ -459,16 +460,16 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     // 验证不超过5小时（300分钟）
     if (diffMinutes > 300) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('End time cannot exceed 5 hours from now')),
+        SnackBar(
+            content: Text(AppLocalizations.of(context).t('end_time_exceed'))),
       );
       return;
     }
 
     if (diffMinutes < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('End time cannot be earlier than current time')),
+        SnackBar(
+            content: Text(AppLocalizations.of(context).t('end_time_past'))),
       );
       return;
     }
@@ -477,9 +478,9 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     final estimatedEndTime = now.add(Duration(minutes: heatingTotalMinutes));
     if (estimatedEndTime.isAfter(actualTargetTime)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
             content: Text(
-                'Heating duration too long, cannot finish before set time')),
+                AppLocalizations.of(context).t('heating_duration_too_long'))),
       );
       return;
     }
@@ -502,13 +503,13 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
           await _createCalendarReminder();
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Timing heating started successfully')),
+          SnackBar(content: Text(AppLocalizations.of(context).t('timing_heating_started'))),
         );
         Navigator.of(context).pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Failed to send command, please try again')),
+          SnackBar(
+              content: Text(AppLocalizations.of(context).t('command_failed'))),
         );
       }
     }
@@ -649,6 +650,17 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
               ),
             ),
 
+            // Setting Temperature
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                AppLocalizations.of(context).t('setting_temperature'),
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+              ),
+            ),
+            const SizedBox(height: 10),
+
             // 温度
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -682,11 +694,11 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
             const SizedBox(height: 20),
 
             // Setting Heat Duration
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                'Setting Heat Duration',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+                AppLocalizations.of(context).t('setting_heat_duration'),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
               ),
             ),
             const SizedBox(height: 10),
@@ -730,11 +742,11 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
             const SizedBox(height: 30),
 
             // Setting end time
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                'Setting end time',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+                AppLocalizations.of(context).t('setting_end_time'),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
               ),
             ),
             const SizedBox(height: 10),
@@ -813,8 +825,8 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'Remind',
+                  Text(
+                    AppLocalizations.of(context).t('remind'),
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                   const Spacer(),

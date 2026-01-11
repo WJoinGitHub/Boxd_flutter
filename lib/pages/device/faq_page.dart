@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/feedback_page.dart';
@@ -8,9 +9,10 @@ class FaqPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: BxAppBar(title: 'Help & Support'),
+      appBar: BxAppBar(title: l10n.t('help')),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -20,19 +22,19 @@ class FaqPage extends StatelessWidget {
             const SizedBox(height: 20),
 
             // 分类卡片
-            _buildCategoryCards(),
+            _buildCategoryCards(l10n),
             const SizedBox(height: 30),
 
             // Top Questions 部分
-            _buildTopQuestions(context),
+            _buildTopQuestions(context, l10n),
             const SizedBox(height: 30),
 
             // Contact Service 部分
-            _buildContactService(),
+            _buildContactService(l10n),
             const SizedBox(height: 30),
 
             // Feedback 按钮
-            _buildFeedbackButton(context),
+            _buildFeedbackButton(context, l10n),
             const SizedBox(height: 20),
           ],
         ),
@@ -68,7 +70,7 @@ class FaqPage extends StatelessWidget {
   }
 
   /// 分类卡片
-  Widget _buildCategoryCards() {
+  Widget _buildCategoryCards(AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -147,7 +149,7 @@ class FaqPage extends StatelessWidget {
   }
 
   /// Top Questions 部分
-  Widget _buildTopQuestions(BuildContext context) {
+  Widget _buildTopQuestions(BuildContext context, AppLocalizations l10n) {
     final topQuestions = [
       'Not scanned my equipment',
       'Ai message how to work',
@@ -226,14 +228,14 @@ class FaqPage extends StatelessWidget {
   }
 
   /// Contact Service 部分
-  Widget _buildContactService() {
+  Widget _buildContactService(AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Contact Service',
+          Text(
+            l10n.t('contact_service'),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -246,7 +248,7 @@ class FaqPage extends StatelessWidget {
               Expanded(
                 child: _buildContactItem(
                   icon: Icons.email_outlined,
-                  label: 'Email',
+                  label: l10n.t('email'),
                 ),
               ),
             ],
@@ -283,7 +285,7 @@ class FaqPage extends StatelessWidget {
   }
 
   /// Feedback 按钮
-  Widget _buildFeedbackButton(BuildContext context) {
+  Widget _buildFeedbackButton(BuildContext context, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: SizedBox(
@@ -303,8 +305,8 @@ class FaqPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          child: const Text(
-            'Feedback',
+          child: Text(
+            l10n.t('feedback'),
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,

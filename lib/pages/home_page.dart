@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/device/device_connect_page.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/setting_page.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/pages/login/email_login_page.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
@@ -213,87 +214,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
     
     await _loadDevices();
-    try {
-      if (_currentDevice != null) {
-        final deviceUuid = _currentDevice!['device_uuid'];
-        print('[HOME] 找到绑定设备: $deviceUuid');
-
-        final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
-        BluetoothDevice? targetDevice;
-
-        for (var device in connectedDevices) {
-          final currentUuid = Platform.isAndroid
-              ? device.remoteId.str.replaceAll(':', '').toUpperCase()
-              : device.remoteId.str.replaceAll('-', '').toUpperCase();
-          if (currentUuid == deviceUuid) {
-            targetDevice = device;
-            break;
-          }
-        }
-
-        if (targetDevice == null) {
-          print('[HOME] 开始扫描设备...');
-          await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
-          await for (var results in FlutterBluePlus.scanResults) {
-            for (var r in results) {
-              final currentUuid = Platform.isAndroid
-                  ? r.device.remoteId.str.replaceAll(':', '').toUpperCase()
-                  : r.device.remoteId.str.replaceAll('-', '').toUpperCase();
-              print(
-                  '[HOME] 扫描到设备: ${r.device.platformName} UUID: $currentUuid');
-              if (currentUuid == deviceUuid) {
-                targetDevice = r.device;
-                break;
-              }
-            }
-            if (targetDevice != null) break;
-          }
-          await FlutterBluePlus.stopScan();
-        }
-
-        if (targetDevice != null && mounted) {
-          final success =
-              await bleService.connect(targetDevice, skipBind: true);
-          if (success && mounted) {
-            setState(() => connected = true);
-            print('[HOME] 自动连接成功');
-            // 从 lastStatus 加载设备状态数据
-            final lastStatus = bleService.lastStatus;
-            if (lastStatus != null) {
-              setState(() {
-                _deviceState = lastStatus.state;
-                if (lastStatus.mealTime != null) {
-                  _mealTime = lastStatus.mealTime;
-                }
-                if (lastStatus.temperature != null) {
-                  temperature = lastStatus.temperature!;
-                }
-                if (lastStatus.batteryLevel != null) {
-                  final level = lastStatus.batteryLevel!;
-                  if (level >= 1 && level <= 4) {
-                    batteryLevel = level * 25;
-                  } else {
-                    batteryLevel = level;
-                  }
-                }
-              });
-            }
-            // 获取设备详情
-            try {
-              final detail = await ApiClient.getDeviceDetail(deviceUuid);
-              if (detail['code'] == 200 && detail['data'] != null && mounted) {
-                setState(() => deviceDetail = detail['data']);
-                print('[HOME] 设备详情: $deviceDetail');
-              }
-            } catch (e) {
-              print('[HOME] 获取设备详情失败: $e');
-            }
-          }
-        }
-      }
-    } catch (e) {
-      print('[HOME] 自动连接失败: $e');
+    if (_devices.isEmpty) {
+      print('[HOME] 没有绑定的设备');
+      return;
     }
+
+    // 取设备列表第一个设备，走用户点击连接设备的逻辑
+    final firstDevice = _devices.first;
+    print('[HOME] 自动连接第一个设备: ${firstDevice['device_uuid']}');
+    await _connectToDevice(firstDevice);
   }
 
   /// 获取显示设备名（如果有多个设备，添加序列号）
@@ -387,11 +316,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
               child: Text(
-                'Select Device',
-                style: TextStyle(
+                AppLocalizations.of(context).t('select_device'),
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -419,11 +348,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             if (isDeviceConnected)
-                              const Padding(
-                                padding: EdgeInsets.only(right: 8),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
                                 child: Text(
-                                  'Connected',
-                                  style: TextStyle(
+                                  AppLocalizations.of(context).t('connected'),
+                                  style: const TextStyle(
                                     fontSize: 12,
                                     color: Colors.green,
                                   ),
@@ -537,16 +466,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
               content: Text(
-                  'Device not found. Please make sure the device is powered on and nearby.')),
+                  AppLocalizations.of(context).t('device_not_found'))),
         );
       }
     } catch (e) {
       print('[HOME] 连接设备失败: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to connect device: $e')),
+          SnackBar(content: Text('${AppLocalizations.of(context).t('failed_to_connect')}: $e')),
         );
       }
     } finally {
@@ -616,6 +545,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
@@ -704,7 +634,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Text(
-                                            'Connect Device',
+                                            l10n.t('connect_device'),
                                             style: TextStyle(
                                               fontSize: 14,
                                               color: _isConnecting ? Colors.grey : AppColors.orange,
@@ -791,8 +721,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   const SizedBox(width: 5),
                                   Text(
                                     connected
-                                        ? "Connected"
-                                        : "Connect your Lunch box",
+                                        ? l10n.t('connected')
+                                        : l10n.t('connect_your_lunch_box'),
                                     style: TextStyle(
                                       fontSize: connected ? 20 : 13,
                                       color: connected
@@ -982,17 +912,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               _buildModeButton(
-                                "Ins",
+                                l10n.t('ins'),
                                 Assets.home.images.homeIns
                                     .image(width: 52, height: 30),
                               ),
                               _buildModeButton(
-                                "Heat",
+                                l10n.t('heat'),
                                 Assets.home.images.homeHeat
                                     .image(width: 39, height: 28),
                               ),
                               _buildModeButton(
-                                "Timer",
+                                l10n.t('timer'),
                                 Assets.home.images.homeTime
                                     .image(width: 32, height: 39),
                               ),
@@ -1058,7 +988,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        _isPoweredOff ? 'POWER ON' : 'POWER OFF',
+                        _isPoweredOff ? l10n.t('power_on') : l10n.t('power_off'),
                         style: const TextStyle(color: Colors.white, fontSize: 16),
                       ),
                     ],
@@ -1179,14 +1109,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   /// 构建功能按钮（带图片 + 文字）
   Widget _buildModeButton(String label, Widget icon) {
+    final l10n = AppLocalizations.of(context);
     // 判断当前按钮是否激活
     bool isActive = false;
     if (connected && _deviceState != null) {
-      if (label == "Ins" && _deviceState == DeviceState.keepWarm) {
+      if (label == l10n.t('ins') && _deviceState == DeviceState.keepWarm) {
         isActive = true;
-      } else if (label == "Heat" && _deviceState == DeviceState.heating) {
+      } else if (label == l10n.t('heat') && _deviceState == DeviceState.heating) {
         isActive = true;
-      } else if (label == "Timer" && _deviceState == DeviceState.timing) {
+      } else if (label == l10n.t('timer') && _deviceState == DeviceState.timing) {
         isActive = true;
       }
     }
@@ -1203,20 +1134,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         // 检查设备是否已关机
         if (_isPoweredOff) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Device is powered off')),
+            SnackBar(content: Text(l10n.t('device_is_powered_off'))),
           );
           return;
         }
 
-        if (label == "Ins") {
+        if (label == l10n.t('ins')) {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const KeepWarmPage()),
           );
-        } else if (label == "Heat") {
+        } else if (label == l10n.t('heat')) {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const HeatPage()),
           );
-        } else if (label == "Timer") {
+        } else if (label == l10n.t('timer')) {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const HeatingTimePage()),
           );

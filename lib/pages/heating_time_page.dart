@@ -293,8 +293,8 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                   backgroundColor: Colors.black,
                   minimumSize: const Size(double.infinity, 44),
                 ),
-                child: const Text('Confirm',
-                    style: TextStyle(color: Colors.white)),
+                child: Text(AppLocalizations.of(context).t('confirm'),
+                    style: const TextStyle(color: Colors.white)),
               ),
             ),
           ],
@@ -389,8 +389,8 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                   backgroundColor: Colors.black,
                   minimumSize: const Size(double.infinity, 44),
                 ),
-                child: const Text('Confirm',
-                    style: TextStyle(color: Colors.white)),
+                child: Text(AppLocalizations.of(context).t('confirm'),
+                    style: const TextStyle(color: Colors.white)),
               ),
             ),
           ],
@@ -429,7 +429,9 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
   void _sendCommand() async {
     if (selectedTemperature == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).t('please_select_temperature'))),
+        SnackBar(
+            content: Text(
+                AppLocalizations.of(context).t('please_select_temperature'))),
       );
       return;
     }
@@ -439,7 +441,9 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     // 验证不超过5小时（300分钟）
     if (heatingTotalMinutes > 300) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).t('heating_time_exceed'))),
+        SnackBar(
+            content:
+                Text(AppLocalizations.of(context).t('heating_time_exceed'))),
       );
       return;
     }
@@ -503,7 +507,9 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
           await _createCalendarReminder();
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).t('timing_heating_started'))),
+          SnackBar(
+              content: Text(
+                  AppLocalizations.of(context).t('timing_heating_started'))),
         );
         Navigator.of(context).pop();
       } else {
@@ -531,10 +537,10 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
           if (!result.isSuccess || !result.data!) {
             print('[CALENDAR] Permission denied');
             if (mounted) {
+              final l10n = AppLocalizations.of(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text(
-                        'Calendar permission denied. Please enable it in settings to use reminder feature.')),
+                SnackBar(
+                    content: Text(l10n.t('calendar_permission_denied_detail'))),
               );
             }
             return;
@@ -542,10 +548,10 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
         } catch (e) {
           print('[CALENDAR] 权限请求异常: $e');
           if (mounted) {
+            final l10n = AppLocalizations.of(context);
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text(
-                      'Calendar permission denied. Please enable it in settings to use reminder feature.')),
+              SnackBar(
+                  content: Text(l10n.t('calendar_permission_denied_detail'))),
             );
           }
           return;
@@ -593,9 +599,11 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
       if (createResult?.isSuccess == true) {
         print('[CALENDAR] Reminder created successfully');
         if (mounted) {
+          final l10n = AppLocalizations.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Calendar reminder created successfully')),
+            SnackBar(
+                content:
+                    Text(l10n.t('calendar_reminder_created_successfully'))),
           );
         }
       }
@@ -625,7 +633,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Assets.device.images.devHeatTime.image(
+                      Assets.device.images.devTimer.image(
                         width: 60,
                         fit: BoxFit.contain,
                       ),
@@ -677,9 +685,11 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    border: Border.all(color: const Color(0xFF7F8489), width: 1),
+                    border:
+                        Border.all(color: const Color(0xFF7F8489), width: 1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -698,7 +708,8 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
                 AppLocalizations.of(context).t('setting_heat_duration'),
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
               ),
             ),
             const SizedBox(height: 10),
@@ -746,7 +757,8 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
                 AppLocalizations.of(context).t('setting_end_time'),
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
               ),
             ),
             const SizedBox(height: 10),

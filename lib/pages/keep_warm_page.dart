@@ -227,12 +227,13 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
   }
 
   Future<void> _saveToCalendar() async {
+    final l10n = AppLocalizations.of(context);
     try {
       final permissionsGranted = await _calendarPlugin.requestPermissions();
       if (!permissionsGranted.isSuccess || !permissionsGranted.data!) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Calendar permission denied')),
+            SnackBar(content: Text(l10n.t('calendar_permission_denied'))),
           );
         }
         return;
@@ -242,7 +243,7 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
       if (!calendarsResult.isSuccess || calendarsResult.data == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to retrieve calendars')),
+            SnackBar(content: Text(l10n.t('failed_to_retrieve_calendars'))),
           );
         }
         return;
@@ -252,7 +253,7 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
       if (calendars.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No calendars available')),
+            SnackBar(content: Text(l10n.t('no_calendars_available'))),
           );
         }
         return;
@@ -295,20 +296,20 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
           await _calendarPlugin.createOrUpdateEvent(event);
       if (createEventResult != null && createEventResult.isSuccess && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Saved to calendar')),
+          SnackBar(content: Text(l10n.t('saved_to_calendar'))),
         );
       } else if (mounted) {
         final errors = createEventResult?.errors;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(
-                  'Failed to save to calendar: ${errors != null ? errors.join(', ') : 'Unknown error'}')),
+                  '${l10n.t('failed_to_save_to_calendar')}: ${errors != null ? errors.join(', ') : l10n.t('unknown_error')}')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text('${l10n.t('error')}: $e')),
         );
       }
     }
@@ -319,7 +320,8 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(AppLocalizations.of(context).t('device_not_connected'))),
+              content:
+                  Text(AppLocalizations.of(context).t('device_not_connected'))),
         );
       }
       return;
@@ -367,7 +369,7 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Assets.device.images.devIns.image(
-                        width: 56,
+                        width: 60,
                         fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 30),
@@ -418,7 +420,8 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
                 AppLocalizations.of(context).t('warming_duration'),
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
               ),
             ),
             const SizedBox(height: 30),

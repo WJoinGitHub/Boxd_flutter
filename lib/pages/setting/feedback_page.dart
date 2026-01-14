@@ -201,8 +201,9 @@ class _FeedbackPageState extends State<FeedbackPage> {
     } catch (e) {
       print('[FEEDBACK] 提交反馈失败: $e');
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send feedback: $e')),
+          SnackBar(content: Text('${l10n.t('failed_to_send_feedback')}: $e')),
         );
       }
     } finally {

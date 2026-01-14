@@ -333,12 +333,13 @@ class _HeatPageState extends State<HeatPage> {
   }
 
   Future<void> _saveToCalendar() async {
+    final l10n = AppLocalizations.of(context);
     final calendarsResult = await _calendarPlugin.retrieveCalendars();
     if (!calendarsResult.isSuccess || calendarsResult.data == null) {
       print('[HEAT] 获取日历失败');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to access calendar')),
+          SnackBar(content: Text(l10n.t('failed_to_access_calendar'))),
         );
       }
       return;
@@ -348,7 +349,7 @@ class _HeatPageState extends State<HeatPage> {
     if (calendars.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No calendars available')),
+          SnackBar(content: Text(l10n.t('no_calendars_available'))),
         );
       }
       return;
@@ -388,7 +389,7 @@ class _HeatPageState extends State<HeatPage> {
     final createEventResult = await _calendarPlugin.createOrUpdateEvent(event);
     if (createEventResult != null && createEventResult.isSuccess && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Event saved to calendar')),
+        SnackBar(content: Text(l10n.t('event_saved_to_calendar'))),
       );
     } else {
       final errors = createEventResult?.errors;
@@ -486,9 +487,10 @@ class _HeatPageState extends State<HeatPage> {
         } else {
           // 其他错误，显示提示
           if (mounted) {
+            final l10n = AppLocalizations.of(context);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                  content: Text('Heat started, but reminder setup failed')),
+                  content: Text(l10n.t('heat_started_but_reminder_failed'))),
             );
             Navigator.of(context).pop();
           }
@@ -528,7 +530,7 @@ class _HeatPageState extends State<HeatPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Assets.device.images.devHeat.image(
-                        width: 99,
+                        width: 60,
                         fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 30),

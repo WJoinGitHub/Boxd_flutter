@@ -133,14 +133,14 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text(result['message'] ?? 'Failed to unbind device')),
+                content: Text(result['message'] ?? l10n.t('failed_to_unbind_device'))),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to unbind device: $e')),
+          SnackBar(content: Text('${l10n.t('failed_to_unbind_device')}: $e')),
         );
       }
     }

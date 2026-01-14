@@ -7,6 +7,7 @@ import 'package:flutter_boxd_app_flow/services/facebook_sign_in_service.dart';
 import 'package:flutter_boxd_app_flow/pages/login/email_login_page.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/widgets/social_button.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'register_email_page.dart';
 
 class LoginOptionsPage extends StatelessWidget {
@@ -24,6 +25,7 @@ class LoginOptionsPage extends StatelessWidget {
 class _LoginRoot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -43,14 +45,14 @@ class _LoginRoot extends StatelessWidget {
                 fullscreenDialog: false,
               ));
             },
-            child: const SizedBox(
+            child: SizedBox(
               width: double.infinity,
-              child: Center(child: Text('邮箱登录')),
+              child: Center(child: Text(l10n.t('email_login'))),
             ),
           ),
           const SizedBox(height: 10),
           SocialButton(
-            text: 'Facebook 登录',
+            text: l10n.t('facebook_login'),
             icon: Icons.facebook,
             onPressed: () async {
               await FacebookSignInService.signIn(context);
@@ -59,7 +61,7 @@ class _LoginRoot extends StatelessWidget {
           const SizedBox(height: 10),
           if (Platform.isAndroid)
             SocialButton(
-              text: 'Google 登录',
+              text: l10n.t('google_login'),
               icon: Icons.g_mobiledata,
               onPressed: () async {
                 await GoogleSignInService.signIn(context);
@@ -67,7 +69,7 @@ class _LoginRoot extends StatelessWidget {
             ),
           if (Platform.isIOS)
             SocialButton(
-              text: 'Apple 登录',
+              text: l10n.t('apple_login'),
               icon: Icons.apple,
               onPressed: () async {
                 await AppleSignInService.signIn(context);
@@ -81,7 +83,7 @@ class _LoginRoot extends StatelessWidget {
                 fullscreenDialog: false,
               ));
             },
-            child: const Text('注册'),
+            child: Text(l10n.t('register')),
           ),
         ],
       ),

@@ -254,25 +254,26 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         _getDisplayDeviceName().replaceAll(RegExp(r' \d+$'), ''); // 移除序列号
     final controller = TextEditingController(text: currentName);
 
+    final l10n = AppLocalizations.of(context);
     final newName = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edit Device Name'),
+        title: Text(l10n.t('edit_device_name')),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'Enter device name',
+          decoration: InputDecoration(
+            hintText: l10n.t('enter_device_name'),
           ),
           autofocus: true,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.t('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Save'),
+            child: Text(l10n.t('save')),
           ),
         ],
       ),
@@ -289,7 +290,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Device name saved')),
+            SnackBar(content: Text(l10n.t('device_name_saved'))),
           );
         }
       }
@@ -930,18 +931,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             children: [
                               _buildModeButton(
                                 l10n.t('ins'),
-                                Assets.home.images.homeIns
-                                    .image(width: 52, height: 30),
+                                Assets.device.images.devIns
+                                    .image(width: 48, height: 47),
                               ),
                               _buildModeButton(
                                 l10n.t('heat'),
-                                Assets.home.images.homeHeat
-                                    .image(width: 39, height: 28),
+                                Assets.device.images.devHeat
+                                    .image(width: 44, height: 53),
                               ),
                               _buildModeButton(
                                 l10n.t('timer'),
-                                Assets.home.images.homeTime
-                                    .image(width: 32, height: 39),
+                                Assets.device.images.devTimer
+                                    .image(width: 41, height: 44),
                               ),
                             ],
                           ),
@@ -962,16 +963,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       // 开机
                       final success = await bleService.startDevice();
                       if (mounted) {
+                        final l10n = AppLocalizations.of(context);
                         if (success) {
                           setState(() => _isPoweredOff = false);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Device powered on')),
+                            SnackBar(
+                                content: Text(l10n.t('device_powered_on'))),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    'Failed to power on, please try again')),
+                            SnackBar(
+                                content: Text(l10n.t('failed_to_power_on'))),
                           );
                         }
                       }
@@ -979,16 +981,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       // 关机
                       final success = await bleService.stopDevice();
                       if (mounted) {
+                        final l10n = AppLocalizations.of(context);
                         if (success) {
                           setState(() => _isPoweredOff = true);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Device powered off')),
+                            SnackBar(
+                                content: Text(l10n.t('device_powered_off'))),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    'Failed to power off, please try again')),
+                            SnackBar(
+                                content: Text(l10n.t('failed_to_power_off'))),
                           );
                         }
                       }
@@ -1075,38 +1078,38 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     // 根据设备状态显示对应图片
     if (_deviceState == null) {
       // 默认显示Ins图片
-      return Assets.home.images.homeIns.image(
-        width: 52,
-        height: 30,
+      return Assets.device.images.devIns.image(
+        width: 48,
+        height: 47,
         fit: BoxFit.contain,
       );
     }
 
     switch (_deviceState!) {
       case DeviceState.keepWarm:
-        return Assets.home.images.homeIns.image(
-          width: 52,
-          height: 30,
+        return Assets.device.images.devIns.image(
+          width: 48,
+          height: 47,
           fit: BoxFit.contain,
         );
       case DeviceState.heating:
-        return Assets.home.images.homeHeat.image(
-          width: 39,
-          height: 28,
+        return Assets.device.images.devHeat.image(
+          width: 44,
+          height: 53,
           fit: BoxFit.contain,
         );
       case DeviceState.timing:
-        return Assets.home.images.homeTime.image(
-          width: 32,
-          height: 39,
+        return Assets.device.images.devTimer.image(
+          width: 41,
+          height: 44,
           fit: BoxFit.contain,
         );
       case DeviceState.ready:
       default:
         // 待机状态或未知状态，默认显示Ins图片
-        return Assets.home.images.homeIns.image(
-          width: 52,
-          height: 30,
+        return Assets.device.images.devTimer.image(
+          width: 41,
+          height: 44,
           fit: BoxFit.contain,
         );
     }

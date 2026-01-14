@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
-import 'package:flutter_boxd_app_flow/pages/setting/unit_switching_page.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/feedback_page.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/my_devices_page.dart';
 import 'package:flutter_boxd_app_flow/pages/device/faq_page.dart';
@@ -9,7 +8,6 @@ import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
-import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/utils/app_urls.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/pages/webview_page.dart';
@@ -25,19 +23,7 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool allowNotifications = true;
-  String temperatureUnit = '°C';
   final bleService = BleService();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUnit();
-  }
-
-  Future<void> _loadUnit() async {
-    final unit = await AppStorage.loadUnit();
-    setState(() => temperatureUnit = unit);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,25 +61,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 if (result == true && mounted) {
                   Navigator.of(context).pop(true);
                 }
-              },
-            ),
-            _buildRowTile(
-              l10n.t('unit_switching'),
-              leading: Assets.setting.images.temperatureUnitSetting.image(
-                width: 18,
-                height: 18,
-                fit: BoxFit.contain,
-              ),
-              trailing: temperatureUnit,
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const UnitSwitchingPage(),
-                  ),
-                );
-                // 重新加载单位（因为单位可能已经在UnitSwitchingPage中保存了）
-                await _loadUnit();
               },
             ),
           ]),
@@ -385,7 +352,7 @@ class _SettingsPageState extends State<SettingsPage> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Logout failed: $e')),
+            SnackBar(content: Text('${l10n.t('logout_failed')}: $e')),
           );
         }
       }
@@ -428,7 +395,7 @@ class _SettingsPageState extends State<SettingsPage> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Delete account failed: $e')),
+            SnackBar(content: Text('${l10n.t('delete_account_failed')}: $e')),
           );
         }
       }

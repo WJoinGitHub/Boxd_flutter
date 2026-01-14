@@ -4,6 +4,7 @@ import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 
 class UnitSwitchingPage extends StatefulWidget {
   const UnitSwitchingPage({super.key});
@@ -40,19 +41,20 @@ class _UnitSwitchingPageState extends State<UnitSwitchingPage> {
 
     // 发送时间同步命令，包含温度单位
     if (bleService.isConnected) {
+      final l10n = AppLocalizations.of(context);
       try {
         await bleService.syncTime();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Temperature unit changed to $unit')),
+            SnackBar(content: Text('${l10n.t('temperature_unit_changed_to')} $unit')),
           );
         }
       } catch (e) {
         print('[UNIT] 发送温度单位命令失败: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Failed to send command, please try again')),
+            SnackBar(
+                content: Text(l10n.t('failed_to_send_command_try_again'))),
           );
         }
       }
@@ -67,6 +69,7 @@ class _UnitSwitchingPageState extends State<UnitSwitchingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: BxAppBar(
         leftIcon: Assets.common.images.deviceBack.image(
@@ -74,7 +77,7 @@ class _UnitSwitchingPageState extends State<UnitSwitchingPage> {
           height: 35,
           fit: BoxFit.contain,
         ),
-        title: "Settings",
+        title: l10n.t('settings'),
       ),
       backgroundColor: Colors.white,
       body: Column(
@@ -86,24 +89,24 @@ class _UnitSwitchingPageState extends State<UnitSwitchingPage> {
               children: [
                 Assets.user.images.temperatureChange.image(width: 250),
                 const SizedBox(height: 20),
-                const SizedBox(
+                SizedBox(
                   width: 220,
                   child: Column(
                     children: [
-                      Text('Unit switching',
-                          style: TextStyle(
+                      Text(l10n.t('unit_switching_title'),
+                          style: const TextStyle(
                               fontWeight: FontWeight.w600, fontSize: 17)),
-                      SizedBox(height: 12),
-                      Text('You can set the display unit for temperature here',
+                      const SizedBox(height: 12),
+                      Text(l10n.t('unit_switching_description'),
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.black, fontSize: 12)),
+                          style: const TextStyle(color: Colors.black, fontSize: 12)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 27),
-                _buildUnitButton('°F', 'Fahrenheit'),
+                _buildUnitButton('°F', l10n.t('fahrenheit')),
                 const SizedBox(height: 10),
-                _buildUnitButton('°C', 'Centigrade'),
+                _buildUnitButton('°C', l10n.t('centigrade')),
               ],
             ),
           ),

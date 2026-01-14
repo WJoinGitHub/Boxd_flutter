@@ -138,6 +138,10 @@ class AppLocalizations {
       'already_have_account': 'Already have an account?',
       'sign_in': 'Sign In',
       'sign_up': 'Sign Up',
+      'email_login': 'Email Login',
+      'facebook_login': 'Facebook Login',
+      'google_login': 'Google Login',
+      'apple_login': 'Apple Login',
       'or_continue_with': 'Or continue with',
       'google': 'Google',
       'apple': 'Apple',
@@ -191,6 +195,7 @@ class AppLocalizations {
       'submit': 'Submit',
       'feedback_submitted': 'Feedback submitted successfully',
       'feedback_failed': 'Failed to submit feedback',
+      'failed_to_send_feedback': 'Failed to send feedback',
 
       // Feedback Page
       'question_about': 'Question about',
@@ -237,6 +242,8 @@ class AppLocalizations {
           'Device not connected. Please connect your device first.',
       'keep_warm_started': 'Keep warm started successfully',
       'heat_started': 'Heat started successfully',
+      'heat_started_but_reminder_failed':
+          'Heat started, but reminder setup failed',
       'timing_heating_started': 'Timing heating started successfully',
       'command_failed': 'Failed to send command. Please try again.',
       'please_select_temperature': 'Please select temperature',
@@ -246,6 +253,30 @@ class AppLocalizations {
       'end_time_past': 'End time cannot be earlier than current time',
       'heating_duration_too_long':
           'Heating duration too long, cannot finish before set time',
+
+      // Calendar
+      'calendar_permission_denied': 'Calendar permission denied',
+      'calendar_permission_denied_detail':
+          'Calendar permission denied. Please enable it in settings to use reminder feature.',
+      'failed_to_access_calendar': 'Failed to access calendar',
+      'failed_to_retrieve_calendars': 'Failed to retrieve calendars',
+      'no_calendars_available': 'No calendars available',
+      'event_saved_to_calendar': 'Event saved to calendar',
+      'saved_to_calendar': 'Saved to calendar',
+      'calendar_reminder_created_successfully':
+          'Calendar reminder created successfully',
+      'failed_to_save_to_calendar': 'Failed to save to calendar',
+      'error': 'Error',
+
+      // Unit Switching
+      'unit_switching_description':
+          'You can set the display unit for temperature here',
+      'fahrenheit': 'Fahrenheit',
+      'centigrade': 'Centigrade',
+      'temperature_unit_changed_to': 'Temperature unit changed to',
+      'failed_to_send_command_try_again':
+          'Failed to send command, please try again',
+      'unknown_error': 'Unknown error',
     },
     'zh': {
       // Common
@@ -399,7 +430,7 @@ class AppLocalizations {
       'terms_of_service': '服务条款',
       'privacy_policy': '隐私政策',
       'agree_to_terms_prefix': '继续即表示您同意HeatLink的 ',
-      'agree_to_terms_middle': ' 并确认您已阅读ok的 ',
+      'agree_to_terms_middle': ' 并确认您已阅读HeatLink的 ',
       'please_enter_code_sent_to_email': '请输入发送到您的邮箱 ',
       'for_verification': ' 的4位验证码。',
       'request_new_code_in': '在 ',
@@ -416,6 +447,7 @@ class AppLocalizations {
       'submit': '提交',
       'feedback_submitted': '反馈提交成功',
       'feedback_failed': '反馈提交失败',
+      'failed_to_send_feedback': '发送反馈失败',
 
       // Feedback Page
       'question_about': '问题类型',
@@ -459,6 +491,7 @@ class AppLocalizations {
       'device_not_connected': '设备未连接。请先连接您的设备。',
       'keep_warm_started': '保温已成功启动',
       'heat_started': '加热已成功启动',
+      'heat_started_but_reminder_failed': '加热已启动，但提醒设置失败',
       'timing_heating_started': '定时加热已成功启动',
       'command_failed': '发送命令失败，请重试。',
       'please_select_temperature': '请选择温度',
@@ -467,6 +500,26 @@ class AppLocalizations {
       'end_time_exceed': '结束时间不能超过当前时间5小时',
       'end_time_past': '结束时间不能早于当前时间',
       'heating_duration_too_long': '加热时长过长，无法在设定时间前完成',
+
+      // Calendar
+      'calendar_permission_denied': '日历权限被拒绝',
+      'calendar_permission_denied_detail': '日历权限被拒绝。请在设置中启用以使用提醒功能。',
+      'failed_to_access_calendar': '访问日历失败',
+      'failed_to_retrieve_calendars': '获取日历列表失败',
+      'no_calendars_available': '没有可用的日历',
+      'event_saved_to_calendar': '事件已保存到日历',
+      'saved_to_calendar': '已保存到日历',
+      'calendar_reminder_created_successfully': '日历提醒创建成功',
+      'failed_to_save_to_calendar': '保存到日历失败',
+      'error': '错误',
+
+      // Unit Switching
+      'unit_switching_description': '您可以在这里设置温度的显示单位',
+      'fahrenheit': '华氏度',
+      'centigrade': '摄氏度',
+      'temperature_unit_changed_to': '温度单位已更改为',
+      'failed_to_send_command_try_again': '发送命令失败，请重试',
+      'unknown_error': '未知错误',
     },
   };
 

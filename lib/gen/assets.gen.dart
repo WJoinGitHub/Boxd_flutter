@@ -91,6 +91,9 @@ class $AssetsDeviceImagesGen {
   /// File path: assets/device/images/dev_heat.png
   AssetGenImage get devHeat => const AssetGenImage('assets/device/images/dev_heat.png');
 
+  /// File path: assets/device/images/dev_heat_select.png
+  AssetGenImage get devHeatSelect => const AssetGenImage('assets/device/images/dev_heat_select.png');
+
   /// File path: assets/device/images/dev_heat_time.png
   AssetGenImage get devHeatTime => const AssetGenImage('assets/device/images/dev_heat_time.png');
 
@@ -99,6 +102,9 @@ class $AssetsDeviceImagesGen {
 
   /// File path: assets/device/images/dev_ins.png
   AssetGenImage get devIns => const AssetGenImage('assets/device/images/dev_ins.png');
+
+  /// File path: assets/device/images/dev_ins_select.png
+  AssetGenImage get devInsSelect => const AssetGenImage('assets/device/images/dev_ins_select.png');
 
   /// File path: assets/device/images/dev_next_gray.png
   AssetGenImage get devNextGray => const AssetGenImage('assets/device/images/dev_next_gray.png');
@@ -114,6 +120,12 @@ class $AssetsDeviceImagesGen {
 
   /// File path: assets/device/images/dev_retry.png
   AssetGenImage get devRetry => const AssetGenImage('assets/device/images/dev_retry.png');
+
+  /// File path: assets/device/images/dev_timer.png
+  AssetGenImage get devTimer => const AssetGenImage('assets/device/images/dev_timer.png');
+
+  /// File path: assets/device/images/dev_timer_select.png
+  AssetGenImage get devTimerSelect => const AssetGenImage('assets/device/images/dev_timer_select.png');
 
   /// File path: assets/device/images/hot_rice.png
   AssetGenImage get hotRice => const AssetGenImage('assets/device/images/hot_rice.png');
@@ -133,14 +145,18 @@ class $AssetsDeviceImagesGen {
         devBtnRotate,
         devEye,
         devHeat,
+        devHeatSelect,
         devHeatTime,
         devHelpMsg,
         devIns,
+        devInsSelect,
         devNextGray,
         devOpenBle,
         devOpenBleTop,
         devOpenLocation,
         devRetry,
+        devTimer,
+        devTimerSelect,
         hotRice,
         remainBell,
         temperature,
@@ -169,18 +185,8 @@ class $AssetsHomeImagesGen {
   /// File path: assets/home/images/home_device_on.png
   AssetGenImage get homeDeviceOn => const AssetGenImage('assets/home/images/home_device_on.png');
 
-  /// File path: assets/home/images/home_heat.png
-  AssetGenImage get homeHeat => const AssetGenImage('assets/home/images/home_heat.png');
-
-  /// File path: assets/home/images/home_ins.png
-  AssetGenImage get homeIns => const AssetGenImage('assets/home/images/home_ins.png');
-
-  /// File path: assets/home/images/home_time.png
-  AssetGenImage get homeTime => const AssetGenImage('assets/home/images/home_time.png');
-
   /// List of all assets
-  List<AssetGenImage> get values =>
-      [addDevice, devTemperatureF, homeAvatar, homeBanner, homeDevice, homeDeviceOn, homeHeat, homeIns, homeTime];
+  List<AssetGenImage> get values => [addDevice, devTemperatureF, homeAvatar, homeBanner, homeDevice, homeDeviceOn];
 }
 
 class $AssetsLaunchImagesGen {

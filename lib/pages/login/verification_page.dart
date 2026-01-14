@@ -6,6 +6,7 @@ import 'package:flutter_boxd_app_flow/pages/login/set_username_page.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'set_password_page.dart';
 
 class VerificationPage extends StatefulWidget {
@@ -53,6 +54,7 @@ class _VerificationPageState extends State<VerificationPage> {
   }
 
   Future<void> _verifyCode() async {
+    final l10n = AppLocalizations.of(context);
     final code = _controllers.map((c) => c.text).join();
     try {
       final result = await ApiClient.verifyCode(
@@ -84,19 +86,20 @@ class _VerificationPageState extends State<VerificationPage> {
         }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? '验证失败')),
+          SnackBar(content: Text(result['message'] ?? l10n.t('verification_failed'))),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('验证失败: $e')),
+          SnackBar(content: Text('${l10n.t('verification_failed')}: $e')),
         );
       }
     }
   }
 
   Future<void> _sendCode({bool showLoading = true}) async {
+    final l10n = AppLocalizations.of(context);
     if (showLoading) setState(() => _loading = true);
     try {
       final result = await ApiClient.sendCode(
@@ -109,7 +112,7 @@ class _VerificationPageState extends State<VerificationPage> {
         setState(() => _secondsLeft = 0);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? '发送失败')),
+            SnackBar(content: Text(result['message'] ?? l10n.t('send_failed'))),
           );
         }
       }
@@ -117,7 +120,7 @@ class _VerificationPageState extends State<VerificationPage> {
       setState(() => _secondsLeft = 0);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('发送失败: $e')),
+          SnackBar(content: Text('${l10n.t('send_failed')}: $e')),
         );
       }
     } finally {
@@ -154,7 +157,8 @@ class _VerificationPageState extends State<VerificationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.isForReset ? 'Reset Password' : 'Sign In';
+    final l10n = AppLocalizations.of(context);
+    final title = widget.isForReset ? l10n.t('reset_password') : l10n.t('sign_in');
     return Scaffold(
       appBar: const BxAppBar(title: ""),
       body: Padding(
@@ -187,7 +191,7 @@ class _VerificationPageState extends State<VerificationPage> {
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: 'Please enter the 4-digit code sent to your email ',
+                      text: l10n.t('please_enter_code_sent_to_email'),
                       style: TextStyle(
                         fontFamily: 'SF Pro',
                         fontWeight: FontWeight.w400,
@@ -207,7 +211,7 @@ class _VerificationPageState extends State<VerificationPage> {
                       ),
                     ),
                     TextSpan(
-                      text: ' for verification.',
+                      text: l10n.t('for_verification'),
                       style: TextStyle(
                         fontFamily: 'SF Pro',
                         fontWeight: FontWeight.w400,
@@ -267,7 +271,7 @@ class _VerificationPageState extends State<VerificationPage> {
               duration: const Duration(milliseconds: 300),
               child: _secondsLeft > 0
                   ? Text(
-                      'Request new code in ${_secondsLeft}s',
+                      '${l10n.t('request_new_code_in')}${_secondsLeft}${l10n.t('seconds')}',
                       key: const ValueKey('countdown'),
                       style: TextStyle(
                         fontFamily: 'SF Pro',
@@ -294,7 +298,7 @@ class _VerificationPageState extends State<VerificationPage> {
                               ),
                             )
                           : Text(
-                              'Send again',
+                              l10n.t('send_again'),
                               style: TextStyle(
                                 fontFamily: 'SF Pro',
                                 fontSize: 12,
@@ -319,7 +323,7 @@ class _VerificationPageState extends State<VerificationPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('VERTICAL', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.white)),
+                child: Text(l10n.t('verify_button'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.white)),
               ),
             ),
           ],

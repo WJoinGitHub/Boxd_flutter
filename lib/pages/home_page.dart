@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _loadTemperatureUnit();
     _init();
     _isInitialized = true;
-    
+
     // 注册401错误回调，用于清空设备列表
     UserService().onUnauthorized = () {
       if (mounted) {
@@ -63,13 +63,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         print('[HOME] 401错误，已清空设备列表');
       }
     };
-    
+
     bleService.statusStream.listen((status) {
       if (mounted) {
         setState(() {
           // 更新设备状态
           _deviceState = status.state;
-          
+
           // 根据设备状态更新开关机状态
           if (status.state == DeviceState.disabled) {
             // 设备关机状态
@@ -175,21 +175,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       final result = await ApiClient.getDevices(page: 1, pageSize: 100);
       if (result['code'] == 200 && result['data'] != null) {
         final devices = List<Map<String, dynamic>>.from(result['data']);
-        
+
         // 从本地匹配保存的设备名称
         final userId = UserService().currentUser?.userId;
         if (userId != null) {
           for (var device in devices) {
             final deviceUuid = device['device_uuid'] as String?;
             if (deviceUuid != null) {
-              final localName = await AppStorage.loadDeviceLocalName(userId, deviceUuid);
+              final localName =
+                  await AppStorage.loadDeviceLocalName(userId, deviceUuid);
               if (localName != null && localName.isNotEmpty) {
                 device['local_name'] = localName;
               }
             }
           }
         }
-        
+
         if (mounted) {
           setState(() {
             _devices = devices;
@@ -212,7 +213,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       print('[HOME] 未登录，跳过加载设备列表');
       return;
     }
-    
+
     await _loadDevices();
     if (_devices.isEmpty) {
       print('[HOME] 没有绑定的设备');
@@ -227,12 +228,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   /// 获取显示设备名（如果有多个设备，添加序列号）
   String _getDisplayDeviceName() {
-    if (_currentDevice == null) return 'HotRice';
-    
+    if (_currentDevice == null) return 'HeatLink';
+
     // 优先使用本地保存的名称
     final localName = _currentDevice!['local_name'] as String?;
-    final deviceName = localName ?? (_currentDevice!['device_name'] as String? ?? 'HotRice');
-    
+    final deviceName =
+        localName ?? (_currentDevice!['device_name'] as String? ?? 'HeatLink');
+
     if (_devices.length > 1) {
       // 找到当前设备在列表中的索引
       final index = _devices.indexWhere(
@@ -248,7 +250,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Future<void> _showEditDeviceNameDialog() async {
     if (_currentDevice == null) return;
 
-    final currentName = _getDisplayDeviceName().replaceAll(RegExp(r' \d+$'), ''); // 移除序列号
+    final currentName =
+        _getDisplayDeviceName().replaceAll(RegExp(r' \d+$'), ''); // 移除序列号
     final controller = TextEditingController(text: currentName);
 
     final newName = await showDialog<String>(
@@ -278,12 +281,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (newName != null && newName.isNotEmpty && newName != currentName) {
       final userId = UserService().currentUser?.userId;
       final deviceUuid = _currentDevice!['device_uuid'] as String?;
-      
+
       if (userId != null && deviceUuid != null) {
         await AppStorage.saveDeviceLocalName(userId, deviceUuid, newName);
         _currentDevice!['local_name'] = newName;
         setState(() {});
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Device name saved')),
@@ -405,7 +408,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (mounted) {
       setState(() => _isConnecting = true);
     }
-    
+
     try {
       final deviceUuid = device['device_uuid'] as String;
       print('[HOME] 连接设备: $deviceUuid');
@@ -467,15 +470,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(
-                  AppLocalizations.of(context).t('device_not_found'))),
+              content:
+                  Text(AppLocalizations.of(context).t('device_not_found'))),
         );
       }
     } catch (e) {
       print('[HOME] 连接设备失败: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${AppLocalizations.of(context).t('failed_to_connect')}: $e')),
+          SnackBar(
+              content: Text(
+                  '${AppLocalizations.of(context).t('failed_to_connect')}: $e')),
         );
       }
     } finally {
@@ -521,8 +526,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Future<void> _checkLoginStatusAndRefresh() async {
     final isLoggedIn = UserService().isLoggedIn;
-    print('[HOME] _checkLoginStatusAndRefresh - _wasLoggedIn: $_wasLoggedIn, isLoggedIn: $isLoggedIn');
-    
+    print(
+        '[HOME] _checkLoginStatusAndRefresh - _wasLoggedIn: $_wasLoggedIn, isLoggedIn: $isLoggedIn');
+
     // 如果从未登录变为已登录，刷新设备列表
     if (!_wasLoggedIn && isLoggedIn) {
       print('[HOME] 检测到登录状态变化，刷新设备列表');
@@ -622,14 +628,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     ],
                                   ),
                                   // 已登录且未连接且有设备时，显示连接按钮
-                                  if (!connected && UserService().isLoggedIn && _currentDevice != null) ...[
+                                  if (!connected &&
+                                      UserService().isLoggedIn &&
+                                      _currentDevice != null) ...[
                                     const SizedBox(height: 8),
                                     GestureDetector(
-                                      onTap: _isConnecting ? null : () async {
-                                        if (_currentDevice != null) {
-                                          await _connectToDevice(_currentDevice!);
-                                        }
-                                      },
+                                      onTap: _isConnecting
+                                          ? null
+                                          : () async {
+                                              if (_currentDevice != null) {
+                                                await _connectToDevice(
+                                                    _currentDevice!);
+                                              }
+                                            },
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
@@ -637,9 +648,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                             l10n.t('connect_device'),
                                             style: TextStyle(
                                               fontSize: 14,
-                                              color: _isConnecting ? Colors.grey : AppColors.orange,
+                                              color: _isConnecting
+                                                  ? Colors.grey
+                                                  : AppColors.orange,
                                               fontWeight: FontWeight.w500,
-                                              decoration: TextDecoration.underline,
+                                              decoration:
+                                                  TextDecoration.underline,
                                             ),
                                           ),
                                           if (_isConnecting) ...[
@@ -649,7 +663,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               height: 14,
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.orange),
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                            Color>(
+                                                        AppColors.orange),
                                               ),
                                             ),
                                           ],
@@ -952,7 +969,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Failed to power on, please try again')),
+                            const SnackBar(
+                                content: Text(
+                                    'Failed to power on, please try again')),
                           );
                         }
                       }
@@ -967,7 +986,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Failed to power off, please try again')),
+                            const SnackBar(
+                                content: Text(
+                                    'Failed to power off, please try again')),
                           );
                         }
                       }
@@ -983,13 +1004,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        _isPoweredOff ? Icons.power_settings_new : Icons.power_settings_new,
+                        _isPoweredOff
+                            ? Icons.power_settings_new
+                            : Icons.power_settings_new,
                         color: Colors.white,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        _isPoweredOff ? l10n.t('power_on') : l10n.t('power_off'),
-                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                        _isPoweredOff
+                            ? l10n.t('power_on')
+                            : l10n.t('power_off'),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 16),
                       ),
                     ],
                   ),
@@ -1115,22 +1141,23 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (connected && _deviceState != null) {
       if (label == l10n.t('ins') && _deviceState == DeviceState.keepWarm) {
         isActive = true;
-      } else if (label == l10n.t('heat') && _deviceState == DeviceState.heating) {
+      } else if (label == l10n.t('heat') &&
+          _deviceState == DeviceState.heating) {
         isActive = true;
-      } else if (label == l10n.t('timer') && _deviceState == DeviceState.timing) {
+      } else if (label == l10n.t('timer') &&
+          _deviceState == DeviceState.timing) {
         isActive = true;
       }
     }
 
     // 根据连接状态和激活状态确定颜色
-    final color = !connected
-        ? Colors.grey
-        : (isActive ? Colors.orange : AppColors.black);
+    final color =
+        !connected ? Colors.grey : (isActive ? Colors.orange : AppColors.black);
 
     return GestureDetector(
       onTap: () async {
         if (!connected) return;
-        
+
         // 检查设备是否已关机
         if (_isPoweredOff) {
           ScaffoldMessenger.of(context).showSnackBar(

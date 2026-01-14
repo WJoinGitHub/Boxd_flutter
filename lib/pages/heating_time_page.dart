@@ -578,7 +578,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
 
       final event = Event(
         calendar.id,
-        title: 'HotRice - Meal Ready',
+        title: 'HeatLink - Meal Ready',
         description:
             'Your meal will be ready at ${selectedHour.toString().padLeft(2, '0')}:${selectedMinute.toString().padLeft(2, '0')}',
         start: tzActualMealTime,

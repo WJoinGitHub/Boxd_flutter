@@ -10,8 +10,9 @@ import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
+import 'package:flutter_boxd_app_flow/utils/app_urls.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_boxd_app_flow/pages/webview_page.dart';
 
 class SettingsPage extends StatefulWidget {
   final Map<String, dynamic>? deviceDetail;
@@ -25,34 +26,17 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool allowNotifications = true;
   String temperatureUnit = '°C';
-  String? privacyPolicyUrl;
-  String? termsUrl;
   final bleService = BleService();
 
   @override
   void initState() {
     super.initState();
     _loadUnit();
-    _loadPolicies();
   }
 
   Future<void> _loadUnit() async {
     final unit = await AppStorage.loadUnit();
     setState(() => temperatureUnit = unit);
-  }
-
-  Future<void> _loadPolicies() async {
-    try {
-      final result = await ApiClient.getPolicies();
-      if (result['code'] == 200 && result['data'] != null) {
-        setState(() {
-          privacyPolicyUrl = result['data']['privacy_policy']?['url'];
-          termsUrl = result['data']['terms_of_service']?['url'];
-        });
-      }
-    } catch (e) {
-      print('Failed to load policies: $e');
-    }
   }
 
   @override
@@ -126,7 +110,16 @@ class _SettingsPageState extends State<SettingsPage> {
                 height: 18,
                 fit: BoxFit.contain,
               ),
-              onTap: () => _openUrl(privacyPolicyUrl),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => WebViewPage(
+                      url: AppUrls.privacyPolicy,
+                      title: l10n.t('privacy_policy'),
+                    ),
+                  ),
+                );
+              },
             ),
             _buildRowTile(
               l10n.t('terms_conditions'),
@@ -135,7 +128,16 @@ class _SettingsPageState extends State<SettingsPage> {
                 height: 18,
                 fit: BoxFit.contain,
               ),
-              onTap: () => _openUrl(termsUrl),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => WebViewPage(
+                      url: AppUrls.termsOfService,
+                      title: l10n.t('terms_conditions'),
+                    ),
+                  ),
+                );
+              },
             ),
           ]),
 
@@ -213,7 +215,7 @@ class _SettingsPageState extends State<SettingsPage> {
           Assets.user.images.userAvatar.image(width: 40, height: 40),
           const SizedBox(width: 10),
           const Text(
-            'HotRice',
+            'HeatLink',
             style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
           ),
         ],
@@ -242,34 +244,34 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildSupportTile() {
     final l10n = AppLocalizations.of(context);
     return GestureDetector(
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const FaqPage(),
-            ),
-          );
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFE8E8E8).withOpacity(0.3),
-            borderRadius: BorderRadius.circular(10),
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const FaqPage(),
           ),
-          child: ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-            leading: Assets.setting.images.setSupport.image(
-              width: 18,
-              height: 18,
-              fit: BoxFit.contain,
-            ),
-            title: Text(l10n.t('support'),
-                style: TextStyle(
-                    color: AppColors.orange, fontWeight: FontWeight.w700)),
-            subtitle: Text(l10n.t('help_and_troubleshooting')),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 13),
-          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8E8E8).withOpacity(0.3),
+          borderRadius: BorderRadius.circular(10),
         ),
-      );
+        child: ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+          leading: Assets.setting.images.setSupport.image(
+            width: 18,
+            height: 18,
+            fit: BoxFit.contain,
+          ),
+          title: Text(l10n.t('support'),
+              style: TextStyle(
+                  color: AppColors.orange, fontWeight: FontWeight.w700)),
+          subtitle: Text(l10n.t('help_and_troubleshooting')),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 13),
+        ),
+      ),
+    );
   }
 
   Widget _buildSectionTitle(String title) => Padding(
@@ -404,7 +406,8 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.t('delete'), style: const TextStyle(color: Colors.red)),
+            child: Text(l10n.t('delete'),
+                style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -429,15 +432,6 @@ class _SettingsPageState extends State<SettingsPage> {
           );
         }
       }
-    }
-  }
-
-  Future<void> _openUrl(String? url) async {
-    if (url == null) return;
-    final fullUrl = url.startsWith('http') ? url : '${ApiClient.baseUrl}$url';
-    final uri = Uri.parse(fullUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.inAppWebView);
     }
   }
 }

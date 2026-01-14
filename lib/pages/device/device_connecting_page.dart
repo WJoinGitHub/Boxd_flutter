@@ -70,7 +70,7 @@ class _DeviceConnectingPageState extends State<DeviceConnectingPage> {
             Text(
               widget.device.platformName.isNotEmpty
                   ? widget.device.platformName
-                  : 'HotRice',
+                  : 'HeatLink',
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,

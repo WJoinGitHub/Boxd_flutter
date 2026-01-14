@@ -5,6 +5,7 @@ import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/widgets/app_text_field.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 
 class SetPasswordPage extends StatefulWidget {
   final bool isForReset;
@@ -34,9 +35,10 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
   }
 
   Future<void> _savePassword() async {
+    final l10n = AppLocalizations.of(context);
     if (!validate(_pwdCtrl.text)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('密码要求：8-20位，包含字母和数字')),
+        SnackBar(content: Text(l10n.t('password_requirements_detail'))),
       );
       return;
     }
@@ -51,12 +53,12 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
         );
         if (result['code'] == 200 && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('密码重置成功')),
+            SnackBar(content: Text(l10n.t('password_reset_success'))),
           );
           Navigator.of(context).popUntil((route) => route.isFirst);
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? '重置失败')),
+            SnackBar(content: Text(result['message'] ?? l10n.t('reset_failed'))),
           );
         }
       } else {
@@ -85,20 +87,20 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
           }
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('注册成功！')),
+              SnackBar(content: Text(l10n.t('registration_success'))),
             );
             Navigator.of(context).popUntil((route) => route.isFirst);
           }
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? '注册失败')),
+            SnackBar(content: Text(result['message'] ?? l10n.t('registration_failed'))),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('request error: $e')),
+          SnackBar(content: Text('${l10n.t('request_error')}: $e')),
         );
       }
     } finally {
@@ -115,10 +117,9 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.isForReset ? 'Reset Password' : 'Create Password';
-    final desc = widget.isForReset
-        ? 'Pleas enter six or more characters'
-        : 'Pleas enter six or more characters';
+    final l10n = AppLocalizations.of(context);
+    final title = widget.isForReset ? l10n.t('reset_password') : l10n.t('create_password');
+    final desc = l10n.t('please_enter_six_or_more_characters');
     return Scaffold(
         appBar: const BxAppBar(title: ""),
         backgroundColor: AppColors.pageBg,
@@ -156,7 +157,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
               const SizedBox(height: 25),
               AppTextField(
                   controller: _pwdCtrl,
-                  labelText: 'Password',
+                  labelText: l10n.t('password'),
                   obscureText: _obscure,
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -166,13 +167,13 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                   onChanged: (_) => setState(() {})), // ✅ 确保每次输入都会重建按钮),
               if (!widget.isForReset) ...[
                 const SizedBox(height: 7),
-                const Align(
+                Align(
                   alignment: Alignment.centerLeft,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Enter six or more characters',
+                        l10n.t('enter_six_or_more_characters'),
                         style: TextStyle(
                           fontFamily: 'SF Pro',
                           fontWeight: FontWeight.w500,
@@ -184,7 +185,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                       ),
                       SizedBox(height: 3),
                       Text(
-                        '8 to 20 characters',
+                        l10n.t('eight_to_twenty_characters'),
                         style: TextStyle(
                           fontFamily: 'SF Pro',
                           fontWeight: FontWeight.w500,
@@ -196,7 +197,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                       ),
                       SizedBox(height: 3),
                       Text(
-                        'Letters, number, and special characters',
+                        l10n.t('letters_numbers_special_characters'),
                         style: TextStyle(
                           fontFamily: 'SF Pro',
                           fontWeight: FontWeight.w500,
@@ -237,9 +238,9 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          'Save',
-                          style: TextStyle(
+                      : Text(
+                          l10n.t('save'),
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w400,
                             color: Colors.white,

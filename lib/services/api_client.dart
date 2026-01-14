@@ -30,7 +30,7 @@ class ApiClient {
       'd66530267153704b2e86d89204089e6f0aed041b82f2a9729e4779b2cf51cd22';
   static const String _appSecretAndroid =
       '091eee43543d14bfed76282e4a1e3a90cddbef91fb8f6baabe4b61347e8595de';
-  static const String userAgent = 'HotRice/1.0.0';
+  static const String userAgent = 'HeatLink/1.0.0';
 
   static String? _token;
 

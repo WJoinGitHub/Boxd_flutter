@@ -6,6 +6,7 @@ import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/widgets/app_text_field.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 
 class EmailLoginPage extends StatefulWidget {
   const EmailLoginPage({super.key});
@@ -37,46 +38,47 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
   }
 
   Future<void> _login() async {
+    final l10n = AppLocalizations.of(context);
     setState(() => _loading = true);
     try {
       final result = await ApiClient.login(
         email: _emailCtrl.text,
         password: _pwdCtrl.text,
       );
-      
+
       if (result['code'] == 200 && mounted) {
         final data = result['data'];
         if (data != null) {
           final tokens = data['tokens'];
           final user = data['user'];
-          
+
           if (tokens != null && user != null) {
             await UserService().saveTokens(
               accessToken: tokens['access_token'] ?? '',
               refreshToken: tokens['refresh_token'] ?? '',
               expiresIn: tokens['expires_in'],
             );
-            
+
             final userInfo = UserInfo.fromJson(user);
             await UserService().saveUserInfo(userInfo);
           }
         }
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('登录成功！')),
+            SnackBar(content: Text(l10n.t('login_success'))),
           );
           Navigator.of(context).popUntil((route) => route.isFirst);
         }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? '登录失败')),
+          SnackBar(content: Text(result['message'] ?? l10n.t('login_failed'))),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('登录失败: $e')),
+          SnackBar(content: Text('${l10n.t('login_failed')}: $e')),
         );
       }
     } finally {
@@ -86,9 +88,10 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sign In'),
+        title: Text(l10n.t('sign_in')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
@@ -118,7 +121,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
               const SizedBox(height: 25),
               AppTextField(
                 controller: _emailCtrl,
-                labelText: 'Enter your email',
+                labelText: l10n.t('enter_email'),
                 keyboardType: TextInputType.emailAddress,
                 suffixIcon: _emailCtrl.text.isNotEmpty
                     ? IconButton(
@@ -131,7 +134,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
               const SizedBox(height: 13),
               AppTextField(
                 controller: _pwdCtrl,
-                labelText: 'Password',
+                labelText: l10n.t('password'),
                 obscureText: _obscure,
                 suffixIcon: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -163,7 +166,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                             )));
                   },
                   child: Text(
-                    'Forget Password?',
+                    l10n.t('forgot_password'),
                     style: TextStyle(color: AppColors.orange, fontSize: 13),
                   ),
                 ),
@@ -189,10 +192,12 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          'Sign In',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.w400, color: Colors.white),
+                      : Text(
+                          l10n.t('sign_in'),
+                          style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white),
                         ),
                 ),
               ),
@@ -200,14 +205,14 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("Don't have an account? "),
+                  Text('${l10n.t('dont_have_account')} '),
                   GestureDetector(
                     onTap: () {
                       Navigator.of(context).push(MaterialPageRoute(
                           builder: (_) => const RegisterEmailPage()));
                     },
                     child: Text(
-                      'Sign Up',
+                      l10n.t('sign_up'),
                       style: TextStyle(color: AppColors.orange, fontSize: 13),
                     ),
                   ),

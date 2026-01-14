@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/login/set_password_page.dart';
-import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart'; // ✅ 新增导入
+import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 
 class SetUsernamePage extends StatefulWidget {
   final String email;
@@ -39,6 +40,7 @@ class _SetUsernamePageState extends State<SetUsernamePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
         appBar: const BxAppBar(title: ""),
         body: Padding(
@@ -50,7 +52,7 @@ class _SetUsernamePageState extends State<SetUsernamePage> {
               const SizedBox(height: 17),
               TextField(
                   controller: _nameCtrl,
-                  decoration: const InputDecoration(labelText: 'UserName'),
+                  decoration: InputDecoration(labelText: l10n.t('username_label')),
                   onChanged: (_) => setState(() => {})),
               const SizedBox(height: 20),
               SizedBox(
@@ -63,7 +65,7 @@ class _SetUsernamePageState extends State<SetUsernamePage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('下一步', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.white)),
+                  child: Text(l10n.t('next'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.white)),
                 ),
               ),
             ])));

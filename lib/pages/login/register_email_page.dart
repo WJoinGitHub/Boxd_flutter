@@ -2,8 +2,11 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
+import 'package:flutter_boxd_app_flow/utils/app_urls.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/widgets/app_text_field.dart';
+import 'package:flutter_boxd_app_flow/pages/webview_page.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'verification_page.dart';
 
 class RegisterEmailPage extends StatefulWidget {
@@ -22,19 +25,34 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
   }
 
   void _openTerms() {
-    // TODO: 打开 Terms of Service 页面
-    debugPrint("Tapped Terms of Service");
+    final l10n = AppLocalizations.of(context);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => WebViewPage(
+          url: AppUrls.termsOfService,
+          title: l10n.t('terms_of_service'),
+        ),
+      ),
+    );
   }
 
   void _openPrivacy() {
-    // TODO: 打开 Privacy Policy 页面
-    debugPrint("Tapped Privacy Policy");
+    final l10n = AppLocalizations.of(context);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => WebViewPage(
+          url: AppUrls.privacyPolicy,
+          title: l10n.t('privacy_policy'),
+        ),
+      ),
+    );
   }
 
   void _sendCode() {
+    final l10n = AppLocalizations.of(context);
     if (!_emailCtrl.text.contains('@') || !_emailCtrl.text.contains('.')) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请输入有效的邮箱地址')),
+        SnackBar(content: Text(l10n.t('invalid_email_message'))),
       );
       return;
     }
@@ -52,6 +70,7 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: BxAppBar(title: "", backgroundColor: AppColors.pageBg),
       backgroundColor: AppColors.pageBg,
@@ -70,14 +89,14 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
             const SizedBox(height: 8),
             Center(
               child: Text(
-                "Sign In",
+                l10n.t('sign_in'),
                 style: TextStyle(color: AppColors.black, fontSize: 27),
               ),
             ),
             const SizedBox(height: 25),
             AppTextField(
               controller: _emailCtrl,
-              labelText: 'Email',
+              labelText: l10n.t('email'),
               keyboardType: TextInputType.emailAddress,
               suffixIcon: _emailCtrl.text.isNotEmpty
                   ? IconButton(
@@ -103,22 +122,22 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
                     height: 1.5,
                   ),
                   children: [
-                    const TextSpan(
-                      text: 'By continuing, you agree to HotRice’s ',
+                    TextSpan(
+                      text: l10n.t('agree_to_terms_prefix'),
                     ),
                     TextSpan(
-                      text: 'Terms of Service',
+                      text: l10n.t('terms_of_service'),
                       style: const TextStyle(
                         color: Colors.blueAccent,
                         decoration: TextDecoration.underline,
                       ),
                       recognizer: TapGestureRecognizer()..onTap = _openTerms,
                     ),
-                    const TextSpan(
-                      text: ' and confirm that you have read TikTok’s ',
+                    TextSpan(
+                      text: l10n.t('agree_to_terms_middle'),
                     ),
                     TextSpan(
-                      text: 'Privacy Policy',
+                      text: l10n.t('privacy_policy'),
                       style: const TextStyle(
                         color: Colors.blueAccent,
                         decoration: TextDecoration.underline,
@@ -142,7 +161,13 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Next', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.white)),
+                child: Text(
+                  l10n.t('next'),
+                  style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white),
+                ),
               ),
             ),
           ],

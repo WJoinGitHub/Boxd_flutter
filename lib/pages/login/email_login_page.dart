@@ -241,10 +241,18 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                 onPressed: _canLogin && !_loading ? _login : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 44),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
+                  ),
+                ).copyWith(
+                  foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                    (Set<MaterialState> states) {
+                      if (states.contains(MaterialState.disabled)) {
+                        return Colors.black.withOpacity(0.3);
+                      }
+                      return Colors.white;
+                    },
                   ),
                 ),
                 child: Center(
@@ -267,33 +275,35 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                 ),
               ),
               const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: _loading ? null : _guestLogin,
-                  child: Text(
-                    l10n.t('guest_login'),
-                    style: TextStyle(
-                      color: AppColors.orange,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('${l10n.t('dont_have_account')} '),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(
-                          builder: (_) => const RegisterEmailPage()));
-                    },
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('${l10n.t('dont_have_account')} '),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => const RegisterEmailPage()));
+                        },
+                        child: Text(
+                          l10n.t('sign_up'),
+                          style:
+                              TextStyle(color: AppColors.orange, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                  TextButton(
+                    onPressed: _loading ? null : _guestLogin,
                     child: Text(
-                      l10n.t('sign_up'),
-                      style: TextStyle(color: AppColors.orange, fontSize: 13),
+                      l10n.t('guest_login'),
+                      style: TextStyle(
+                        color: AppColors.orange,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],

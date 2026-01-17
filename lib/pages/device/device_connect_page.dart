@@ -244,7 +244,7 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       };
     } else {
       title = l10n.t('auto_detecting');
-      desc = "Nearby devices...";
+      desc = l10n.t('nearby_devices');
       buttonText = scanning ? l10n.t('scanning') : l10n.t('scan_devices');
       onPressed = scanning ? null : startScan;
     }

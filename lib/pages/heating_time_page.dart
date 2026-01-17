@@ -104,15 +104,14 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
   Future<void> _showMinutesPicker() async {
     final result = await showMinutesPicker(context, minutes);
     if (result != null) {
-          setState(() {
+      setState(() {
         minutes = result;
       });
     }
   }
 
   Future<void> _showEndTimePicker() async {
-    final result =
-        await showRestrictedTimePicker(context, endHour, endMinute);
+    final result = await showRestrictedTimePicker(context, endHour, endMinute);
     if (result != null) {
       setState(() {
         endHour = result.hour;
@@ -347,9 +346,9 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                         fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 30),
-                      const Text(
-                        'Timer',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context).t('timer_mode'),
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
                           color: Colors.black,
@@ -422,12 +421,12 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
               ),
             ),
             const SizedBox(height: 10),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Center(
                 child: Text(
-                  'MIN',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  AppLocalizations.of(context).t('min_abbreviation'),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ),
             ),
@@ -476,22 +475,24 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 80,
                     child: Center(
                       child: Text(
-                        'HOURS',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        AppLocalizations.of(context).t('hours_abbreviation'),
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ),
                   ),
                   const SizedBox(width: 40),
-                  const SizedBox(
+                  SizedBox(
                     width: 80,
                     child: Center(
                       child: Text(
-                        'MIN',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        AppLocalizations.of(context).t('min_abbreviation'),
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ),
                   ),
@@ -513,19 +514,34 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        endHour.toString().padLeft(2, '0'),
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w300,
+                      SizedBox(
+                        width: 80,
+                        child: Center(
+                          child: Text(
+                            endHour.toString().padLeft(2, '0'),
+                            style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
                         ),
                       ),
-                      const Text(':', style: TextStyle(fontSize: 40)),
-                      Text(
-                        endMinute.toString().padLeft(2, '0'),
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w300,
+                      const SizedBox(
+                        width: 40,
+                        child: Center(
+                          child: Text(':', style: TextStyle(fontSize: 40)),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 80,
+                        child: Center(
+                          child: Text(
+                            endMinute.toString().padLeft(2, '0'),
+                            style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
                         ),
                       ),
                     ],

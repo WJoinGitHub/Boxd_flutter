@@ -70,7 +70,7 @@ class _TimePickerBottomSheetState extends State<_TimePickerBottomSheet> {
         'isNextDay': isNextDay,
         'datetime': currentTime,
       });
-      currentTime = currentTime.add(const Duration(minutes: 15));
+      currentTime = currentTime.add(const Duration(minutes: 1));
     }
   }
 

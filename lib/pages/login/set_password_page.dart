@@ -231,11 +231,19 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                     backgroundColor: validate(_pwdCtrl.text)
                         ? AppColors.orange
                         : AppColors.gray2,
-                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
+                  ).copyWith(
+                    foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                      (Set<MaterialState> states) {
+                        if (states.contains(MaterialState.disabled)) {
+                          return Colors.black.withOpacity(0.3);
+                        }
+                        return Colors.white;
+                      },
+                    ),
                   ),
                   child: _loading
                       ? const SizedBox(

@@ -105,17 +105,22 @@ class AppLocalizations {
 
       // Keep Warm Page
       'keep_warm_title': 'Keep Warm',
+      'keep_warm_mode': 'Keep Warm',
       'set_temperature': 'Set Temperature',
       'start': 'Start',
       'stop': 'Stop',
 
       // Heat Page
       'heat_title': 'Heat',
+      'heating_mode': 'Heating',
       'heating_time': 'Heating Time',
       'minutes': 'Minutes',
+      'min_abbreviation': 'MIN',
+      'hours_abbreviation': 'HOURS',
 
       // Heating Time Page
       'heating_time_title': 'Heating Time',
+      'timer_mode': 'Timer',
       'set_meal_time': 'Set Meal Time',
       'meal_time': 'Meal Time',
 
@@ -123,6 +128,7 @@ class AppLocalizations {
       'connect_device_title': 'Connect Device',
       'searching_devices': 'Searching for devices...',
       'no_devices_found': 'No devices found',
+      'nearby_devices': 'Nearby devices...',
       'turn_on_bluetooth': 'Please turn on Bluetooth',
       'connecting': 'Connecting...',
       'connection_failed': 'Connection failed',
@@ -372,17 +378,22 @@ class AppLocalizations {
 
       // Keep Warm Page
       'keep_warm_title': '保温',
+      'keep_warm_mode': '保温模式',
       'set_temperature': '设置温度',
       'start': '开始',
       'stop': '停止',
 
       // Heat Page
       'heat_title': '加热',
+      'heating_mode': '加热模式',
       'heating_time': '加热时间',
       'minutes': '分钟',
+      'min_abbreviation': '分钟',
+      'hours_abbreviation': '小时',
 
       // Heating Time Page
       'heating_time_title': '定时加热',
+      'timer_mode': '定时加热模式',
       'set_meal_time': '设置用餐时间',
       'meal_time': '用餐时间',
 
@@ -390,6 +401,7 @@ class AppLocalizations {
       'connect_device_title': '连接设备',
       'searching_devices': '正在搜索设备...',
       'no_devices_found': '未找到设备',
+      'nearby_devices': '附近设备...',
       'turn_on_bluetooth': '请打开蓝牙',
       'connecting': '连接中...',
       'connection_failed': '连接失败',

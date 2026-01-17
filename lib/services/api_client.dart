@@ -280,6 +280,9 @@ class ApiClient {
   }
 
   /// 获取设备信息
+  /// device_id 使用设备的 UDID（唯一标识符）
+  /// iOS: identifierForVendor (IDFV) - 设备唯一标识符
+  /// Android: id (Android ID) - 设备唯一标识符
   static Future<Map<String, dynamic>> _getDeviceInfo() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
@@ -294,11 +297,14 @@ class ApiClient {
         final iosInfo = await deviceInfo.iosInfo;
         deviceModel = iosInfo.model;
         deviceName = iosInfo.name;
+        // iOS: 使用 identifierForVendor (IDFV) 作为设备 UDID
+        // 注意：苹果已禁止访问真正的 UDID，IDFV 是当前可用的设备唯一标识符
         deviceId = iosInfo.identifierForVendor ?? 'Unknown';
       } else {
         final androidInfo = await deviceInfo.androidInfo;
         deviceModel = androidInfo.model;
         deviceName = androidInfo.device;
+        // Android: 使用 id (Android ID) 作为设备 UDID
         deviceId = androidInfo.id;
       }
 

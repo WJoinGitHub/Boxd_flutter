@@ -432,9 +432,9 @@ class _HeatPageState extends State<HeatPage> {
                         fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 30),
-                      const Text(
-                        'Heating',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context).t('heating_mode'),
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
                           color: Colors.black,
@@ -507,12 +507,12 @@ class _HeatPageState extends State<HeatPage> {
               ),
             ),
             const SizedBox(height: 10),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Center(
                 child: Text(
-                  'MIN',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  AppLocalizations.of(context).t('min_abbreviation'),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ),
             ),

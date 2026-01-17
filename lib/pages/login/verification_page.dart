@@ -287,9 +287,17 @@ class _VerificationPageState extends State<VerificationPage> {
                       key: const ValueKey('sendagain'),
                       onPressed: _loading ? null : () => _sendCode(),
                       style: TextButton.styleFrom(
-                        foregroundColor: AppColors.orange,
                         padding: EdgeInsets.zero,
                         overlayColor: Colors.transparent,
+                      ).copyWith(
+                        foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                          (Set<MaterialState> states) {
+                            if (states.contains(MaterialState.disabled)) {
+                              return Colors.black.withOpacity(0.3);
+                            }
+                            return AppColors.orange;
+                          },
+                        ),
                       ),
                       child: _loading
                           ? SizedBox(
@@ -324,6 +332,15 @@ class _VerificationPageState extends State<VerificationPage> {
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
+                  ),
+                ).copyWith(
+                  foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                    (Set<MaterialState> states) {
+                      if (states.contains(MaterialState.disabled)) {
+                        return Colors.black.withOpacity(0.3);
+                      }
+                      return Colors.white;
+                    },
                   ),
                 ),
                 child: Text(l10n.t('verify_button'),

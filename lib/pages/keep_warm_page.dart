@@ -373,9 +373,9 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
                         fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 30),
-                      const Text(
-                        'Keep\nWarm',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context).t('keep_warm_mode'),
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
                           color: Colors.black,

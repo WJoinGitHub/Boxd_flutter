@@ -157,17 +157,19 @@ class _SettingsPageState extends State<SettingsPage> {
                       fontWeight: FontWeight.w500),
                 ),
               ),
-              const SizedBox(width: 20),
-              TextButton(
-                onPressed: _handleDeleteAccount,
-                child: Text(
-                  l10n.t('delete_account'),
-                  style: const TextStyle(
-                      color: Colors.black54,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500),
+              if (!UserService().isGuestMode) ...[
+                const SizedBox(width: 20),
+                TextButton(
+                  onPressed: _handleDeleteAccount,
+                  child: Text(
+                    l10n.t('delete_account'),
+                    style: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ],

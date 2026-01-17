@@ -179,7 +179,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildProfile() {
     final userService = UserService();
-    final nickname = userService.currentUser?.nickname ?? 'HeatLink';
+    final isGuest = userService.isGuestMode;
+    final nickname = isGuest ? '游客' : (userService.currentUser?.nickname ?? 'HeatLink');
     
     return Row(
       children: [
@@ -189,15 +190,17 @@ class _SettingsPageState extends State<SettingsPage> {
           nickname,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
         ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: _showEditNicknameDialog,
-          child: Icon(
-            Icons.edit,
-            size: 18,
-            color: Colors.grey[600],
+        if (!isGuest) ...[
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: _showEditNicknameDialog,
+            child: Icon(
+              Icons.edit,
+              size: 18,
+              color: Colors.grey[600],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }

@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'user_service.dart';
 
 enum CodeType {
@@ -270,6 +272,53 @@ class ApiClient {
       'email': email,
       'password': password,
     });
+    if (result['code'] == 200 &&
+        result['data']?['tokens']?['access_token'] != null) {
+      setToken(result['data']['tokens']['access_token']);
+    }
+    return result;
+  }
+
+  /// 获取设备信息
+  static Future<Map<String, dynamic>> _getDeviceInfo() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final deviceInfo = DeviceInfoPlugin();
+
+      String platform = Platform.isIOS ? 'iOS' : 'Android';
+      String deviceModel = 'Unknown';
+      String deviceName = 'Unknown';
+      String deviceId = 'Unknown';
+
+      if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        deviceModel = iosInfo.model;
+        deviceName = iosInfo.name;
+        deviceId = iosInfo.identifierForVendor ?? 'Unknown';
+      } else {
+        final androidInfo = await deviceInfo.androidInfo;
+        deviceModel = androidInfo.model;
+        deviceName = androidInfo.device;
+        deviceId = androidInfo.id;
+      }
+
+      return {
+        'app_version': packageInfo.version,
+        'device_id': deviceId,
+        'device_model': deviceModel,
+        'device_name': deviceName,
+        'platform': platform,
+      };
+    } catch (e) {
+      print('[API] 获取设备信息失败: $e');
+      return {};
+    }
+  }
+
+  /// 游客登录
+  static Future<Map<String, dynamic>> guestLogin() async {
+    final deviceInfo = await _getDeviceInfo();
+    final result = await post('/auth/guest-login', deviceInfo);
     if (result['code'] == 200 &&
         result['data']?['tokens']?['access_token'] != null) {
       setToken(result['data']['tokens']['access_token']);

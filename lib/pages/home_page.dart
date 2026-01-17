@@ -703,6 +703,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   const SizedBox(height: 3),
                                   Row(
                                     children: [
+                                      // 设备名称显示（游客模式下也显示）
                                       GestureDetector(
                                         onTap: _devices.length > 1
                                             ? _showDeviceSelector
@@ -729,7 +730,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                           ],
                                         ),
                                       ),
-                                      if (_currentDevice != null) ...[
+                                      // 编辑按钮（游客模式下隐藏）
+                                      if (_currentDevice != null &&
+                                          !UserService().isGuestMode) ...[
                                         const SizedBox(width: 8),
                                         GestureDetector(
                                           onTap: _showEditDeviceNameDialog,
@@ -875,6 +878,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     ),
                                   );
                                   if (result == true && mounted) {
+                                    // 绑定设备成功后，刷新设备列表（包括游客模式）
+                                    if (UserService().isLoggedIn) {
+                                      await _loadDevices();
+                                    }
                                     setState(() =>
                                         connected = bleService.isConnected);
                                   }

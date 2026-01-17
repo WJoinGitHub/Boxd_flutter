@@ -37,6 +37,63 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
     return emailReg.hasMatch(v);
   }
 
+  Future<void> _guestLogin() async {
+    final l10n = AppLocalizations.of(context);
+    setState(() => _loading = true);
+    try {
+      final result = await ApiClient.guestLogin();
+
+      if (result['code'] == 200 && mounted) {
+        final data = result['data'];
+        if (data != null) {
+          final tokens = data['tokens'];
+          final user = data['user'];
+
+          if (tokens != null && user != null) {
+            await UserService().saveTokens(
+              accessToken: tokens['access_token'] ?? '',
+              refreshToken: tokens['refresh_token'] ?? '',
+              expiresIn: tokens['expires_in'],
+              isGuest: true, // 标记为游客模式
+            );
+
+            final userInfo = UserInfo.fromJson(user);
+            await UserService().saveUserInfo(userInfo, isGuest: true);
+
+            // 游客登录成功后调用 user/profile 接口刷新用户信息
+            try {
+              await UserService().fetchUserInfo();
+              print(
+                  '[GUEST_LOGIN] 用户信息已刷新: ${UserService().currentUser?.nickname}');
+            } catch (e) {
+              print('[GUEST_LOGIN] 刷新用户信息失败: $e');
+            }
+          }
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.t('guest_login_success'))),
+          );
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(result['message'] ?? l10n.t('guest_login_failed'))),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${l10n.t('guest_login_failed')}: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   Future<void> _login() async {
     final l10n = AppLocalizations.of(context);
     setState(() => _loading = true);
@@ -209,7 +266,22 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                         ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _loading ? null : _guestLogin,
+                  child: Text(
+                    l10n.t('guest_login'),
+                    style: TextStyle(
+                      color: AppColors.orange,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

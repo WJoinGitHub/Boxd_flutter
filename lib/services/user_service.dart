@@ -110,6 +110,7 @@ class UserService {
   String? _accessToken;
   String? _refreshToken;
   DateTime? _expiresAt;
+  bool _isGuestMode = false; // 是否为游客模式
 
   // 401错误回调，用于通知UI清空设备列表
   void Function()? onUnauthorized;
@@ -117,6 +118,7 @@ class UserService {
   UserInfo? get currentUser => _currentUser;
   String? get accessToken => _accessToken;
   bool get isLoggedIn => _accessToken != null;
+  bool get isGuestMode => _isGuestMode;
 
   /// 保存 tokens
   Future<void> saveTokens({
@@ -124,9 +126,11 @@ class UserService {
     required String refreshToken,
     String? expiresAt,
     int? expiresIn,
+    bool isGuest = false, // 是否为游客模式
   }) async {
     _accessToken = accessToken;
     _refreshToken = refreshToken;
+    _isGuestMode = isGuest;
     ApiClient.setToken(accessToken);
 
     String expiresAtStr = '';
@@ -142,24 +146,35 @@ class UserService {
       expiresAtStr = _expiresAt!.toIso8601String();
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final saveAccessToken = await prefs.setString('access_token', accessToken);
-    final saveRefreshToken =
-        await prefs.setString('refresh_token', refreshToken);
-    final saveExpiresAt = await prefs.setString('expires_at', expiresAtStr);
-    print(
-        '[USER] Tokens 已保存: access=$saveAccessToken, refresh=$saveRefreshToken, expires=$saveExpiresAt');
-    print('[USER] 保存的 access_token: ${accessToken.substring(0, 20)}...');
-    print('[USER] 保存的 refresh_token: ${refreshToken.substring(0, 20)}...');
-    print('[USER] 保存的 expires_at: $expiresAtStr');
+    // 游客模式不保存到本地
+    if (!isGuest) {
+      final prefs = await SharedPreferences.getInstance();
+      final saveAccessToken =
+          await prefs.setString('access_token', accessToken);
+      final saveRefreshToken =
+          await prefs.setString('refresh_token', refreshToken);
+      final saveExpiresAt = await prefs.setString('expires_at', expiresAtStr);
+      print(
+          '[USER] Tokens 已保存: access=$saveAccessToken, refresh=$saveRefreshToken, expires=$saveExpiresAt');
+      print('[USER] 保存的 access_token: ${accessToken.substring(0, 20)}...');
+      print('[USER] 保存的 refresh_token: ${refreshToken.substring(0, 20)}...');
+      print('[USER] 保存的 expires_at: $expiresAtStr');
+    } else {
+      print('[USER] 游客模式，不保存 tokens 到本地');
+    }
   }
 
   /// 保存用户信息（内存和本地）
-  Future<void> saveUserInfo(UserInfo user) async {
+  Future<void> saveUserInfo(UserInfo user, {bool isGuest = false}) async {
     _currentUser = user;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_info', jsonEncode(user.toJson()));
-    print('[USER] 用户信息已保存: ${user.email}');
+    // 游客模式不保存到本地
+    if (!isGuest) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_info', jsonEncode(user.toJson()));
+      print('[USER] 用户信息已保存: ${user.email}');
+    } else {
+      print('[USER] 游客模式，用户信息仅保存在内存: ${user.email}');
+    }
   }
 
   /// 从本地加载 token 和用户信息
@@ -283,6 +298,7 @@ class UserService {
     _refreshToken = null;
     _expiresAt = null;
     _currentUser = null;
+    _isGuestMode = false;
     ApiClient.clearToken();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');

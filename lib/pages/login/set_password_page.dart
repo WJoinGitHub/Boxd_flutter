@@ -83,6 +83,14 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
               
               final userInfo = UserInfo.fromJson(user);
               await UserService().saveUserInfo(userInfo);
+              
+              // 注册成功后调用 user/profile 接口刷新用户信息
+              try {
+                await UserService().fetchUserInfo();
+                print('[REGISTER] 用户信息已刷新: ${UserService().currentUser?.nickname}');
+              } catch (e) {
+                print('[REGISTER] 刷新用户信息失败: $e');
+              }
             }
           }
           if (mounted) {

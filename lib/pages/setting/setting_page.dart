@@ -177,16 +177,21 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // ------------------------- Components ----------------------------
 
-  Widget _buildProfile() => Row(
-        children: [
-          Assets.user.images.userAvatar.image(width: 40, height: 40),
-          const SizedBox(width: 10),
-          const Text(
-            'HeatLink',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-          ),
-        ],
-      );
+  Widget _buildProfile() {
+    final userService = UserService();
+    final nickname = userService.currentUser?.nickname ?? 'HeatLink';
+    
+    return Row(
+      children: [
+        Assets.user.images.userAvatar.image(width: 40, height: 40),
+        const SizedBox(width: 10),
+        Text(
+          nickname,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        ),
+      ],
+    );
+  }
 
   Widget _buildCouponCard() => Container(
         height: 67,

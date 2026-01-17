@@ -61,6 +61,14 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
 
             final userInfo = UserInfo.fromJson(user);
             await UserService().saveUserInfo(userInfo);
+            
+            // 登录成功后调用 user/profile 接口刷新用户信息
+            try {
+              await UserService().fetchUserInfo();
+              print('[LOGIN] 用户信息已刷新: ${UserService().currentUser?.nickname}');
+            } catch (e) {
+              print('[LOGIN] 刷新用户信息失败: $e');
+            }
           }
         }
 

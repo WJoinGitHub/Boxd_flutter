@@ -153,15 +153,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final hasToken = await UserService().loadFromLocal();
     print('[HOME] loadFromLocal 结果: $hasToken');
     if (hasToken) {
-      // 只有在本地没有用户信息时才获取
-      if (UserService().currentUser == null) {
-        try {
-          await UserService().fetchUserInfo();
-          print('[HOME] 用户信息: ${UserService().currentUser?.email}');
-        } catch (e) {
-          print('[HOME] 获取用户信息失败: $e');
-          // 如果获取用户信息失败（可能是401），确保UI更新
-        }
+      // 自动登录成功后调用 user/profile 接口刷新用户信息
+      try {
+        await UserService().fetchUserInfo();
+        print('[HOME] 用户信息已刷新: ${UserService().currentUser?.email}, 昵称: ${UserService().currentUser?.nickname}');
+      } catch (e) {
+        print('[HOME] 获取用户信息失败: $e');
+        // 如果获取用户信息失败（可能是401），确保UI更新
       }
       print('[HOME] isLoggedIn: ${UserService().isLoggedIn}');
       if (mounted) {

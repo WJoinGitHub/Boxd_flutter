@@ -132,7 +132,11 @@ class _TemperaturePickerBottomSheetState
             ),
           ),
           Expanded(
-            child: Row(
+            child: SizedBox(
+              height: 200,
+              child: Stack(
+                children: [
+                  Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildTemperaturePicker(),
@@ -145,6 +149,27 @@ class _TemperaturePickerBottomSheetState
                   ),
                 ),
               ],
+                  ),
+                  // 中间选中行的背景（覆盖数值和单位）
+                  Positioned(
+                    top: 50,
+                    left: 0,
+                    right: 0,
+                    height: 40,
+                    child: IgnorePointer(
+                      child: Center(
+                        child: Container(
+                          width: 140, // 足够覆盖数值和单位
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           Padding(

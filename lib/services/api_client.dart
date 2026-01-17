@@ -55,9 +55,10 @@ class ApiClient {
     String method,
     String path,
     String timestamp,
-    String body,
-  ) {
-    final token = _token?.replaceFirst('Bearer ', '') ?? '';
+    String body, {
+    bool skipAuth = false,
+  }) {
+    final token = skipAuth ? '' : (_token?.replaceFirst('Bearer ', '') ?? '');
     final signString = token.isEmpty
         ? method + path + timestamp + body + userAgent
         : method + path + timestamp + token + body + userAgent;
@@ -73,6 +74,7 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? body,
     Map<String, dynamic>? queryParams,
+    bool skipAuth = false,
   }) async {
     final uri = queryParams != null
         ? Uri.parse('$baseUrl$basePath$path').replace(
@@ -84,8 +86,9 @@ class ApiClient {
     final timestamp =
         (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
     final bodyStr = body != null ? jsonEncode(body) : '';
-    final signature =
-        _generateSignature(method, basePath + path, timestamp, bodyStr);
+    final signature = _generateSignature(
+        method, basePath + path, timestamp, bodyStr,
+        skipAuth: skipAuth);
 
     final headers = {
       'Content-Type': 'application/json',
@@ -93,7 +96,7 @@ class ApiClient {
       'X-Timestamp': timestamp,
       'X-Signature': signature,
       'User-Agent': userAgent,
-      if (_token != null) 'Authorization': 'Bearer $_token',
+      if (!skipAuth && _token != null) 'Authorization': 'Bearer $_token',
     };
 
     print('Request $method: $uri');
@@ -275,7 +278,8 @@ class ApiClient {
   }
 
   static Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
-    final result = await post('/auth/refresh', {'refresh_token': refreshToken});
+    final result = await _request('POST', '/auth/refresh',
+        body: {'refresh_token': refreshToken}, skipAuth: true);
     if (result['code'] == 200 &&
         result['data']?['tokens']?['access_token'] != null) {
       setToken(result['data']['tokens']['access_token']);

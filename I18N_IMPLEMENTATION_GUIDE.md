@@ -99,7 +99,7 @@ Text(l10n.t('connect_device'))
 - 'Enter your email' → l10n.t('enter_email')
 - 'Next' → l10n.t('next')
 - 'Already have an account?' → l10n.t('already_have_account')
-- 'Sign In' → l10n.t('sign_in')
+- 'Sign In' → l10n.t('sign_up')
 
 ### FeedbackPage (setting/feedback_page.dart)
 - 'Feedback' → l10n.t('feedback_title')

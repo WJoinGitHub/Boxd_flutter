@@ -89,7 +89,7 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
             const SizedBox(height: 8),
             Center(
               child: Text(
-                l10n.t('sign_in'),
+                l10n.t('sign_up'),
                 style: TextStyle(color: AppColors.black, fontSize: 27),
               ),
             ),

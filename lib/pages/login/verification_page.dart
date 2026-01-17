@@ -86,7 +86,9 @@ class _VerificationPageState extends State<VerificationPage> {
         }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? l10n.t('verification_failed'))),
+          SnackBar(
+              content:
+                  Text(result['message'] ?? l10n.t('verification_failed'))),
         );
       }
     } catch (e) {
@@ -158,7 +160,8 @@ class _VerificationPageState extends State<VerificationPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final title = widget.isForReset ? l10n.t('reset_password') : l10n.t('sign_in');
+    final title =
+        widget.isForReset ? l10n.t('reset_password') : l10n.t('sign_up');
     return Scaffold(
       appBar: const BxAppBar(title: ""),
       body: Padding(
@@ -323,7 +326,11 @@ class _VerificationPageState extends State<VerificationPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text(l10n.t('verify_button'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400, color: Colors.white)),
+                child: Text(l10n.t('verify_button'),
+                    style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white)),
               ),
             ),
           ],

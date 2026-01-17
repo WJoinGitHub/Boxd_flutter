@@ -247,8 +247,8 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                               const EdgeInsets.symmetric(horizontal: 12),
                           leading: Assets.device.images.hotRice
                               .image(width: 40, height: 40),
-                          title: Stack(
-                            clipBehavior: Clip.none,
+                          title: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 displayName,
@@ -257,19 +257,14 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              if (isConnected)
-                                Positioned(
-                                  top: -4,
-                                  right: -4,
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.green,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
+                              if (isConnected) ...[
+                                const SizedBox(width: 6),
+                                Icon(
+                                  Icons.circle,
+                                  color: Colors.green,
+                                  size: 13,
                                 ),
+                              ],
                             ],
                           ),
                           trailing: IconButton(

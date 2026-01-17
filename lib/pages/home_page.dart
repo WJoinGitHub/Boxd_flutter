@@ -223,7 +223,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     // 取设备列表第一个设备，走用户点击连接设备的逻辑
     final firstDevice = _devices.first;
     print('[HOME] 自动连接第一个设备: ${firstDevice['device_uuid']}');
-    await _connectToDevice(firstDevice);
+    await _connectToDevice(firstDevice, isAutoConnect: true);
   }
 
   /// 获取显示设备名（如果有多个设备，添加序列号）
@@ -405,19 +405,47 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     await _connectToDevice(newDevice);
   }
 
-  Future<void> _connectToDevice(Map<String, dynamic> device) async {
+  Future<void> _connectToDevice(Map<String, dynamic> device, {bool isAutoConnect = false}) async {
     if (mounted) {
       setState(() => _isConnecting = true);
     }
+
+    // 设置15秒总超时
+    bool timeoutOccurred = false;
+    Timer? timeoutTimer;
 
     try {
       final deviceUuid = device['device_uuid'] as String;
       print('[HOME] 连接设备: $deviceUuid');
 
+      // 启动超时定时器
+      timeoutTimer = Timer(const Duration(seconds: 15), () {
+        timeoutOccurred = true;
+        print('[HOME] 连接超时（15秒），停止连接');
+        // 停止扫描
+        try {
+          FlutterBluePlus.stopScan();
+        } catch (e) {
+          print('[HOME] 停止扫描失败: $e');
+        }
+        // 断开连接
+        try {
+          bleService.disconnect();
+        } catch (e) {
+          print('[HOME] 断开连接失败: $e');
+        }
+      });
+
       final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
+      if (timeoutOccurred || !mounted) {
+        timeoutTimer?.cancel();
+        return;
+      }
+
       BluetoothDevice? targetDevice;
 
       for (var d in connectedDevices) {
+        if (timeoutOccurred) break;
         // 尝试通过UUID匹配
         final currentUuid = Platform.isAndroid
             ? d.remoteId.str.replaceAll(':', '').toUpperCase()
@@ -428,34 +456,96 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         }
       }
 
-      if (targetDevice == null) {
+      if (targetDevice == null && !timeoutOccurred) {
         print('[HOME] 开始扫描设备...');
         await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
-        await for (var results in FlutterBluePlus.scanResults) {
-          for (var r in results) {
-            // 尝试通过UUID匹配
-            final currentUuid = Platform.isAndroid
-                ? r.device.remoteId.str.replaceAll(':', '').toUpperCase()
-                : r.device.remoteId.str.replaceAll('-', '').toUpperCase();
-            if (currentUuid == deviceUuid) {
-              targetDevice = r.device;
-              break;
+        
+        final deviceCompleter = Completer<BluetoothDevice?>();
+        StreamSubscription? scanSubscription;
+        
+        try {
+          scanSubscription = FlutterBluePlus.scanResults.listen((results) {
+            if (timeoutOccurred || deviceCompleter.isCompleted) {
+              return;
             }
-            // 尝试通过设备名称匹配
-            final deviceName = device['device_name'] as String? ?? '';
-            if (deviceName.isNotEmpty && r.device.platformName == deviceName) {
-              targetDevice = r.device;
-              break;
+            
+            for (var r in results) {
+              if (timeoutOccurred || deviceCompleter.isCompleted) break;
+              // 尝试通过UUID匹配
+              final currentUuid = Platform.isAndroid
+                  ? r.device.remoteId.str.replaceAll(':', '').toUpperCase()
+                  : r.device.remoteId.str.replaceAll('-', '').toUpperCase();
+              if (currentUuid == deviceUuid) {
+                deviceCompleter.complete(r.device);
+                break;
+              }
+              // 尝试通过设备名称匹配
+              final deviceName = device['device_name'] as String? ?? '';
+              if (deviceName.isNotEmpty && r.device.platformName == deviceName) {
+                deviceCompleter.complete(r.device);
+                break;
+              }
             }
+          });
+
+          // 等待扫描完成或超时
+          try {
+            targetDevice = await deviceCompleter.future.timeout(
+              const Duration(seconds: 5),
+              onTimeout: () => null,
+            );
+          } catch (e) {
+            print('[HOME] 扫描等待失败: $e');
           }
-          if (targetDevice != null) break;
+          
+          scanSubscription?.cancel();
+          if (!timeoutOccurred) {
+            await FlutterBluePlus.stopScan();
+          }
+        } catch (e) {
+          scanSubscription?.cancel();
+          if (!deviceCompleter.isCompleted) {
+            deviceCompleter.complete(null);
+          }
+          if (!timeoutOccurred) {
+            await FlutterBluePlus.stopScan();
+          }
         }
-        await FlutterBluePlus.stopScan();
+      }
+
+      if (timeoutOccurred) {
+        timeoutTimer?.cancel();
+        // 自动连接失败时不显示提示
+        if (mounted && !isAutoConnect) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context).t('failed_to_connect')),
+            ),
+          );
+        }
+        return;
       }
 
       if (targetDevice != null && mounted) {
-        final success = await bleService.connect(targetDevice, skipBind: true);
-        if (success && mounted) {
+        // 在连接前再次检查超时
+        if (timeoutOccurred) {
+          timeoutTimer?.cancel();
+          return;
+        }
+
+        final success = await bleService.connect(targetDevice, skipBind: true)
+            .timeout(
+          const Duration(seconds: 15),
+          onTimeout: () {
+            print('[HOME] BLE服务连接超时');
+            timeoutOccurred = true;
+            return false;
+          },
+        );
+
+        timeoutTimer?.cancel();
+
+        if (success && mounted && !timeoutOccurred) {
           setState(() => connected = true);
           print('[HOME] 设备连接成功');
           // 获取设备详情
@@ -467,8 +557,25 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           } catch (e) {
             print('[HOME] 获取设备详情失败: $e');
           }
+          // 自动连接时不显示成功提示
+          if (!isAutoConnect && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(AppLocalizations.of(context).t('connection_success')),
+              ),
+            );
+          }
+        } else if (mounted && timeoutOccurred && !isAutoConnect) {
+          // 自动连接失败时不显示提示
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context).t('failed_to_connect')),
+            ),
+          );
         }
-      } else if (mounted) {
+      } else if (mounted && !timeoutOccurred && !isAutoConnect) {
+        // 自动连接失败时不显示提示
+        timeoutTimer?.cancel();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content:
@@ -476,8 +583,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         );
       }
     } catch (e) {
+      timeoutTimer?.cancel();
       print('[HOME] 连接设备失败: $e');
-      if (mounted) {
+      // 自动连接失败时不显示提示
+      if (mounted && !timeoutOccurred && !isAutoConnect) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(
@@ -485,6 +594,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         );
       }
     } finally {
+      timeoutTimer?.cancel();
       if (mounted) {
         setState(() => _isConnecting = false);
       }
@@ -728,71 +838,59 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                children: [
-                                  if (connected)
-                                    Icon(
-                                      Icons.circle,
-                                      color: AppColors.green,
-                                      size: 13,
-                                    ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    connected
-                                        ? l10n.t('connected')
-                                        : l10n.t('connect_your_lunch_box'),
-                                    style: TextStyle(
-                                      fontSize: connected ? 20 : 13,
-                                      color: connected
-                                          ? AppColors.green
-                                          : Colors.black54,
-                                      fontWeight: FontWeight.w300,
-                                    ),
-                                  ),
-                                ],
+                              Text(
+                                connected
+                                    ? l10n.t('connected')
+                                    : l10n.t('connect_your_lunch_box'),
+                                style: TextStyle(
+                                  fontSize: connected ? 20 : 13,
+                                  color: connected
+                                      ? AppColors.green
+                                      : Colors.black54,
+                                  fontWeight: FontWeight.w300,
+                                ),
                               ),
-                              if (!connected)
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    if (!UserService().isLoggedIn) {
-                                      await Navigator.of(context).push(
-                                        PageRouteBuilder(
-                                          fullscreenDialog: true,
-                                          pageBuilder: (_, __, ___) =>
-                                              const EmailLoginPage(),
-                                        ),
-                                      );
-                                      if (!mounted || !UserService().isLoggedIn)
-                                        return;
-                                    }
-                                    final result =
-                                        await Navigator.of(context).push(
+                              ElevatedButton(
+                                onPressed: () async {
+                                  if (!UserService().isLoggedIn) {
+                                    await Navigator.of(context).push(
                                       PageRouteBuilder(
+                                        fullscreenDialog: true,
                                         pageBuilder: (_, __, ___) =>
-                                            const DeviceConnectPage(),
+                                            const EmailLoginPage(),
                                       ),
                                     );
-                                    if (result == true && mounted) {
-                                      setState(() =>
-                                          connected = bleService.isConnected);
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    elevation: 0,
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: const Size(29, 27),
-                                    shape: const CircleBorder(),
-                                  ),
-                                  child: Center(
-                                    child: Assets.home.images.addDevice.image(
-                                      width: 21,
-                                      height: 21,
-                                      fit: BoxFit.contain,
+                                    if (!mounted || !UserService().isLoggedIn)
+                                      return;
+                                  }
+                                  final result =
+                                      await Navigator.of(context).push(
+                                    PageRouteBuilder(
+                                      pageBuilder: (_, __, ___) =>
+                                          const DeviceConnectPage(),
                                     ),
+                                  );
+                                  if (result == true && mounted) {
+                                    setState(() =>
+                                        connected = bleService.isConnected);
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  elevation: 0,
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: const Size(29, 27),
+                                  shape: const CircleBorder(),
+                                ),
+                                child: Center(
+                                  child: Assets.home.images.addDevice.image(
+                                    width: 21,
+                                    height: 21,
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
+                              ),
                             ],
                           ),
 
@@ -957,70 +1055,75 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             if (connected)
               Padding(
                 padding: const EdgeInsets.all(20),
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (_isPoweredOff) {
-                      // 开机
-                      final success = await bleService.startDevice();
-                      if (mounted) {
-                        final l10n = AppLocalizations.of(context);
-                        if (success) {
-                          setState(() => _isPoweredOff = false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(l10n.t('device_powered_on'))),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(l10n.t('failed_to_power_on'))),
-                          );
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (_isPoweredOff) {
+                        // 开机
+                        final success = await bleService.startDevice();
+                        if (mounted) {
+                          final l10n = AppLocalizations.of(context);
+                          if (success) {
+                            setState(() => _isPoweredOff = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(l10n.t('device_powered_on'))),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(l10n.t('failed_to_power_on'))),
+                            );
+                          }
+                        }
+                      } else {
+                        // 关机
+                        final success = await bleService.stopDevice();
+                        if (mounted) {
+                          final l10n = AppLocalizations.of(context);
+                          if (success) {
+                            setState(() => _isPoweredOff = true);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(l10n.t('device_powered_off'))),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(l10n.t('failed_to_power_off'))),
+                            );
+                          }
                         }
                       }
-                    } else {
-                      // 关机
-                      final success = await bleService.stopDevice();
-                      if (mounted) {
-                        final l10n = AppLocalizations.of(context);
-                        if (success) {
-                          setState(() => _isPoweredOff = true);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(l10n.t('device_powered_off'))),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(l10n.t('failed_to_power_off'))),
-                          );
-                        }
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _isPoweredOff ? Colors.green : Colors.red,
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        _isPoweredOff
-                            ? Icons.power_settings_new
-                            : Icons.power_settings_new,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _isPoweredOff
-                            ? l10n.t('power_on')
-                            : l10n.t('power_off'),
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                    ],
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          _isPoweredOff ? Colors.green : Colors.red,
+                      minimumSize: const Size(100, 56),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isPoweredOff
+                              ? Icons.power_settings_new
+                              : Icons.power_settings_new,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _isPoweredOff
+                              ? l10n.t('power_on')
+                              : l10n.t('power_off'),
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 16),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               )
@@ -1047,12 +1150,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     await bleService.syncTime();
   }
 
-  /// 获取显示温度（根据单位转换）
+  /// 获取显示温度（心跳收到的温度已经是转换过的，直接返回）
   int _getDisplayTemperature() {
-    if (temperatureUnit == '°F') {
-      // 摄氏度转华氏度: F = C * 9/5 + 32
-      return (temperature * 9 / 5 + 32).round();
-    }
     return temperature;
   }
 
@@ -1157,6 +1256,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final color =
         !connected ? Colors.grey : (isActive ? Colors.orange : AppColors.black);
 
+    // 根据按钮类型和激活状态选择图片
+    Widget buttonIcon;
+    if (label == l10n.t('ins')) {
+      buttonIcon = isActive
+          ? Assets.device.images.devInsSelect.image(width: 48, height: 47)
+          : Assets.device.images.devIns.image(width: 48, height: 47);
+    } else if (label == l10n.t('heat')) {
+      buttonIcon = isActive
+          ? Assets.device.images.devHeatSelect.image(width: 44, height: 53)
+          : Assets.device.images.devHeat.image(width: 44, height: 53);
+    } else if (label == l10n.t('timer')) {
+      buttonIcon = isActive
+          ? Assets.device.images.devTimerSelect.image(width: 41, height: 44)
+          : Assets.device.images.devTimer.image(width: 41, height: 44);
+    } else {
+      buttonIcon = icon;
+    }
+
     return GestureDetector(
       onTap: () async {
         if (!connected) return;
@@ -1195,7 +1312,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             const SizedBox(height: 20),
             SizedBox(
               height: 58,
-              child: Center(child: icon),
+              child: Center(child: buttonIcon),
             ),
             const Spacer(),
             Padding(

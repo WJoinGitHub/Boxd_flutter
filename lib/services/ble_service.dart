@@ -28,6 +28,7 @@ class BleService {
   Timer? _heartbeatTimer;
   int _missedHeartbeats = 0;
   DateTime? _lastHeartbeatTime;
+  bool _skipNextHeartbeat = false; // 跳过下一次心跳，避免重复请求
 
   Completer<bool>? _commandCompleter;
   int? _pendingCommand;
@@ -314,8 +315,31 @@ class BleService {
     _heartbeatTimer?.cancel();
     _missedHeartbeats = 0;
     _lastHeartbeatTime = DateTime.now();
+    _skipNextHeartbeat = false;
 
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      // 如果设置了跳过标志，跳过本次心跳
+      if (_skipNextHeartbeat) {
+        print('[BLE] 跳过本次心跳（命令后已手动获取状态）');
+        _skipNextHeartbeat = false;
+        // 即使跳过，也要检查超时
+        if (_lastHeartbeatTime != null) {
+          final elapsed =
+              DateTime.now().difference(_lastHeartbeatTime!).inSeconds;
+          if (elapsed > 30) {
+            _missedHeartbeats++;
+            print('[BLE] 心跳超时: $_missedHeartbeats/3');
+
+            if (_missedHeartbeats >= 3) {
+              print('[BLE] 心跳失败，断开连接...');
+              timer.cancel();
+              await disconnect();
+            }
+          }
+        }
+        return;
+      }
+
       print('[BLE] 发送心跳指令...');
       try {
         await getDeviceStatus();
@@ -346,6 +370,7 @@ class BleService {
     _heartbeatTimer = null;
     _missedHeartbeats = 0;
     _lastHeartbeatTime = null;
+    _skipNextHeartbeat = false;
   }
 
   /// 重新连接
@@ -434,9 +459,13 @@ class BleService {
     final success = await _writeWithResponse(data, 0x40, 0x00);
 
     if (success) {
+      // 立即获取一次设备状态，用于更新UI
+      // 设置跳过标志，避免心跳定时器在短时间内重复请求
+      _skipNextHeartbeat = true;
       await getDeviceStatus();
+      // 更新心跳时间（_onDataReceived 中也会更新，这里提前更新以避免超时）
       _lastHeartbeatTime = DateTime.now();
-      print('[BLE] 工作命令发送成功，已更新心跳时间');
+      print('[BLE] 工作命令发送成功，已获取设备状态');
     }
 
     return success;

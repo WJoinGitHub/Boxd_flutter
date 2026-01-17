@@ -6,6 +6,7 @@ import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/widgets/temperature_picker_dialog.dart';
+import 'package:flutter_boxd_app_flow/widgets/minutes_picker_dialog.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -37,7 +38,6 @@ class _HeatPageState extends State<HeatPage> {
 
   late final FixedExtentScrollController hourController;
   late final FixedExtentScrollController minuteController;
-  FixedExtentScrollController? _minutesPickerController;
 
   @override
   void initState() {
@@ -117,123 +117,21 @@ class _HeatPageState extends State<HeatPage> {
   void dispose() {
     hourController.dispose();
     minuteController.dispose();
-    _minutesPickerController?.dispose();
     super.dispose();
   }
 
   Future<void> _showMinutesPicker() async {
-    // 初始化控制器
-    _minutesPickerController?.dispose();
-    _minutesPickerController = FixedExtentScrollController(
-      initialItem: minutes - 20, // 20-50分钟，索引从0开始
-    );
-
-    await showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: 300,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 8),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text(
-                AppLocalizations.of(context).t('select_duration'),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildMinutesPickerInDialog(),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'MIN',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w300,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  minimumSize: const Size(double.infinity, 44),
-                ),
-                child: Text(
-                  AppLocalizations.of(context).t('confirm'),
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMinutesPickerInDialog() {
-    if (_minutesPickerController == null) {
-      return const SizedBox(width: 80, height: 200);
+    final result = await showMinutesPicker(context, minutes);
+    if (result != null) {
+      setState(() {
+        minutes = result;
+        // 更新 remind 时间：当前时间 + 新选择的时长
+        final now = DateTime.now();
+        final targetTime = now.add(Duration(minutes: result));
+        selectedHour = targetTime.hour;
+        selectedMinute = targetTime.minute;
+      });
     }
-    return SizedBox(
-      width: 80,
-      height: 200,
-      child: ListWheelScrollView.useDelegate(
-        controller: _minutesPickerController!,
-        itemExtent: 40,
-        diameterRatio: 1.5,
-        physics: const FixedExtentScrollPhysics(),
-        onSelectedItemChanged: (index) {
-          final newMinutes = index + 20; // 20-50分钟
-          setState(() {
-            minutes = newMinutes;
-            // 更新 remind 时间：当前时间 + 新选择的时长
-            final now = DateTime.now();
-            final targetTime = now.add(Duration(minutes: newMinutes));
-            selectedHour = targetTime.hour;
-            selectedMinute = targetTime.minute;
-          });
-        },
-        childDelegate: ListWheelChildBuilderDelegate(
-          builder: (context, index) {
-            final displayValue = index + 20;
-            return Center(
-              child: Text(
-                displayValue.toString().padLeft(2, '0'),
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w300,
-                ),
-              ),
-            );
-          },
-          childCount: 31, // 20-50分钟，共31个值
-        ),
-      ),
-    );
   }
 
   Future<void> _showTimePicker() async {
@@ -421,7 +319,7 @@ class _HeatPageState extends State<HeatPage> {
       return;
     }
 
-    if (minutes < 20 || minutes > 50) {
+    if (minutes < 15 || minutes > 50) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content:

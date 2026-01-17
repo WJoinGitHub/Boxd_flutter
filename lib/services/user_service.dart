@@ -51,7 +51,7 @@ class UserService {
   String? _accessToken;
   String? _refreshToken;
   DateTime? _expiresAt;
-  
+
   // 401错误回调，用于通知UI清空设备列表
   void Function()? onUnauthorized;
 
@@ -142,14 +142,15 @@ class UserService {
 
         // 检查是否需要刷新 token：只有当今天过期或已过期时才刷新
         final now = DateTime.now();
-        final expiryDate = DateTime(_expiresAt!.year, _expiresAt!.month, _expiresAt!.day);
+        final expiryDate =
+            DateTime(_expiresAt!.year, _expiresAt!.month, _expiresAt!.day);
         final today = DateTime(now.year, now.month, now.day);
 
         // 如果过期日期是今天或更早，则刷新token
         if (expiryDate.isBefore(today) || expiryDate.isAtSameMomentAs(today)) {
           if (_refreshToken != null) {
             print('[USER] Token 今天过期或已过期，刷新 token...');
-          await refreshAccessToken();
+            await refreshAccessToken();
           }
         } else {
           final daysUntilExpiry = expiryDate.difference(today).inDays;
@@ -230,7 +231,7 @@ class UserService {
     await prefs.remove('expires_at');
     await prefs.remove('user_info');
     print('[USER] 已登出');
-    
+
     // 触发401回调，通知UI清空设备列表
     onUnauthorized?.call();
   }

@@ -299,14 +299,14 @@ class ApiClient {
   }
 
   // ==================== 用户管理 ====================
-  static Future<Map<String, dynamic>> getUserProfile() =>
-      put('/user/profile', {});
+  static Future<Map<String, dynamic>> getUserProfile() => get('/user/profile');
 
   static Future<Map<String, dynamic>> updateUserProfile(
-          {String? email, String? phone}) =>
+          {String? email, String? phone, String? nickname}) =>
       put('/user/profile', {
         if (email != null) 'email': email,
-        if (phone != null) 'phone': phone
+        if (phone != null) 'phone': phone,
+        if (nickname != null) 'nickname': nickname,
       });
 
   static Future<Map<String, dynamic>> changePassword(

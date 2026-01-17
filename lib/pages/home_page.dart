@@ -156,7 +156,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       // 自动登录成功后调用 user/profile 接口刷新用户信息
       try {
         await UserService().fetchUserInfo();
-        print('[HOME] 用户信息已刷新: ${UserService().currentUser?.email}, 昵称: ${UserService().currentUser?.nickname}');
+        print(
+            '[HOME] 用户信息已刷新: ${UserService().currentUser?.email}, 昵称: ${UserService().currentUser?.nickname}');
       } catch (e) {
         print('[HOME] 获取用户信息失败: $e');
         // 如果获取用户信息失败（可能是401），确保UI更新
@@ -175,8 +176,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         final devices = List<Map<String, dynamic>>.from(result['data']);
 
         // 从本地匹配保存的设备名称
-        final userId = UserService().currentUser?.userId;
-        if (userId != null) {
+        final userId = UserService().currentUser?.id;
+        if (userId != null && userId.isNotEmpty) {
           for (var device in devices) {
             final deviceUuid = device['device_uuid'] as String?;
             if (deviceUuid != null) {
@@ -278,10 +279,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
 
     if (newName != null && newName.isNotEmpty && newName != currentName) {
-      final userId = UserService().currentUser?.userId;
+      final userId = UserService().currentUser?.id;
       final deviceUuid = _currentDevice!['device_uuid'] as String?;
 
-      if (userId != null && deviceUuid != null) {
+      if (userId != null && userId.isNotEmpty && deviceUuid != null) {
         await AppStorage.saveDeviceLocalName(userId, deviceUuid, newName);
         _currentDevice!['local_name'] = newName;
         setState(() {});
@@ -403,7 +404,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     await _connectToDevice(newDevice);
   }
 
-  Future<void> _connectToDevice(Map<String, dynamic> device, {bool isAutoConnect = false}) async {
+  Future<void> _connectToDevice(Map<String, dynamic> device,
+      {bool isAutoConnect = false}) async {
     if (mounted) {
       setState(() => _isConnecting = true);
     }
@@ -457,16 +459,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       if (targetDevice == null && !timeoutOccurred) {
         print('[HOME] 开始扫描设备...');
         await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
-        
+
         final deviceCompleter = Completer<BluetoothDevice?>();
         StreamSubscription? scanSubscription;
-        
+
         try {
           scanSubscription = FlutterBluePlus.scanResults.listen((results) {
             if (timeoutOccurred || deviceCompleter.isCompleted) {
               return;
             }
-            
+
             for (var r in results) {
               if (timeoutOccurred || deviceCompleter.isCompleted) break;
               // 尝试通过UUID匹配
@@ -479,7 +481,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               }
               // 尝试通过设备名称匹配
               final deviceName = device['device_name'] as String? ?? '';
-              if (deviceName.isNotEmpty && r.device.platformName == deviceName) {
+              if (deviceName.isNotEmpty &&
+                  r.device.platformName == deviceName) {
                 deviceCompleter.complete(r.device);
                 break;
               }
@@ -495,7 +498,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           } catch (e) {
             print('[HOME] 扫描等待失败: $e');
           }
-          
+
           scanSubscription?.cancel();
           if (!timeoutOccurred) {
             await FlutterBluePlus.stopScan();
@@ -517,7 +520,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         if (mounted && !isAutoConnect) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(AppLocalizations.of(context).t('failed_to_connect')),
+              content:
+                  Text(AppLocalizations.of(context).t('failed_to_connect')),
             ),
           );
         }
@@ -531,8 +535,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           return;
         }
 
-        final success = await bleService.connect(targetDevice, skipBind: true)
-            .timeout(
+        final success =
+            await bleService.connect(targetDevice, skipBind: true).timeout(
           const Duration(seconds: 15),
           onTimeout: () {
             print('[HOME] BLE服务连接超时');
@@ -559,7 +563,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           if (!isAutoConnect && mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(AppLocalizations.of(context).t('connection_success')),
+                content:
+                    Text(AppLocalizations.of(context).t('connection_success')),
               ),
             );
           }
@@ -567,7 +572,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           // 自动连接失败时不显示提示
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(AppLocalizations.of(context).t('failed_to_connect')),
+              content:
+                  Text(AppLocalizations.of(context).t('failed_to_connect')),
             ),
           );
         }

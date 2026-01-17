@@ -17,14 +17,16 @@ class AppStorage {
   }
 
   /// 保存设备本地名称（与用户ID和设备UUID绑定）
-  static Future<void> saveDeviceLocalName(int userId, String deviceUuid, String localName) async {
+  static Future<void> saveDeviceLocalName(
+      String userId, String deviceUuid, String localName) async {
     final prefs = await SharedPreferences.getInstance();
     final key = '$_deviceNamePrefix${userId}_$deviceUuid';
     await prefs.setString(key, localName);
   }
 
   /// 读取设备本地名称
-  static Future<String?> loadDeviceLocalName(int userId, String deviceUuid) async {
+  static Future<String?> loadDeviceLocalName(
+      String userId, String deviceUuid) async {
     final prefs = await SharedPreferences.getInstance();
     final key = '$_deviceNamePrefix${userId}_$deviceUuid';
     return prefs.getString(key);

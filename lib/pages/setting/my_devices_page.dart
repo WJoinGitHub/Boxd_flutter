@@ -37,8 +37,8 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
         final devices = List<Map<String, dynamic>>.from(result['data']);
         
         // 从本地匹配保存的设备名称
-        final userId = UserService().currentUser?.userId;
-        if (userId != null) {
+        final userId = UserService().currentUser?.id;
+        if (userId != null && userId.isNotEmpty) {
           for (var device in devices) {
             final deviceUuid = device['device_uuid'] as String?;
             if (deviceUuid != null) {

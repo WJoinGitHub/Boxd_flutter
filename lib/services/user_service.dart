@@ -3,42 +3,101 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
 
 class UserInfo {
-  final int userId;
+  final String id;
   final String email;
+  final String? avatarUrl;
   final String nickname;
   final String language;
   final String timezone;
+  final String? country;
+  final String? region;
+  final String? lastLoginIp;
+  final String? lastLoginAt;
+  final String accountType;
+  final String status;
+  final bool isEmailVerified;
+  final String? emailVerifiedAt;
+  final String? lastPasswordChange;
+  final int failedLoginAttempts;
+  final String? lockedUntil;
   final String createdAt;
+  final String updatedAt;
 
   UserInfo({
-    required this.userId,
+    required this.id,
     required this.email,
+    this.avatarUrl,
     required this.nickname,
     required this.language,
     required this.timezone,
+    this.country,
+    this.region,
+    this.lastLoginIp,
+    this.lastLoginAt,
+    required this.accountType,
+    required this.status,
+    required this.isEmailVerified,
+    this.emailVerifiedAt,
+    this.lastPasswordChange,
+    required this.failedLoginAttempts,
+    this.lockedUntil,
     required this.createdAt,
+    required this.updatedAt,
   });
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
     return UserInfo(
-      userId: json['user_id'] ?? 0,
+      id: json['id'] ?? '',
       email: json['email'] ?? '',
+      avatarUrl: json['avatar_url'],
       nickname: json['nickname'] ?? '',
       language: json['language'] ?? 'zh-CN',
       timezone: json['timezone'] ?? 'Asia/Shanghai',
+      country: json['country'],
+      region: json['region'],
+      lastLoginIp: json['last_login_ip'],
+      lastLoginAt: json['last_login_at'],
+      accountType: json['account_type'] ?? 'regular',
+      status: json['status'] ?? 'active',
+      isEmailVerified: json['is_email_verified'] ?? false,
+      emailVerifiedAt: json['email_verified_at'],
+      lastPasswordChange: json['last_password_change'],
+      failedLoginAttempts: json['failed_login_attempts'] ?? 0,
+      lockedUntil: json['locked_until'],
       createdAt: json['created_at'] ?? '',
+      updatedAt: json['updated_at'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'user_id': userId,
+      'id': id,
       'email': email,
+      'avatar_url': avatarUrl,
       'nickname': nickname,
       'language': language,
       'timezone': timezone,
+      'country': country,
+      'region': region,
+      'last_login_ip': lastLoginIp,
+      'last_login_at': lastLoginAt,
+      'account_type': accountType,
+      'status': status,
+      'is_email_verified': isEmailVerified,
+      'email_verified_at': emailVerifiedAt,
+      'last_password_change': lastPasswordChange,
+      'failed_login_attempts': failedLoginAttempts,
+      'locked_until': lockedUntil,
       'created_at': createdAt,
+      'updated_at': updatedAt,
     };
+  }
+
+  // 为了向后兼容，保留 userId getter（从 id 中提取数字部分或使用 id）
+  int get userId {
+    // 如果 id 包含数字，尝试提取；否则返回 0
+    final match = RegExp(r'\d+').firstMatch(id);
+    return match != null ? int.tryParse(match.group(0) ?? '0') ?? 0 : 0;
   }
 }
 

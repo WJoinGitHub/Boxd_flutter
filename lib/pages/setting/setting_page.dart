@@ -189,8 +189,73 @@ class _SettingsPageState extends State<SettingsPage> {
           nickname,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
         ),
+        const SizedBox(width: 8),
+        GestureDetector(
+          onTap: _showEditNicknameDialog,
+          child: Icon(
+            Icons.edit,
+            size: 18,
+            color: Colors.grey[600],
+          ),
+        ),
       ],
     );
+  }
+
+  Future<void> _showEditNicknameDialog() async {
+    final userService = UserService();
+    final currentNickname = userService.currentUser?.nickname ?? '';
+    final controller = TextEditingController(text: currentNickname);
+
+    final l10n = AppLocalizations.of(context);
+    final newNickname = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.t('edit_nickname')),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: l10n.t('enter_nickname'),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.t('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: Text(l10n.t('save')),
+          ),
+        ],
+      ),
+    );
+
+    if (newNickname != null && newNickname.isNotEmpty && newNickname != currentNickname) {
+      try {
+        final result = await ApiClient.updateUserProfile(nickname: newNickname);
+        if (result['code'] == 200 && mounted) {
+          // 更新成功后刷新用户信息
+          await UserService().fetchUserInfo();
+          setState(() {});
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.t('nickname_updated_successfully'))),
+          );
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? l10n.t('update_failed'))),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${l10n.t('update_failed')}: $e')),
+          );
+        }
+      }
+    }
   }
 
   Widget _buildCouponCard() => Container(

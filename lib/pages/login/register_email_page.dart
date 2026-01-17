@@ -173,9 +173,7 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
                 child: Text(
                   l10n.t('next'),
                   style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.white),
+                      fontSize: 18, fontWeight: FontWeight.w400),
                 ),
               ),
             ),

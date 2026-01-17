@@ -290,7 +290,8 @@ class _VerificationPageState extends State<VerificationPage> {
                         padding: EdgeInsets.zero,
                         overlayColor: Colors.transparent,
                       ).copyWith(
-                        foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                        foregroundColor:
+                            MaterialStateProperty.resolveWith<Color>(
                           (Set<MaterialState> states) {
                             if (states.contains(MaterialState.disabled)) {
                               return Colors.black.withOpacity(0.3);
@@ -345,9 +346,7 @@ class _VerificationPageState extends State<VerificationPage> {
                 ),
                 child: Text(l10n.t('verify_button'),
                     style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white)),
+                        fontSize: 18, fontWeight: FontWeight.w400)),
               ),
             ),
           ],

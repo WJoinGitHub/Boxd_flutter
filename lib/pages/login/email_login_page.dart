@@ -268,9 +268,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                       : Text(
                           l10n.t('sign_in'),
                           style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.white),
+                              fontSize: 18, fontWeight: FontWeight.w400),
                         ),
                 ),
               ),

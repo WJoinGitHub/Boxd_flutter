@@ -254,12 +254,11 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                             color: Colors.white,
                           ),
                         )
-                      : Text(
+                      :                       Text(
                           l10n.t('save'),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w400,
-                            color: Colors.white,
                           ),
                         ),
                 ),

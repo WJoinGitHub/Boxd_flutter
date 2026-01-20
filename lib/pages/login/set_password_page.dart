@@ -6,6 +6,7 @@ import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/widgets/app_text_field.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
+import 'package:flutter_boxd_app_flow/pages/home_page.dart';
 
 class SetPasswordPage extends StatefulWidget {
   final bool isForReset;
@@ -97,7 +98,10 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(l10n.t('registration_success'))),
             );
-            Navigator.of(context).popUntil((route) => route.isFirst);
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const HomePage()),
+              (route) => false, // 清除所有路由，返回到首页
+            );
           }
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

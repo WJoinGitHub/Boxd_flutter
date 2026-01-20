@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'user_service.dart';
+import '../main.dart';
+import '../pages/login/email_login_page.dart';
 
 enum CodeType {
   register,
@@ -139,6 +142,15 @@ class ApiClient {
         } catch (e) {
           print('[API] 清除登录状态失败: $e');
         }
+
+        // 使用全局 navigatorKey 跳转到登录页面
+        if (navigatorKey.currentContext != null) {
+          final context = navigatorKey.currentContext!;
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const EmailLoginPage()),
+            (route) => false, // 清除所有路由
+          );
+        }
       }
 
       throw Exception('HTTP ${response.statusCode}: ${response.body}');
@@ -218,6 +230,15 @@ class ApiClient {
           await UserService().logout();
         } catch (e) {
           print('[API] 清除登录状态失败: $e');
+        }
+
+        // 使用全局 navigatorKey 跳转到登录页面
+        if (navigatorKey.currentContext != null) {
+          final context = navigatorKey.currentContext!;
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const EmailLoginPage()),
+            (route) => false, // 清除所有路由
+          );
         }
       }
 

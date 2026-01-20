@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <!-- HeatLink 文字 - x 和 y 都居中 -->
+    <TextView
+        android:id="@+id/heatlink_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="HeatLink"
+        android:textSize="50sp"
+        android:fontFamily="sans-serif-medium"
+        android:textColor="#000000"
+        android:gravity="center"
+        android:layout_gravity="center" />
+
+    <!-- QIMI 文字 - 在 HeatLink 上方 80dp，水平居中（通过代码设置 translationY） -->
+    <TextView
+        android:id="@+id/qimi_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="QIMI"
+        android:textSize="60sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-black"
+        android:textColor="#FF7622"
+        android:gravity="center"
+        android:layout_gravity="center" />
+
+</FrameLayout>

@@ -145,6 +145,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       print('[HOME] _init 检测到登录状态变化，更新 _wasLoggedIn');
       _wasLoggedIn = isLoggedIn;
     }
+
+    // 如果未登录，跳转到登录页面
+    if (!isLoggedIn && mounted) {
+      print('[HOME] 未登录，跳转到登录页面');
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const EmailLoginPage()),
+      );
+      return;
+    }
+
     await _autoConnect();
   }
 
@@ -457,59 +467,114 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       }
 
       if (targetDevice == null && !timeoutOccurred) {
+        // 检查蓝牙状态
+        final bluetoothAdapterState = await FlutterBluePlus.adapterState.first;
+        if (bluetoothAdapterState != BluetoothAdapterState.on) {
+          print('[HOME] 蓝牙未开启，无法扫描');
+          timeoutTimer?.cancel();
+          if (mounted && !isAutoConnect) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(AppLocalizations.of(context).t('turn_on_bluetooth')),
+              ),
+            );
+          }
+          return;
+        }
+        
         print('[HOME] 开始扫描设备...');
-        await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
-
+        print('[HOME] 目标设备UUID: $deviceUuid');
+        
         final deviceCompleter = Completer<BluetoothDevice?>();
         StreamSubscription? scanSubscription;
+        bool scanStarted = false;
 
         try {
+          // 先设置监听器，再启动扫描，避免丢失结果
           scanSubscription = FlutterBluePlus.scanResults.listen((results) {
             if (timeoutOccurred || deviceCompleter.isCompleted) {
               return;
             }
 
+            print('[HOME] 收到扫描结果: ${results.length} 个设备');
             for (var r in results) {
               if (timeoutOccurred || deviceCompleter.isCompleted) break;
+              
               // 尝试通过UUID匹配
               final currentUuid = Platform.isAndroid
                   ? r.device.remoteId.str.replaceAll(':', '').toUpperCase()
                   : r.device.remoteId.str.replaceAll('-', '').toUpperCase();
+              
+              print('[HOME] 扫描到设备: ${r.device.platformName}, UUID: $currentUuid');
+              
               if (currentUuid == deviceUuid) {
+                print('[HOME] 找到匹配的设备（通过UUID）: ${r.device.platformName}');
                 deviceCompleter.complete(r.device);
                 break;
               }
+              
               // 尝试通过设备名称匹配
               final deviceName = device['device_name'] as String? ?? '';
               if (deviceName.isNotEmpty &&
                   r.device.platformName == deviceName) {
+                print('[HOME] 找到匹配的设备（通过名称）: ${r.device.platformName}');
                 deviceCompleter.complete(r.device);
                 break;
               }
             }
           });
 
-          // 等待扫描完成或超时
+          // 启动扫描，超时时间15秒
+          try {
+            await FlutterBluePlus.startScan(timeout: const Duration(seconds: 15));
+            scanStarted = true;
+            print('[HOME] 扫描已启动，将扫描15秒');
+          } catch (e) {
+            print('[HOME] 启动扫描失败: $e');
+            scanSubscription?.cancel();
+            if (!deviceCompleter.isCompleted) {
+              deviceCompleter.complete(null);
+            }
+            return;
+          }
+
+          // 等待扫描完成或超时，等待时间15秒
           try {
             targetDevice = await deviceCompleter.future.timeout(
-              const Duration(seconds: 5),
-              onTimeout: () => null,
+              const Duration(seconds: 15),
+              onTimeout: () {
+                print('[HOME] 扫描超时（15秒），未找到设备');
+                return null;
+              },
             );
           } catch (e) {
             print('[HOME] 扫描等待失败: $e');
           }
 
+          // 停止扫描（无论是否找到设备）
           scanSubscription?.cancel();
-          if (!timeoutOccurred) {
-            await FlutterBluePlus.stopScan();
+          if (scanStarted) {
+            try {
+              await FlutterBluePlus.stopScan();
+              print('[HOME] 扫描已停止');
+            } catch (e) {
+              print('[HOME] 停止扫描失败: $e');
+            }
           }
         } catch (e) {
+          print('[HOME] 扫描过程出错: $e');
           scanSubscription?.cancel();
           if (!deviceCompleter.isCompleted) {
             deviceCompleter.complete(null);
           }
-          if (!timeoutOccurred) {
-            await FlutterBluePlus.stopScan();
+          // 确保停止扫描
+          if (scanStarted) {
+            try {
+              await FlutterBluePlus.stopScan();
+              print('[HOME] 异常处理：扫描已停止');
+            } catch (e) {
+              print('[HOME] 停止扫描失败: $e');
+            }
           }
         }
       }
@@ -577,18 +642,34 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             ),
           );
         }
-      } else if (mounted && !timeoutOccurred && !isAutoConnect) {
-        // 自动连接失败时不显示提示
+      } else if (mounted && !timeoutOccurred) {
+        // 未找到设备，确保停止扫描
         timeoutTimer?.cancel();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text(AppLocalizations.of(context).t('device_not_found'))),
-        );
+        try {
+          await FlutterBluePlus.stopScan();
+          print('[HOME] 未找到设备，扫描已停止');
+        } catch (e) {
+          print('[HOME] 停止扫描失败: $e');
+        }
+        // 自动连接失败时不显示提示
+        if (!isAutoConnect) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content:
+                    Text(AppLocalizations.of(context).t('device_not_found'))),
+          );
+        }
       }
     } catch (e) {
       timeoutTimer?.cancel();
       print('[HOME] 连接设备失败: $e');
+      // 确保停止扫描
+      try {
+        await FlutterBluePlus.stopScan();
+        print('[HOME] 异常处理：扫描已停止');
+      } catch (e) {
+        print('[HOME] 停止扫描失败: $e');
+      }
       // 自动连接失败时不显示提示
       if (mounted && !timeoutOccurred && !isAutoConnect) {
         ScaffoldMessenger.of(context).showSnackBar(

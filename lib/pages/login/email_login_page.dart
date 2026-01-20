@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/login/register_email_page.dart';
 import 'package:flutter_boxd_app_flow/pages/login/verification_page.dart';
+import 'package:flutter_boxd_app_flow/pages/home_page.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
@@ -75,7 +76,9 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.t('guest_login_success'))),
           );
-          Navigator.of(context).popUntil((route) => route.isFirst);
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomePage()),
+          );
         }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -133,7 +136,9 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.t('login_success'))),
           );
-          Navigator.of(context).popUntil((route) => route.isFirst);
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomePage()),
+          );
         }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -157,10 +162,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.t('sign_in')),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        automaticallyImplyLeading: false, // 不显示返回按钮
       ),
       backgroundColor: AppColors.pageBg,
       resizeToAvoidBottomInset: true,

@@ -6,6 +6,7 @@ import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
+import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -349,111 +350,122 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final displayTemp = getDisplayTemperature();
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: BxAppBar(
-        title: '',
+        title: l10n.t('keep_warm'),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 顶部：图标和标题
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 左侧：Ins图标和标题
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Assets.device.images.devIns.image(
-                        width: 60,
-                        fit: BoxFit.contain,
-                      ),
-                      const SizedBox(height: 30),
-                      Text(
-                        AppLocalizations.of(context).t('keep_warm_mode'),
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
+      body: Column(
+        children: [
+          // 主要内容区域（垂直居中）
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // 图片距离导航栏高度100
+                const SizedBox(height: 100),
+                // 保温图标（橙色）
+                ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    AppColors.orange,
+                    BlendMode.srcIn,
                   ),
-                  const Spacer(),
-                  // 右侧：设备图片
-                  Assets.device.images.hotRice.image(
-                    width: 150,
+                  child: Assets.device.images.devIns.image(
+                    width: 80,
+                    height: 80,
                     fit: BoxFit.contain,
                   ),
-                ],
-              ),
-            ),
+                ),
+                const SizedBox(height: 60),
 
-            // 温度和电量
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Assets.device.images.temperature.image(
-                    width: 31,
-                    fit: BoxFit.contain,
+                // Temperature 标签和值
+                Text(
+                  l10n.t('temperature'),
+                  style: const TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
                   ),
-                  const SizedBox(width: 15),
-                  Text(
-                    '${getDisplayTemperature()}   $temperatureUnit',
-                    style: const TextStyle(
-                        fontSize: 30, fontWeight: FontWeight.w400),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '$displayTemp',
+                      style: const TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      temperatureUnit,
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+
+                // Clock 标签和值
+                Text(
+                  l10n.t('clock'),
+                  style: const TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black,
                   ),
-                  const Spacer(),
-                ],
-              ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${durationHours}H',
+                  style: const TextStyle(
+                    fontSize: 40,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
             ),
+          ),
 
-            const SizedBox(height: 20),
-
-            // Warming Duration
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                AppLocalizations.of(context).t('warming_duration'),
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
-              ),
-            ),
-            const SizedBox(height: 30),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                '${durationHours} ${AppLocalizations.of(context).t('hours')}',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black,
+          // 底部 Start 按钮
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _startKeepWarm,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.orange,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                ),
+                child: Text(
+                  l10n.t('start'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
-
-            const SizedBox(height: 40),
-
-            // Start按钮（靠右，屏幕宽的2/3）
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                    onPressed: _startKeepWarm,
-                    icon: Assets.device.images.btnStart.image(
-                      width: MediaQuery.of(context).size.width * 1 / 2,
-                      fit: BoxFit.contain,
-                    )),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

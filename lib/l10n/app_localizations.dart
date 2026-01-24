@@ -110,6 +110,8 @@ class AppLocalizations {
       'keep_warm_title': 'Keep Warm',
       'keep_warm_mode': 'Keep Warm',
       'set_temperature': 'Set Temperature',
+      'temperature': 'Temperature',
+      'clock': 'Clock',
       'start': 'Start',
       'stop': 'Stop',
 
@@ -394,6 +396,8 @@ class AppLocalizations {
       'keep_warm_title': '保温',
       'keep_warm_mode': '保温模式',
       'set_temperature': '设置温度',
+      'temperature': '温度',
+      'clock': '时钟',
       'start': '开始',
       'stop': '停止',
 

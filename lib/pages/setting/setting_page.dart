@@ -182,11 +182,15 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildProfile() {
     final userService = UserService();
     final isGuest = userService.isGuestMode;
-    final nickname = isGuest ? '游客' : (userService.currentUser?.nickname ?? 'HeatLink');
-    
+    final nickname =
+        isGuest ? '游客' : (userService.currentUser?.nickname ?? 'HeatLink');
+
     return Row(
       children: [
-        Assets.user.images.userAvatar.image(width: 40, height: 40),
+        (userService.isGuestMode
+                ? Assets.home.images.homeAvatarYk
+                : Assets.home.images.homeAvatar)
+            .image(width: 40, height: 40),
         const SizedBox(width: 10),
         Text(
           nickname,
@@ -196,10 +200,10 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(width: 8),
           GestureDetector(
             onTap: _showEditNicknameDialog,
-            child: Icon(
-              Icons.edit,
-              size: 18,
-              color: Colors.grey[600],
+            child: Assets.home.images.editPencil.image(
+              width: 20,
+              height: 20,
+              fit: BoxFit.contain,
             ),
           ),
         ],
@@ -237,20 +241,23 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
 
-    if (newNickname != null && newNickname.isNotEmpty && newNickname != currentNickname) {
+    if (newNickname != null &&
+        newNickname.isNotEmpty &&
+        newNickname != currentNickname) {
       try {
         final result = await ApiClient.updateUserProfile(nickname: newNickname);
         if (result['code'] == 200 && mounted) {
           // 更新成功后刷新用户信息
           await UserService().fetchUserInfo();
           setState(() {});
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.t('nickname_updated_successfully'))),
           );
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? l10n.t('update_failed'))),
+            SnackBar(
+                content: Text(result['message'] ?? l10n.t('update_failed'))),
           );
         }
       } catch (e) {

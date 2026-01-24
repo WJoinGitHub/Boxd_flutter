@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
+import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 
 /// 显示时长选择底部弹窗（15-50分钟）
 /// 返回选择的分钟数
@@ -123,7 +124,7 @@ class _MinutesPickerBottomSheetState extends State<_MinutesPickerBottomSheet> {
             child: ElevatedButton(
               onPressed: () => Navigator.pop(context, minutes),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
+                backgroundColor: AppColors.orange,
                 minimumSize: const Size(double.infinity, 44),
               ),
               child: Text(

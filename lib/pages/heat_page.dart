@@ -8,6 +8,7 @@ import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/widgets/temperature_picker_dialog.dart';
 import 'package:flutter_boxd_app_flow/widgets/minutes_picker_dialog.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
+import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -58,10 +59,23 @@ class _HeatPageState extends State<HeatPage> {
     _initNotifications();
     _loadBatteryLevel();
 
+    // 如果设备已有温度，使用它作为默认值
+    final lastStatus = bleService.lastStatus;
+    if (lastStatus?.temperature != null && lastStatus!.temperature! > 0) {
+      selectedTemperature = lastStatus.temperature!;
+      temperature = lastStatus.temperature!;
+    }
+
     bleService.statusStream.listen((status) {
       if (mounted) {
         setState(() {
-          if (status.temperature != null) temperature = status.temperature!;
+          if (status.temperature != null) {
+            temperature = status.temperature!;
+            // 如果用户还没有手动设置过温度，使用设备返回的温度作为默认值
+            if (selectedTemperature == null && temperature > 0) {
+              selectedTemperature = temperature;
+            }
+          }
           if (status.batteryLevel != null) {
             final level = status.batteryLevel!;
             batteryLevel = (level >= 1 && level <= 4) ? level * 25 : level;
@@ -190,11 +204,11 @@ class _HeatPageState extends State<HeatPage> {
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
+                  backgroundColor: AppColors.orange,
                   minimumSize: const Size(double.infinity, 44),
                 ),
                 child: Text(AppLocalizations.of(context).t('confirm'),
-                    style: TextStyle(color: Colors.white)),
+                    style: const TextStyle(color: Colors.white)),
               ),
             ),
           ],
@@ -408,221 +422,291 @@ class _HeatPageState extends State<HeatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final displayTemp = _getDisplayTemperature();
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: BxAppBar(
-        title: '',
+        title: l10n.t('heat_title'),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 顶部：图标和标题
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
+        children: [
+          // 主要内容区域
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // 左侧：Heat图标和标题
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Assets.device.images.devHeat.image(
-                        width: 60,
-                        fit: BoxFit.contain,
-                      ),
-                      const SizedBox(height: 30),
-                      Text(
-                        AppLocalizations.of(context).t('heating_mode'),
+                  // 图片距离导航栏高度12
+                  const SizedBox(height: 12),
+
+                  // 加热图标（橙色）
+                  ColorFiltered(
+                    colorFilter: ColorFilter.mode(
+                      AppColors.orange,
+                      BlendMode.srcIn,
+                    ),
+                    child: Assets.device.images.devHeat.image(
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  const SizedBox(height: 60),
+
+                  // Setting Heat Duration
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        l10n.t('setting_heat_duration'),
                         style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
                           color: Colors.black,
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                  const Spacer(),
-                  // 右侧：设备图片
-                  Assets.device.images.hotRice.image(
-                    width: 150,
-                    fit: BoxFit.contain,
-                  ),
-                ],
-              ),
-            ),
+                  const SizedBox(height: 8),
 
-            // Setting Temperature
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                AppLocalizations.of(context).t('setting_temperature'),
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            // 温度
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: GestureDetector(
-                onTap: () async {
-                  final initialTemp = selectedTemperature ??
-                      (temperature > 0 ? temperature : 90);
-                  final result = await showTemperaturePicker(
-                    context,
-                    initialTemp,
-                  );
-                  if (result != null) {
-                    setState(() => selectedTemperature = result);
-                  }
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    border:
-                        Border.all(color: const Color(0xFF7F8489), width: 1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${_getDisplayTemperature()}  $temperatureUnit',
-                    style: const TextStyle(
-                        fontSize: 30, fontWeight: FontWeight.w400),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Setting Heat Duration
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                AppLocalizations.of(context).t('setting_heat_duration'),
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Center(
-                child: Text(
-                  AppLocalizations.of(context).t('min_abbreviation'),
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: GestureDetector(
-                onTap: _showMinutesPicker,
-                child: Container(
-                  height: 60,
-                  decoration: BoxDecoration(
-                    border:
-                        Border.all(color: const Color(0xFF7F8489), width: 1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        minutes.toString().padLeft(2, '0'),
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w300,
+                  // 加热时长输入框
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: GestureDetector(
+                      onTap: _showMinutesPicker,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.black,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${minutes.toString().padLeft(2, '0')} ${l10n.t('minutes')}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.black,
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ),
 
-            const SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-            // Remind开关
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Assets.device.images.remainBell.image(
-                    width: 33,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    AppLocalizations.of(context).t('remind'),
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                  const Spacer(),
-                  Switch(
-                    value: remindEnabled,
-                    onChanged: (value) {
-                      setState(() => remindEnabled = value);
-                    },
-                    activeColor: Colors.green,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // 时间选择
-            if (remindEnabled)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0x20A9E88B),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Assets.device.images.devHeatTime.image(
-                        width: 71,
-                        fit: BoxFit.contain,
+                  // Setting Temperature
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        l10n.t('setting_temperature'),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.black,
+                        ),
                       ),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: _showTimePicker,
-                        child: Text(
-                          '${selectedHour.toString().padLeft(2, '0')} : ${selectedMinute.toString().padLeft(2, '0')}',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 温度输入框
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: GestureDetector(
+                      onTap: () async {
+                        final initialTemp = selectedTemperature ??
+                            (temperature > 0 ? temperature : 90);
+                        final result = await showTemperaturePicker(
+                          context,
+                          initialTemp,
+                        );
+                        if (result != null) {
+                          setState(() => selectedTemperature = result);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.black,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                selectedTemperature != null
+                                    ? '$displayTemp $temperatureUnit'
+                                    : '75 - 100 $temperatureUnit',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.black,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // Remind开关
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        Assets.device.images.remainBell.image(
+                          width: 24,
+                          height: 24,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.t('remind'),
                           style: const TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.black,
                           ),
                         ),
+                        const Spacer(),
+                        Switch(
+                          value: remindEnabled,
+                          onChanged: (value) {
+                            setState(() => remindEnabled = value);
+                          },
+                          activeColor: AppColors.orange,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // 时间选择（绿色背景容器）
+                  if (remindEnabled)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F5E9),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            // 三个图标：叉子、时钟、勺子
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.restaurant,
+                                  size: 20,
+                                  color: Colors.black,
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppColors.orange,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.access_time,
+                                    size: 16,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Icon(
+                                  Icons.restaurant_menu,
+                                  size: 20,
+                                  color: Colors.black,
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: _showTimePicker,
+                              child: Text(
+                                '${selectedHour.toString().padLeft(2, '0')} : ${selectedMinute.toString().padLeft(2, '0')}',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          // 底部 Start 按钮
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _sendCommand,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.orange,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                ),
+                child: Text(
+                  l10n.t('start'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-
-            const SizedBox(height: 40),
-
-            // Start按钮（靠右，屏幕宽的2/3）
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                    onPressed: _sendCommand,
-                    icon: Assets.device.images.btnStart.image(
-                      width: MediaQuery.of(context).size.width * 1 / 2,
-                      fit: BoxFit.contain,
-                    )),
-              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

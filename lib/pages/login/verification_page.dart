@@ -104,10 +104,9 @@ class _VerificationPageState extends State<VerificationPage> {
     final l10n = AppLocalizations.of(context);
     if (showLoading) setState(() => _loading = true);
     try {
-      final result = await ApiClient.sendCode(
-        widget.email,
-        widget.isForReset ? CodeType.resetPassword : CodeType.register,
-      );
+      final result = widget.isForReset
+          ? await ApiClient.sendResetPasswordCode(widget.email)
+          : await ApiClient.sendCode(widget.email, CodeType.register);
       if (result['code'] == 200) {
         _startTimer();
       } else {
@@ -335,18 +334,22 @@ class _VerificationPageState extends State<VerificationPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ).copyWith(
-                  foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                  backgroundColor: MaterialStateProperty.resolveWith<Color>(
                     (Set<MaterialState> states) {
                       if (states.contains(MaterialState.disabled)) {
-                        return Colors.black.withOpacity(0.3);
+                        return Colors.black.withOpacity(0.1);
                       }
-                      return Colors.white;
+                      return AppColors.orange; // 可点击时使用主题橙色
                     },
                   ),
+                  foregroundColor:
+                      MaterialStateProperty.all<Color>(Colors.white),
                 ),
                 child: Text(l10n.t('verify_button'),
                     style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w400)),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white)),
               ),
             ),
           ],

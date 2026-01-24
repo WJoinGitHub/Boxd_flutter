@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/pages/home_page.dart';
-import 'package:flutter_boxd_app_flow/pages/login/email_login_page.dart';
+import 'package:flutter_boxd_app_flow/pages/login/register_email_page.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 
@@ -24,13 +24,17 @@ class _SplashPageState extends State<SplashPage> {
 
     if (!mounted) return;
 
+    // 先加载本地保存的登录信息
+    await UserService().loadFromLocal();
+
     // 检查登录状态
     final isLoggedIn = UserService().isLoggedIn;
 
     // 导航到相应页面
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => isLoggedIn ? const HomePage() : const EmailLoginPage(),
+        builder: (_) =>
+            isLoggedIn ? const HomePage() : const RegisterEmailPage(),
       ),
     );
   }

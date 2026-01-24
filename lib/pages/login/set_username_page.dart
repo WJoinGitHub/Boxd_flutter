@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/login/set_password_page.dart';
+import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 
@@ -52,7 +53,8 @@ class _SetUsernamePageState extends State<SetUsernamePage> {
               const SizedBox(height: 17),
               TextField(
                   controller: _nameCtrl,
-                  decoration: InputDecoration(labelText: l10n.t('username_label')),
+                  decoration:
+                      InputDecoration(labelText: l10n.t('username_label')),
                   onChanged: (_) => setState(() => {})),
               const SizedBox(height: 20),
               SizedBox(
@@ -65,16 +67,20 @@ class _SetUsernamePageState extends State<SetUsernamePage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ).copyWith(
-                    foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                    backgroundColor: MaterialStateProperty.resolveWith<Color>(
                       (Set<MaterialState> states) {
                         if (states.contains(MaterialState.disabled)) {
-                          return Colors.black.withOpacity(0.3);
+                          return Colors.black.withOpacity(0.1);
                         }
-                        return Colors.white;
+                        return AppColors.orange; // 可点击时使用主题橙色
                       },
                     ),
+                    foregroundColor:
+                        MaterialStateProperty.all<Color>(Colors.white),
                   ),
-                  child: Text(l10n.t('next'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400)),
+                  child: Text(l10n.t('next'),
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w400)),
                 ),
               ),
             ])));

@@ -4,6 +4,7 @@ import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 class AppTextField extends StatelessWidget {
   final TextEditingController controller;
   final String labelText;
+  final String placeholderText;
   final TextInputType? keyboardType;
   final bool obscureText;
   final Widget? suffixIcon;
@@ -14,6 +15,7 @@ class AppTextField extends StatelessWidget {
     super.key,
     required this.controller,
     required this.labelText,
+    required this.placeholderText,
     this.keyboardType,
     this.obscureText = false,
     this.suffixIcon,
@@ -32,9 +34,9 @@ class AppTextField extends StatelessWidget {
           child: Text(
             labelText,
             style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: AppColors.gray3,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.black1,
             ),
           ),
         ),
@@ -46,20 +48,21 @@ class AppTextField extends StatelessWidget {
           textInputAction: textInputAction,
           maxLines: 1,
           decoration: InputDecoration(
-            hintText: labelText,
+            hintText: placeholderText,
             hintStyle: TextStyle(
-              fontSize: 13,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
               color: AppColors.gray3,
             ),
             filled: true,
-            fillColor: AppColors.white,
+            fillColor: AppColors.fromHex(0xEEF1F0, 0.6), // #EEF1F099
             contentPadding: EdgeInsets.fromLTRB(
               16,
               18,
               suffixIcon != null ? 56 : 16,
               18,
             ),
-            constraints: const BoxConstraints(minHeight: 56),
+            constraints: const BoxConstraints(minHeight: 72, maxHeight: 72),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
               borderSide: BorderSide.none,
@@ -67,7 +70,7 @@ class AppTextField extends StatelessWidget {
             suffixIcon: suffixIcon,
           ),
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 16,
             color: AppColors.black1,
           ),
           onChanged: onChanged,

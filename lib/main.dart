@@ -4,7 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 import 'pages/splash_page.dart';
 import 'pages/home_page.dart';
-import 'pages/login/email_login_page.dart';
+import 'pages/login/register_email_page.dart';
 import 'services/user_service.dart';
 import 'utils/app_colors.dart';
 
@@ -79,13 +79,16 @@ class _InitialPageState extends State<_InitialPage> {
 
     if (!mounted) return;
 
+    // 先加载本地保存的登录信息
+    await UserService().loadFromLocal();
+
     // 检查登录状态
     final isLoggedIn = UserService().isLoggedIn;
 
     // 导航到相应页面
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => isLoggedIn ? const HomePage() : const EmailLoginPage(),
+        builder: (_) => isLoggedIn ? const HomePage() : const RegisterEmailPage(),
       ),
     );
   }

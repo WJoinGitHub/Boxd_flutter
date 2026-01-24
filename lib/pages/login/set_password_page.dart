@@ -59,7 +59,8 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
           Navigator.of(context).popUntil((route) => route.isFirst);
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? l10n.t('reset_failed'))),
+            SnackBar(
+                content: Text(result['message'] ?? l10n.t('reset_failed'))),
           );
         }
       } else {
@@ -74,21 +75,22 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
           if (data != null) {
             final tokens = data['tokens'];
             final user = data['user'];
-            
+
             if (tokens != null && user != null) {
               await UserService().saveTokens(
                 accessToken: tokens['access_token'] ?? '',
                 refreshToken: tokens['refresh_token'] ?? '',
                 expiresIn: tokens['expires_in'],
               );
-              
+
               final userInfo = UserInfo.fromJson(user);
               await UserService().saveUserInfo(userInfo);
-              
+
               // 注册成功后调用 user/profile 接口刷新用户信息
               try {
                 await UserService().fetchUserInfo();
-                print('[REGISTER] 用户信息已刷新: ${UserService().currentUser?.nickname}');
+                print(
+                    '[REGISTER] 用户信息已刷新: ${UserService().currentUser?.nickname}');
               } catch (e) {
                 print('[REGISTER] 刷新用户信息失败: $e');
               }
@@ -105,7 +107,9 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
           }
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? l10n.t('registration_failed'))),
+            SnackBar(
+                content:
+                    Text(result['message'] ?? l10n.t('registration_failed'))),
           );
         }
       }
@@ -130,7 +134,9 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final title = widget.isForReset ? l10n.t('reset_password') : l10n.t('create_password');
+    final title = widget.isForReset
+        ? l10n.t('reset_password')
+        : l10n.t('create_password');
     final desc = l10n.t('please_enter_six_or_more_characters');
     return Scaffold(
         appBar: const BxAppBar(title: ""),
@@ -170,6 +176,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
               AppTextField(
                   controller: _pwdCtrl,
                   labelText: l10n.t('password'),
+                  placeholderText: l10n.t('enter_password'),
                   obscureText: _obscure,
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -240,14 +247,16 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                     ),
                     elevation: 0,
                   ).copyWith(
-                    foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                    backgroundColor: MaterialStateProperty.resolveWith<Color>(
                       (Set<MaterialState> states) {
                         if (states.contains(MaterialState.disabled)) {
-                          return Colors.black.withOpacity(0.3);
+                          return Colors.black.withOpacity(0.1);
                         }
-                        return Colors.white;
+                        return AppColors.orange; // 可点击时使用主题橙色
                       },
                     ),
+                    foregroundColor:
+                        MaterialStateProperty.all<Color>(Colors.white),
                   ),
                   child: _loading
                       ? const SizedBox(
@@ -258,7 +267,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                             color: Colors.white,
                           ),
                         )
-                      :                       Text(
+                      : Text(
                           l10n.t('save'),
                           style: const TextStyle(
                             fontSize: 18,

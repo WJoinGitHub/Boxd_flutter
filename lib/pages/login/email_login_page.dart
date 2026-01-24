@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
-import 'package:flutter_boxd_app_flow/pages/login/register_email_page.dart';
 import 'package:flutter_boxd_app_flow/pages/login/verification_page.dart';
 import 'package:flutter_boxd_app_flow/pages/home_page.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
@@ -36,65 +35,6 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
     final emailReg =
         RegExp(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
     return emailReg.hasMatch(v);
-  }
-
-  Future<void> _guestLogin() async {
-    final l10n = AppLocalizations.of(context);
-    setState(() => _loading = true);
-    try {
-      final result = await ApiClient.guestLogin();
-
-      if (result['code'] == 200 && mounted) {
-        final data = result['data'];
-        if (data != null) {
-          final tokens = data['tokens'];
-          final user = data['user'];
-
-          if (tokens != null && user != null) {
-            await UserService().saveTokens(
-              accessToken: tokens['access_token'] ?? '',
-              refreshToken: tokens['refresh_token'] ?? '',
-              expiresIn: tokens['expires_in'],
-              isGuest: true, // 标记为游客模式
-            );
-
-            final userInfo = UserInfo.fromJson(user);
-            await UserService().saveUserInfo(userInfo, isGuest: true);
-
-            // 游客登录成功后调用 user/profile 接口刷新用户信息
-            try {
-              await UserService().fetchUserInfo();
-              print(
-                  '[GUEST_LOGIN] 用户信息已刷新: ${UserService().currentUser?.nickname}');
-            } catch (e) {
-              print('[GUEST_LOGIN] 刷新用户信息失败: $e');
-            }
-          }
-        }
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.t('guest_login_success'))),
-          );
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomePage()),
-          );
-        }
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(result['message'] ?? l10n.t('guest_login_failed'))),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l10n.t('guest_login_failed')}: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
   }
 
   Future<void> _login() async {
@@ -162,7 +102,13 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.t('sign_in')),
-        automaticallyImplyLeading: false, // 不显示返回按钮
+        centerTitle: true, // 标题居中
+        backgroundColor: Colors.white, // 确保背景色是白色
+        elevation: 0, // 去掉阴影
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       backgroundColor: AppColors.pageBg,
       resizeToAvoidBottomInset: true,
@@ -178,17 +124,18 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 13),
+              const SizedBox(height: 15),
               Center(
                 child: SizedBox(
-                  height: 58,
+                  height: 100,
                   child: Assets.login.images.logo.image(fit: BoxFit.contain),
                 ),
               ),
-              const SizedBox(height: 25),
+              const SizedBox(height: 16),
               AppTextField(
                 controller: _emailCtrl,
-                labelText: l10n.t('enter_email'),
+                labelText: l10n.t('email'),
+                placeholderText: l10n.t('enter_email'),
                 keyboardType: TextInputType.emailAddress,
                 suffixIcon: _emailCtrl.text.isNotEmpty
                     ? IconButton(
@@ -198,10 +145,11 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                     : null,
                 onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: 13),
+              const SizedBox(height: 5),
               AppTextField(
                 controller: _pwdCtrl,
                 labelText: l10n.t('password'),
+                placeholderText: l10n.t('enter_password'),
                 obscureText: _obscure,
                 suffixIcon: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -220,11 +168,29 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                 ),
                 onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: 2),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
+                    // 验证邮箱是否输入
+                    if (_emailCtrl.text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(l10n.t('enter_email')),
+                        ),
+                      );
+                      return;
+                    }
+                    // 验证邮箱格式
+                    if (!_isEmail(_emailCtrl.text)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(l10n.t('invalid_email_message')),
+                        ),
+                      );
+                      return;
+                    }
+                    // 邮箱验证通过，跳转到验证页面
                     Navigator.of(context).push(MaterialPageRoute(
                         builder: (_) => VerificationPage(
                               codeLength: 4,
@@ -238,7 +204,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: _canLogin && !_loading ? _login : null,
                 style: ElevatedButton.styleFrom(
@@ -248,14 +214,16 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ).copyWith(
-                  foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                  backgroundColor: MaterialStateProperty.resolveWith<Color>(
                     (Set<MaterialState> states) {
                       if (states.contains(MaterialState.disabled)) {
-                        return Colors.black.withOpacity(0.3);
+                        return Colors.black.withOpacity(0.1);
                       }
-                      return Colors.white;
+                      return AppColors.orange; // 可点击时使用主题橙色
                     },
                   ),
+                  foregroundColor:
+                      MaterialStateProperty.all<Color>(Colors.white),
                 ),
                 child: Center(
                   child: _loading
@@ -274,40 +242,24 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                         ),
                 ),
               ),
+              /*
               const SizedBox(height: 12),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('${l10n.t('dont_have_account')} '),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(MaterialPageRoute(
-                              builder: (_) => const RegisterEmailPage()));
-                        },
-                        child: Text(
-                          l10n.t('sign_up'),
-                          style:
-                              TextStyle(color: AppColors.orange, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                  TextButton(
-                    onPressed: _loading ? null : _guestLogin,
+                  Text('${l10n.t('dont_have_account')} '),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => const RegisterEmailPage()));
+                    },
                     child: Text(
-                      l10n.t('guest_login'),
-                      style: TextStyle(
-                        color: AppColors.orange,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      l10n.t('sign_up'),
+                      style: TextStyle(color: AppColors.orange, fontSize: 13),
                     ),
                   ),
                 ],
-              ),
+              ),*/
             ],
           ),
         ),

@@ -471,6 +471,34 @@ class BleService {
     return success;
   }
 
+  /// 停止工作（mode=0）
+  Future<bool> stopWork() async {
+    if (_writeCharacteristic == null) return false;
+
+    try {
+      final data = BleProtocolHelper.setWorkCommand(
+        mode: WorkMode.none,
+        temperature: 0,
+        heatingTime: 0,
+        mealTime: 0,
+      );
+      final success = await _writeWithResponse(data, 0x40, 0x00);
+
+      if (success) {
+        // 立即获取一次设备状态，用于更新UI
+        _skipNextHeartbeat = true;
+        await getDeviceStatus();
+        _lastHeartbeatTime = DateTime.now();
+        print('[BLE] 停止工作命令发送成功，已获取设备状态');
+      }
+
+      return success;
+    } catch (e) {
+      print('[BLE] 发送停止工作命令失败: $e');
+      return false;
+    }
+  }
+
   /// 停止设备
   Future<bool> stopDevice() async {
     if (_writeCharacteristic == null) return false;

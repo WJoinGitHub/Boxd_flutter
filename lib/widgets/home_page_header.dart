@@ -14,7 +14,6 @@ class HomePageHeader extends StatelessWidget {
   final Map<String, dynamic>? currentDevice;
   final Map<String, dynamic>? deviceDetail;
   final VoidCallback? onDeviceSelectorTap;
-  final VoidCallback? onConnectDeviceTap;
   final VoidCallback? onSettingsReturn;
 
   const HomePageHeader({
@@ -25,7 +24,6 @@ class HomePageHeader extends StatelessWidget {
     this.currentDevice,
     this.deviceDetail,
     this.onDeviceSelectorTap,
-    this.onConnectDeviceTap,
     this.onSettingsReturn,
   });
 
@@ -78,8 +76,7 @@ class HomePageHeader extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              AppLocalizations.of(context)
-                                  .t('homepage_slogan'),
+                              AppLocalizations.of(context).t('homepage_slogan'),
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w400,
@@ -91,42 +88,6 @@ class HomePageHeader extends StatelessWidget {
                       ),
                     ],
                   ),
-                  // 已登录且未连接且有设备时，显示连接按钮
-                  if (UserService().isLoggedIn &&
-                      !(devices.isEmpty && !connected)) ...[
-                    const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: isConnecting ? null : onConnectDeviceTap,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            l10n.t('connect_device'),
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isConnecting
-                                  ? Colors.grey
-                                  : AppColors.orange,
-                              fontWeight: FontWeight.w500,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                          if (isConnecting) ...[
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppColors.orange),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
                 ],
               ),
               ElevatedButton(

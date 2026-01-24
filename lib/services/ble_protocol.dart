@@ -317,19 +317,14 @@ class BleProtocolHelper {
       return null;
     }
 
-    // 验证校验码（Byte 13应该是Byte 1到Byte 12的和）
-    final checksum = calculateChecksum(data, 1, 13);
-    if (data[13] != checksum) {
-      print('[PROTOCOL] 校验码错误: 期望=$checksum, 实际=${data[13]}');
-      return null;
-    }
+    // 心跳数据不需要校验码匹配，直接解析
 
     // 解析设备状态
     final stateValue = data[2];
     final state = DeviceState.fromValue(stateValue);
 
-    // 解析剩余加热时间（Bytes 3-4，大端序）
-    final remainingHeatingTime = bytesToUint16BigEndian(data, 3);
+    // 解析剩余加热时间（Bytes 3-4，小端序）
+    final remainingHeatingTime = bytesToUint16(data, 3);
 
     // 解析当前温度（Byte 5）
     final temperature = data[5];

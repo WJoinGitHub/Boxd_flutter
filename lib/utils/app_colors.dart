@@ -23,4 +23,5 @@ class AppColors {
   static final Color white = fromHex(0xFFFFFF);
   static final Color green = fromHex(0x3EC032);
   static final Color blue = fromHex(0xFFFFFF);
+  static final Color gray5 = fromHex(0x979797); // 未连接状态颜色
 }

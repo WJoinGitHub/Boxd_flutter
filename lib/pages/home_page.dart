@@ -1028,8 +1028,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     },
                                     child:
                                         Assets.home.images.addDeviceBig.image(
-                                      width: 120,
-                                      height: 120,
+                                      width: 100,
+                                      height: 100,
                                       fit: BoxFit.contain,
                                     ),
                                   ),

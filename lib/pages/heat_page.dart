@@ -406,7 +406,6 @@ class _HeatPageState extends State<HeatPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

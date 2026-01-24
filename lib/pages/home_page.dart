@@ -36,6 +36,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _isInitialized = false;
   DeviceState? _deviceState;
   int? _mealTime; // 设备工作结束时间（从00:00开始的总分钟数）
+  int? _remainingHeatingTime; // 剩余加热时间（分钟）
   Timer? _connectionCheckTimer;
   bool _isPoweredOff = false; // 设备是否已关机
   bool _isConnecting = false; // 是否正在连接设备
@@ -80,10 +81,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             _isPoweredOff = false;
           }
 
-          // 更新结束时间（mealTime）
+          // 更新结束时间（mealTime）- 用于定时模式
           if (status.mealTime != null) {
             _mealTime = status.mealTime;
             print('[HOME] 更新结束时间: $_mealTime 分钟（从00:00开始）');
+          }
+
+          // 更新剩余加热时间（用于保温和加热模式）
+          if (status.remainingHeatingTime != null) {
+            _remainingHeatingTime = status.remainingHeatingTime;
+            print('[HOME] 剩余加热时间: ${status.remainingHeatingTime}分钟');
           }
 
           // 更新电量
@@ -97,10 +104,23 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             }
             print('[HOME] 转换后电量: $batteryLevel%');
           }
+          
           // 更新温度
           if (status.temperature != null) {
             temperature = status.temperature!;
             print('[HOME] 更新温度: $temperature°C');
+          }
+          
+          // 更新温度单位（优先使用设备返回的单位）
+          if (status.isFahrenheit != null) {
+            temperatureUnit = status.isFahrenheit! ? '°F' : '°C';
+            print('[HOME] 更新温度单位: $temperatureUnit（来自设备）');
+          }
+          
+          // 如果设备状态变为待机或关机，清除剩余加热时间
+          if (status.state == DeviceState.ready || 
+              status.state == DeviceState.disabled) {
+            _remainingHeatingTime = null;
           }
         });
       }
@@ -123,6 +143,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             batteryLevel = 0;
             _deviceState = null;
             _mealTime = null;
+            _remainingHeatingTime = null;
             deviceDetail = null;
           }
         });
@@ -456,11 +477,35 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       for (var d in connectedDevices) {
         if (timeoutOccurred) break;
-        // 尝试通过UUID匹配
+        
+        // 优先通过设备名称匹配
+        final deviceName = device['device_name'] as String? ?? '';
+        if (deviceName.isNotEmpty) {
+          final connectedName = d.platformName;
+          // 精确匹配
+          if (connectedName == deviceName) {
+            print('[HOME] 找到已连接的设备（通过名称精确匹配）: $connectedName');
+            targetDevice = d;
+            break;
+          }
+          // 部分匹配：如果设备名称前缀相同（如 QIMI-B13-），也尝试连接
+          if (connectedName.startsWith('QIMI-') && deviceName.startsWith('QIMI-')) {
+            final connectedPrefix = connectedName.split('-').take(2).join('-');
+            final devicePrefix = deviceName.split('-').take(2).join('-');
+            if (connectedPrefix == devicePrefix) {
+              print('[HOME] 找到已连接的设备（通过名称前缀匹配）: $connectedName (目标: $deviceName)');
+              targetDevice = d;
+              break;
+            }
+          }
+        }
+        
+        // 尝试通过UUID匹配（作为备选方案）
         final currentUuid = Platform.isAndroid
             ? d.remoteId.str.replaceAll(':', '').toUpperCase()
             : d.remoteId.str.replaceAll('-', '').toUpperCase();
         if (currentUuid == deviceUuid) {
+          print('[HOME] 找到已连接的设备（通过UUID）: ${d.platformName}');
           targetDevice = d;
           break;
         }
@@ -500,24 +545,39 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             for (var r in results) {
               if (timeoutOccurred || deviceCompleter.isCompleted) break;
               
-              // 尝试通过UUID匹配
               final currentUuid = Platform.isAndroid
                   ? r.device.remoteId.str.replaceAll(':', '').toUpperCase()
                   : r.device.remoteId.str.replaceAll('-', '').toUpperCase();
               
               print('[HOME] 扫描到设备: ${r.device.platformName}, UUID: $currentUuid');
               
-              if (currentUuid == deviceUuid) {
-                print('[HOME] 找到匹配的设备（通过UUID）: ${r.device.platformName}');
-                deviceCompleter.complete(r.device);
-                break;
+              // 优先通过设备名称匹配（因为API返回的device_uuid不是MAC地址）
+              final deviceName = device['device_name'] as String? ?? '';
+              if (deviceName.isNotEmpty) {
+                final scannedName = r.device.platformName;
+                // 精确匹配
+                if (scannedName == deviceName) {
+                  print('[HOME] 找到匹配的设备（通过名称精确匹配）: $scannedName');
+                  deviceCompleter.complete(r.device);
+                  break;
+                }
+                // 部分匹配：如果设备名称前缀相同（如 QIMI-B13-），也尝试连接
+                // 因为设备名称可能因为固件更新等原因略有变化
+                if (scannedName.startsWith('QIMI-') && deviceName.startsWith('QIMI-')) {
+                  // 提取型号部分（如 QIMI-B13-AKH02 中的 QIMI-B13）
+                  final scannedPrefix = scannedName.split('-').take(2).join('-');
+                  final devicePrefix = deviceName.split('-').take(2).join('-');
+                  if (scannedPrefix == devicePrefix) {
+                    print('[HOME] 找到匹配的设备（通过名称前缀匹配）: $scannedName (目标: $deviceName)');
+                    deviceCompleter.complete(r.device);
+                    break;
+                  }
+                }
               }
               
-              // 尝试通过设备名称匹配
-              final deviceName = device['device_name'] as String? ?? '';
-              if (deviceName.isNotEmpty &&
-                  r.device.platformName == deviceName) {
-                print('[HOME] 找到匹配的设备（通过名称）: ${r.device.platformName}');
+              // 尝试通过UUID匹配（作为备选方案，虽然通常不会匹配成功）
+              if (currentUuid == deviceUuid) {
+                print('[HOME] 找到匹配的设备（通过UUID）: ${r.device.platformName}');
                 deviceCompleter.complete(r.device);
                 break;
               }
@@ -1247,21 +1307,51 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return temperature;
   }
 
-  /// 获取结束时间显示文本（将分钟数转换为时:分格式）
+  /// 获取结束时间显示文本
+  /// 对于定时模式：使用开饭时间（mealTime）
+  /// 对于保温和加热模式：根据剩余加热时间计算结束时间
   String? _getEndTimeText() {
-    if (_mealTime == null) return null;
+    if (_deviceState == null) return null;
 
-    // mealTime 是从00:00开始的总分钟数
-    final hours = _mealTime! ~/ 60;
-    final minutes = _mealTime! % 60;
+    // 定时模式：使用开饭时间
+    if (_deviceState == DeviceState.timing && _mealTime != null) {
+      // mealTime 是从00:00开始的总分钟数
+      final hours = _mealTime! ~/ 60;
+      final minutes = _mealTime! % 60;
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+    }
 
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+    // 保温和加热模式：根据剩余加热时间计算结束时间
+    if ((_deviceState == DeviceState.keepWarm || 
+         _deviceState == DeviceState.heating) &&
+        _remainingHeatingTime != null &&
+        _remainingHeatingTime! > 0) {
+      final now = DateTime.now();
+      final endTime = now.add(Duration(minutes: _remainingHeatingTime!));
+      final hours = endTime.hour;
+      final minutes = endTime.minute;
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+    }
+
+    return null;
   }
 
-  /// 是否应该显示结束时间（仅在定时状态时显示）
+  /// 是否应该显示结束时间（在定时、保温、加热状态时显示）
   bool _shouldShowEndTime() {
     if (_deviceState == null) return false;
-    return _deviceState == DeviceState.timing;
+    
+    // 定时模式：需要开饭时间
+    if (_deviceState == DeviceState.timing) {
+      return _mealTime != null;
+    }
+    
+    // 保温和加热模式：需要剩余加热时间
+    if (_deviceState == DeviceState.keepWarm || 
+        _deviceState == DeviceState.heating) {
+      return _remainingHeatingTime != null && _remainingHeatingTime! > 0;
+    }
+    
+    return false;
   }
 
   /// 获取模式图片（根据设备状态）

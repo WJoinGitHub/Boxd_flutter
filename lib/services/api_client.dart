@@ -52,7 +52,6 @@ class ApiClient {
     '/auth/send-code',
     '/auth/verify-code',
     '/auth/reset-password',
-    '/auth/reset-password/send-code',
     '/auth/refresh-token',
   };
 
@@ -266,7 +265,7 @@ class ApiClient {
 
   /// 发送重置密码验证码（专门的重置密码接口）
   static Future<Map<String, dynamic>> sendResetPasswordCode(String email) =>
-      post('/auth/reset-password/send-code', {'email': email});
+      post('/auth/send-code', {'email': email});
 
   static Future<Map<String, dynamic>> verifyCode(
           String email, String code, CodeType type) =>

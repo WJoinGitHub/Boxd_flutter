@@ -107,12 +107,15 @@ class DeviceStatusData {
   final DeviceState state;
   final WorkMode? mode;
   final int? countdownSeconds;
-  final int? heatingTime;
+  final int? heatingTime; // 设定加热时间（分钟）
+  final int? remainingHeatingTime; // 剩余加热时间（分钟）
   final int? temperature;
-  final int? mealTime;
+  final int? mealTime; // 开饭时间（从00:00开始的总分钟数）
   final int? batteryLevel;
   final int? chargingState;
-  final int? lockState;
+  final bool? isLocked; // 按键锁定状态
+  final bool? isFahrenheit; // 温度单位：false=摄氏度，true=华氏度
+  final int? lockState; // 兼容旧字段
   final int? faultCode;
 
   DeviceStatusData({
@@ -120,10 +123,13 @@ class DeviceStatusData {
     this.mode,
     this.countdownSeconds,
     this.heatingTime,
+    this.remainingHeatingTime,
     this.temperature,
     this.mealTime,
     this.batteryLevel,
     this.chargingState,
+    this.isLocked,
+    this.isFahrenheit,
     this.lockState,
     this.faultCode,
   });
@@ -170,6 +176,11 @@ class BleProtocolHelper {
   /// 字节转uint16（小端）
   static int bytesToUint16(List<int> bytes, int offset) {
     return bytes[offset] | (bytes[offset + 1] << 8);
+  }
+
+  /// 字节转uint16（大端）
+  static int bytesToUint16BigEndian(List<int> bytes, int offset) {
+    return (bytes[offset] << 8) | bytes[offset + 1];
   }
 
   /// 获取设备基本信息指令
@@ -239,77 +250,86 @@ class BleProtocolHelper {
     return buildPacket(0x40, data);
   }
 
-  /// 解析设备状态响应
-  static DeviceStatusData? parseDeviceStatus(List<int> data) {
-    final parsed = parsePacket(data);
-    if (parsed == null || parsed.isEmpty || parsed[0] != 0x51) return null;
-
-    final state = DeviceState.fromValue(parsed[1]);
-
-    // 根据协议，状态0-3对应：待机/保温/加热/设定开饭
-    // 状态0（待机）时，数据格式可能不同
-    // 状态1-3（保温/加热/设定开饭）时，包含完整的状态信息
-    switch (state) {
-      case DeviceState.ready:
-        // 待机状态，可能只有基本状态信息
-        if (parsed.length < 3) return null;
-        return DeviceStatusData(
-          state: state,
-          mode: WorkMode.fromValue(parsed[2]),
-        );
-
-      case DeviceState.keepWarm:
-      case DeviceState.heating:
-      case DeviceState.timing:
-        // 保温/加热/设定开饭状态，包含完整信息
-        // 根据协议：指令码(1) + 状态(1) + 加热时间(2) + 温度(1) + 开饭时间(2) + 电池(1) + 充电(1) + 锁定(1) = 10字节
-        if (parsed.length < 10) return null;
-        print('[PROTOCOL] 解析电量: parsed[7]=${parsed[7]}');
-        return DeviceStatusData(
-          state: state,
-          heatingTime: bytesToUint16(parsed, 2),
-          temperature: parsed[4],
-          mealTime: bytesToUint16(parsed, 5),
-          batteryLevel: parsed[7],
-          chargingState: parsed[8],
-          lockState: parsed[9],
-        );
-
-      case DeviceState.starting:
-        if (parsed.length < 3) return null;
-        return DeviceStatusData(
-          state: state,
-          countdownSeconds: parsed[2],
-        );
-
-      case DeviceState.stopped:
-      case DeviceState.running:
-      case DeviceState.paused:
-        if (parsed.length < 9) return null;
-        print('[PROTOCOL] 解析电量: parsed[7]=${parsed[7]}');
-        return DeviceStatusData(
-          state: state,
-          heatingTime: bytesToUint16(parsed, 2),
-          temperature: parsed[4],
-          mealTime: bytesToUint16(parsed, 5),
-          batteryLevel: parsed[7],
-          chargingState: parsed[8],
-          lockState: parsed.length > 9 ? parsed[9] : null,
-        );
-
-      case DeviceState.fault:
-        if (parsed.length < 3) return null;
-        return DeviceStatusData(
-          state: state,
-          faultCode: parsed[2],
-        );
-
-      case DeviceState.disabled:
-        if (parsed.length < 3) return null;
-        return DeviceStatusData(
-          state: state,
-          faultCode: parsed[2],
-        );
+  /// 计算校验码（根据新协议：从Byte 1到Byte 12的和）
+  static int calculateChecksum(List<int> data, int start, int end) {
+    int sum = 0;
+    for (int i = start; i < end; i++) {
+      sum += data[i];
     }
+    return sum & 0xFF;
+  }
+
+  /// 解析设备状态响应（新协议：15字节固定长度）
+  /// 协议格式：
+  /// Byte 0: 起始码 0x02
+  /// Byte 1: 指令码 0x51
+  /// Byte 2: 设备状态 (0=待机, 1-3=保温/加热/定时开饭, 0x05=故障, 0x06=关机)
+  /// Bytes 3-4: 剩余加热时间 (两字节，大端序)
+  /// Byte 5: 当前温度
+  /// Bytes 6-7: 开饭时间 (两字节，大端序，总分钟数)
+  /// Byte 8: 电池电量
+  /// Byte 9: 充电状态 (0=未充电, 1=充电中, 2=已充满)
+  /// Byte 10: 标志位 (bit0=按键锁定, bit1=温度单位 0=摄氏度, 1=华氏度)
+  /// Bytes 11-12: 设定加热时间 (两字节，大端序)
+  /// Byte 13: 校验码
+  /// Byte 14: 结束码 0x03
+  static DeviceStatusData? parseDeviceStatus(List<int> data) {
+    // 检查基本格式：必须是15字节，起始码0x02，结束码0x03，指令码0x51
+    if (data.length != 15 ||
+        data[0] != 0x02 ||
+        data[14] != 0x03 ||
+        data[1] != 0x51) {
+      print('[PROTOCOL] 数据格式错误: 长度=${data.length}, 起始=${data[0]}, 结束=${data[data.length - 1]}, 指令=${data.length > 1 ? data[1] : 'N/A'}');
+      return null;
+    }
+
+    // 验证校验码（Byte 13应该是Byte 1到Byte 12的和）
+    final checksum = calculateChecksum(data, 1, 13);
+    if (data[13] != checksum) {
+      print('[PROTOCOL] 校验码错误: 期望=$checksum, 实际=${data[13]}');
+      return null;
+    }
+
+    // 解析设备状态
+    final stateValue = data[2];
+    final state = DeviceState.fromValue(stateValue);
+
+    // 解析剩余加热时间（Bytes 3-4，大端序）
+    final remainingHeatingTime = bytesToUint16BigEndian(data, 3);
+
+    // 解析当前温度（Byte 5）
+    final temperature = data[5];
+
+    // 解析开饭时间（Bytes 6-7，大端序，总分钟数）
+    final mealTime = bytesToUint16BigEndian(data, 6);
+
+    // 解析电池电量（Byte 8）
+    final batteryLevel = data[8];
+
+    // 解析充电状态（Byte 9）
+    final chargingState = data[9];
+
+    // 解析标志位（Byte 10）
+    final flags = data[10];
+    final isLocked = (flags & 0x01) != 0; // bit0: 按键锁定
+    final isFahrenheit = (flags & 0x02) != 0; // bit1: 温度单位
+
+    // 解析设定加热时间（Bytes 11-12，大端序）
+    final heatingTime = bytesToUint16BigEndian(data, 11);
+
+    print('[PROTOCOL] 解析设备状态: 状态=$stateValue, 剩余加热=$remainingHeatingTime分钟, 温度=$temperature, 开饭时间=$mealTime分钟, 电池=$batteryLevel, 充电=$chargingState, 锁定=$isLocked, 华氏度=$isFahrenheit, 设定加热=$heatingTime分钟');
+
+    return DeviceStatusData(
+      state: state,
+      remainingHeatingTime: remainingHeatingTime,
+      temperature: temperature,
+      mealTime: mealTime,
+      batteryLevel: batteryLevel,
+      chargingState: chargingState,
+      isLocked: isLocked,
+      isFahrenheit: isFahrenheit,
+      lockState: flags, // 兼容旧字段
+      heatingTime: heatingTime,
+    );
   }
 }

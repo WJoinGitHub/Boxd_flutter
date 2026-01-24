@@ -369,16 +369,10 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
                 // 图片距离导航栏高度100
                 const SizedBox(height: 100),
                 // 保温图标（橙色）
-                ColorFiltered(
-                  colorFilter: ColorFilter.mode(
-                    AppColors.orange,
-                    BlendMode.srcIn,
-                  ),
-                  child: Assets.device.images.devIns.image(
-                    width: 80,
-                    height: 80,
-                    fit: BoxFit.contain,
-                  ),
+                Assets.device.images.devInsSelect.image(
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 60),
 
@@ -428,9 +422,9 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
+                const Text(
                   '${durationHours}H',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 40,
                     fontWeight: FontWeight.w700,
                     color: Colors.black,

@@ -7,10 +7,9 @@ import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/widgets/temperature_picker_dialog.dart';
 import 'package:flutter_boxd_app_flow/widgets/minutes_picker_dialog.dart';
 import 'package:flutter_boxd_app_flow/widgets/time_picker_dialog.dart';
-import 'package:device_calendar/device_calendar.dart';
-import 'package:timezone/data/latest.dart' as tz_data;
-import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
+import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
+import 'package:flutter_boxd_app_flow/widgets/reminder_helper.dart';
 
 class HeatingTimePage extends StatefulWidget {
   const HeatingTimePage({super.key});
@@ -27,32 +26,24 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
   int? selectedTemperature;
   int batteryLevel = 0;
   String temperatureUnit = '°C';
-  bool remindEnabled = false;
-  int selectedHour = 0;
-  int selectedMinute = 0;
   int endHour = 0; // 结束时间（小时）
   int endMinute = 0; // 结束时间（分钟）
   final bleService = BleService();
   bool isHeating = false;
-
-  late final FixedExtentScrollController hourController;
-  late final FixedExtentScrollController minuteController;
+  final ReminderHelper reminderHelper = ReminderHelper();
 
   @override
   void initState() {
     super.initState();
-    tz_data.initializeTimeZones();
 
     // 初始化时间：当前时间+1小时（最小可选时间）
     final now = DateTime.now();
     final minTime = now.add(const Duration(hours: 1));
-    selectedHour = minTime.hour;
-    selectedMinute = minTime.minute;
     endHour = minTime.hour;
     endMinute = minTime.minute;
-
-    hourController = FixedExtentScrollController(initialItem: selectedHour);
-    minuteController = FixedExtentScrollController(initialItem: selectedMinute);
+    // 初始化提醒时间
+    reminderHelper.selectedHour = minTime.hour;
+    reminderHelper.selectedMinute = minTime.minute;
 
     _loadTemperatureUnit();
     _loadBatteryLevel();
@@ -60,7 +51,9 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     bleService.statusStream.listen((status) {
       if (mounted) {
         setState(() {
-          if (status.temperature != null) temperature = status.temperature!;
+          if (status.temperature != null) {
+            temperature = status.temperature!;
+          }
           if (status.batteryLevel != null) {
             final level = status.batteryLevel!;
             batteryLevel = (level >= 1 && level <= 4) ? level * 25 : level;
@@ -87,18 +80,17 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
 
   @override
   void dispose() {
-    hourController.dispose();
-    minuteController.dispose();
+    reminderHelper.dispose();
     super.dispose();
   }
 
   /// 获取显示温度（根据单位转换）
   int _getDisplayTemperature() {
-    final temp = selectedTemperature ?? temperature;
+    if (selectedTemperature == null) return 0;
     if (temperatureUnit == '°F') {
-      return (temp * 9 / 5 + 32).round();
+      return (selectedTemperature! * 9 / 5 + 32).round();
     }
-    return temp;
+    return selectedTemperature!;
   }
 
   Future<void> _showMinutesPicker() async {
@@ -117,19 +109,8 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
         endHour = result.hour;
         endMinute = result.minute;
         // 同步更新 remind 时间
-        selectedHour = result.hour;
-        selectedMinute = result.minute;
-      });
-    }
-  }
-
-  Future<void> _showTimePicker() async {
-    final result =
-        await showRestrictedTimePicker(context, selectedHour, selectedMinute);
-    if (result != null) {
-      setState(() {
-        selectedHour = result.hour;
-        selectedMinute = result.minute;
+        reminderHelper.selectedHour = result.hour;
+        reminderHelper.selectedMinute = result.minute;
       });
     }
   }
@@ -158,8 +139,13 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
 
     // 计算目标时间（开饭时间）
     final now = DateTime.now();
-    final targetTime =
-        DateTime(now.year, now.month, now.day, selectedHour, selectedMinute);
+    final targetTime = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      reminderHelper.selectedHour,
+      reminderHelper.selectedMinute,
+    );
 
     // 如果目标时间小于当前时间，说明是第二天
     final actualTargetTime = targetTime.isBefore(now)
@@ -198,7 +184,8 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     }
 
     // 将结束时间转换为总分钟数（从00:00开始计算）
-    final mealTimeTotalMinutes = selectedHour * 60 + selectedMinute;
+    final mealTimeTotalMinutes =
+        reminderHelper.selectedHour * 60 + reminderHelper.selectedMinute;
 
     final success = await bleService.setWork(
       mode: WorkMode.timing,
@@ -211,8 +198,8 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
       if (success) {
         setState(() => isHeating = true);
         // 只有当开关打开时，才处理日历相关操作
-        if (remindEnabled) {
-          await _createCalendarReminder();
+        if (reminderHelper.remindEnabled) {
+          await reminderHelper.createTimingCalendarReminder(context);
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -229,406 +216,261 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     }
   }
 
-  Future<void> _createCalendarReminder() async {
-    print('[CALENDAR] 开始创建日历提醒');
-    try {
-      final plugin = DeviceCalendarPlugin();
-      print('[CALENDAR] 检查日历权限');
-      final permissionGranted = await plugin.hasPermissions();
-      print('[CALENDAR] 权限检查结果: ${permissionGranted.data}');
-
-      if (permissionGranted.isSuccess && !permissionGranted.data!) {
-        print('[CALENDAR] 请求日历权限');
-        try {
-          final result = await plugin.requestPermissions();
-          print('[CALENDAR] 权限请求结果: ${result.data}');
-          if (!result.isSuccess || !result.data!) {
-            print('[CALENDAR] Permission denied');
-            if (mounted) {
-              final l10n = AppLocalizations.of(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text(l10n.t('calendar_permission_denied_detail'))),
-              );
-            }
-            return;
-          }
-        } catch (e) {
-          print('[CALENDAR] 权限请求异常: $e');
-          if (mounted) {
-            final l10n = AppLocalizations.of(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text(l10n.t('calendar_permission_denied_detail'))),
-            );
-          }
-          return;
-        }
-      }
-
-      print('[CALENDAR] 获取日历列表');
-      final calendarsResult = await plugin.retrieveCalendars();
-      print('[CALENDAR] 日历数量: ${calendarsResult.data?.length}');
-      if (!calendarsResult.isSuccess ||
-          calendarsResult.data == null ||
-          calendarsResult.data!.isEmpty) {
-        print('[CALENDAR] No calendars found');
-        return;
-      }
-
-      final calendar = calendarsResult.data!.first;
-      print('[CALENDAR] 使用日历: ${calendar.name}');
-      final now = DateTime.now();
-      final mealDateTime =
-          DateTime(now.year, now.month, now.day, selectedHour, selectedMinute);
-      final actualMealTime = mealDateTime.isBefore(now)
-          ? mealDateTime.add(const Duration(days: 1))
-          : mealDateTime;
-      print('[CALENDAR] 用餐时间: $actualMealTime');
-
-      final tzActualMealTime = tz.TZDateTime.from(actualMealTime, tz.local);
-      final tzEndTime = tz.TZDateTime.from(
-          actualMealTime.add(const Duration(minutes: 15)), tz.local);
-
-      final event = Event(
-        calendar.id,
-        title: 'HeatLink - Meal Ready',
-        description:
-            'Your meal will be ready at ${selectedHour.toString().padLeft(2, '0')}:${selectedMinute.toString().padLeft(2, '0')}',
-        start: tzActualMealTime,
-        end: tzEndTime,
-      );
-
-      event.reminders = [Reminder(minutes: 0)];
-
-      print('[CALENDAR] 创建日历事件');
-      final createResult = await plugin.createOrUpdateEvent(event);
-      print('[CALENDAR] 创建结果: ${createResult?.isSuccess}');
-      if (createResult?.isSuccess == true) {
-        print('[CALENDAR] Reminder created successfully');
-        if (mounted) {
-          final l10n = AppLocalizations.of(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content:
-                    Text(l10n.t('calendar_reminder_created_successfully'))),
-          );
-        }
-      }
-    } catch (e) {
-      print('[CALENDAR] Failed to create reminder: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final displayTemp = _getDisplayTemperature();
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: BxAppBar(
-        title: '',
+        title: l10n.t('timer_mode'),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 顶部：图标和标题
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
+        children: [
+          // 主要内容区域
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // 左侧：Timer图标和标题
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Assets.device.images.devTimer.image(
-                        width: 60,
-                        fit: BoxFit.contain,
-                      ),
-                      const SizedBox(height: 30),
-                      Text(
-                        AppLocalizations.of(context).t('timer_mode'),
+                  // 图片距离导航栏高度12
+                  const SizedBox(height: 12),
+
+                  // 定时图标（橙色）
+                  Assets.device.images.devTimerSelect.image(
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(height: 30),
+
+                  // Setting End Time
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        l10n.t('setting_end_time'),
                         style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
                           color: Colors.black,
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                  const Spacer(),
-                  // 右侧：设备图片
-                  Assets.device.images.hotRice.image(
-                    width: 150,
-                    fit: BoxFit.contain,
-                  ),
-                ],
-              ),
-            ),
+                  const SizedBox(height: 8),
 
-            // Setting Temperature
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                AppLocalizations.of(context).t('setting_temperature'),
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            // 温度
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: GestureDetector(
-                onTap: () async {
-                  final initialTemp = selectedTemperature ??
-                      (temperature > 0 ? temperature : 90);
-                  final result = await showTemperaturePicker(
-                    context,
-                    initialTemp,
-                  );
-                  if (result != null) {
-                    setState(() => selectedTemperature = result);
-                  }
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    border:
-                        Border.all(color: const Color(0xFF7F8489), width: 1),
-                    borderRadius: BorderRadius.circular(12),
+                  // 结束时间输入框
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: GestureDetector(
+                      onTap: _showEndTimePicker,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.black,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${endHour.toString().padLeft(2, '0')} : ${endMinute.toString().padLeft(2, '0')}',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.black,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  child: Text(
-                    '${_getDisplayTemperature()}  $temperatureUnit',
-                    style: const TextStyle(
-                        fontSize: 30, fontWeight: FontWeight.w400),
-                  ),
-                ),
-              ),
-            ),
 
-            const SizedBox(height: 20),
+                  const SizedBox(height: 30),
 
-            // Setting Heat Duration
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                AppLocalizations.of(context).t('setting_heat_duration'),
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Center(
-                child: Text(
-                  AppLocalizations.of(context).t('min_abbreviation'),
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: GestureDetector(
-                onTap: _showMinutesPicker,
-                child: Container(
-                  height: 60,
-                  decoration: BoxDecoration(
-                    border:
-                        Border.all(color: const Color(0xFF7F8489), width: 1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        minutes.toString().padLeft(2, '0'),
+                  // Setting Heat Duration
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        l10n.t('setting_heat_duration'),
                         style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w300,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.black,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // Setting end time
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                AppLocalizations.of(context).t('setting_end_time'),
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 80,
-                    child: Center(
-                      child: Text(
-                        AppLocalizations.of(context).t('hours_abbreviation'),
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 40),
-                  SizedBox(
-                    width: 80,
-                    child: Center(
-                      child: Text(
-                        AppLocalizations.of(context).t('min_abbreviation'),
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.grey),
+                  const SizedBox(height: 8),
+
+                  // 加热时长输入框
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: GestureDetector(
+                      onTap: _showMinutesPicker,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.black,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${minutes.toString().padLeft(2, '0')} ${l10n.t('minutes')}',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.black,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: GestureDetector(
-                onTap: _showEndTimePicker,
-                child: Container(
-                  height: 60,
-                  decoration: BoxDecoration(
-                    border:
-                        Border.all(color: const Color(0xFF7F8489), width: 1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 80,
-                        child: Center(
-                          child: Text(
-                            endHour.toString().padLeft(2, '0'),
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w300,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(
-                        width: 40,
-                        child: Center(
-                          child: Text(':', style: TextStyle(fontSize: 40)),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 80,
-                        child: Center(
-                          child: Text(
-                            endMinute.toString().padLeft(2, '0'),
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w300,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
 
-            const SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-            // Remind开关
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Assets.device.images.remainBell.image(
-                    width: 33,
-                    fit: BoxFit.contain,
+                  // Setting Temperature
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        l10n.t('setting_temperature'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    AppLocalizations.of(context).t('remind'),
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  const SizedBox(height: 8),
+
+                  // 温度输入框
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: GestureDetector(
+                      onTap: () async {
+                        final initialTemp = selectedTemperature ??
+                            (temperature > 0 ? temperature : 90);
+                        final result = await showTemperaturePicker(
+                          context,
+                          initialTemp,
+                        );
+                        if (result != null) {
+                          setState(() => selectedTemperature = result);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.black,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                selectedTemperature != null
+                                    ? '$displayTemp $temperatureUnit'
+                                    : '75 - 100 $temperatureUnit',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.black,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  const Spacer(),
-                  Switch(
-                    value: remindEnabled,
-                    onChanged: (value) {
-                      setState(() => remindEnabled = value);
+
+                  const SizedBox(height: 30),
+
+                  // Remind组件
+                  ReminderWidget(
+                    reminderHelper: reminderHelper,
+                    onRemindChanged: (value) {
+                      setState(() {
+                        reminderHelper.remindEnabled = value;
+                      });
                     },
-                    activeColor: Colors.green,
                   ),
                 ],
               ),
             ),
+          ),
 
-            const SizedBox(height: 20),
-
-            // 时间选择（如果Remind开启）
-            if (remindEnabled)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0x20A9E88B),
-                    borderRadius: BorderRadius.circular(12),
+          // 底部 Start 按钮
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _sendCommand,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.orange,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
                   ),
-                  child: Row(
-                    children: [
-                      Assets.device.images.devHeatTime.image(
-                        width: 71,
-                        fit: BoxFit.contain,
-                      ),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: _showTimePicker,
-                        child: Text(
-                          '${selectedHour.toString().padLeft(2, '0')} : ${selectedMinute.toString().padLeft(2, '0')}',
-                          style: const TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
+                ),
+                child: Text(
+                  l10n.t('start'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-
-            const SizedBox(height: 40),
-
-            // Start按钮（靠右，屏幕宽的2/3）
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                    onPressed: _sendCommand,
-                    icon: Assets.device.images.btnStart.image(
-                      width: MediaQuery.of(context).size.width * 1 / 2,
-                      fit: BoxFit.contain,
-                    )),
-              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -161,7 +161,7 @@ class _TimePickerBottomSheetState extends State<_TimePickerBottomSheet> {
               onPressed: () => Navigator.pop(context,
                   TimePickerResult(hour: selectedHour, minute: selectedMinute)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
+                backgroundColor: Colors.orange,
                 minimumSize: const Size(double.infinity, 44),
               ),
               child: Text(

@@ -1239,23 +1239,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                         DeviceState.timing &&
                                                     _mealTime != null) {
                                                   final now = DateTime.now();
-                                                  final mealTime = DateTime(
-                                                    now.year,
-                                                    now.month,
-                                                    now.day,
-                                                    _mealTime! ~/ 60,
-                                                    _mealTime! % 60,
-                                                  );
-                                                  // 如果开饭时间已过，则认为是明天的
-                                                  final targetTime =
-                                                      mealTime.isBefore(now)
-                                                          ? mealTime.add(
-                                                              const Duration(
-                                                                  days: 1))
-                                                          : mealTime;
-                                                  remainingMinutes = targetTime
-                                                      .difference(now)
-                                                      .inMinutes;
+                                                  // 当前时间从00:00开始的总分钟数
+                                                  final currentMinutes =
+                                                      now.hour * 60 + now.minute;
+                                                  // 计算剩余分钟数
+                                                  int diff = _mealTime! - currentMinutes;
+                                                  // 如果为负，说明是明天的时间
+                                                  if (diff < 0) {
+                                                    diff += 24 * 60; // 加24小时
+                                                  }
+                                                  remainingMinutes = diff;
                                                 }
 
                                                 if (remainingMinutes != null &&

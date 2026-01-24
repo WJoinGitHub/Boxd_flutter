@@ -286,12 +286,21 @@ class BleProtocolHelper {
   /// Byte 4: 数据2
   /// Byte 5: 结束码 0x03
   static DeviceStatusData? parseDeviceStatus(List<int> data) {
+    // 检查数据是否为空
+    if (data.isEmpty) {
+      print('[PROTOCOL] 数据为空');
+      return null;
+    }
+    
     // 检查基本格式：起始码0x02，结束码0x03，指令码0x51
     if (data.length < 3 ||
         data[0] != 0x02 ||
         data[data.length - 1] != 0x03 ||
         data[1] != 0x51) {
-      print('[PROTOCOL] 数据格式错误: 长度=${data.length}, 起始=${data[0]}, 结束=${data[data.length - 1]}, 指令=${data.length > 1 ? data[1] : 'N/A'}');
+      final startByte = data.isNotEmpty ? data[0] : 'N/A';
+      final endByte = data.isNotEmpty ? data[data.length - 1] : 'N/A';
+      final commandByte = data.length > 1 ? data[1] : 'N/A';
+      print('[PROTOCOL] 数据格式错误: 长度=${data.length}, 起始=$startByte, 结束=$endByte, 指令=$commandByte');
       return null;
     }
 
@@ -329,8 +338,8 @@ class BleProtocolHelper {
     // 解析当前温度（Byte 5）
     final temperature = data[5];
 
-    // 解析开饭时间（Bytes 6-7，大端序，总分钟数）
-    final mealTime = bytesToUint16BigEndian(data, 6);
+    // 解析开饭时间（Bytes 6-7，小端序，总分钟数）
+    final mealTime = bytesToUint16(data, 6);
 
     // 解析电池电量（Byte 8）
     final batteryLevel = data[8];

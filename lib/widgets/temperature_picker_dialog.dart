@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 
 /// 显示温度选择底部弹窗
 /// 返回选择的温度值（摄氏度）
@@ -105,6 +106,7 @@ class _TemperaturePickerBottomSheetState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       height: 300,
       decoration: const BoxDecoration(
@@ -138,18 +140,18 @@ class _TemperaturePickerBottomSheetState
               child: Stack(
                 children: [
                   Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildTemperaturePicker(),
-                const SizedBox(width: 8),
-                Text(
-                  temperatureUnit,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w300,
-                  ),
-                ),
-              ],
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildTemperaturePicker(),
+                      const SizedBox(width: 8),
+                      Text(
+                        temperatureUnit,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w300,
+                        ),
+                      ),
+                    ],
                   ),
                   // 中间选中行的背景（覆盖数值和单位）
                   Positioned(
@@ -181,9 +183,9 @@ class _TemperaturePickerBottomSheetState
                 backgroundColor: AppColors.orange,
                 minimumSize: const Size(double.infinity, 44),
               ),
-              child: const Text(
-                'Confirm',
-                style: TextStyle(color: Colors.white),
+              child: Text(
+                l10n.t('confirm'),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
           ),

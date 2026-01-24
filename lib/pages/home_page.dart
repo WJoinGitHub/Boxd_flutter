@@ -16,6 +16,7 @@ import 'package:flutter_boxd_app_flow/pages/heat_page.dart';
 import 'package:flutter_boxd_app_flow/pages/heating_time_page.dart';
 import 'package:flutter_boxd_app_flow/pages/keep_warm_page.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
+import 'package:flutter_boxd_app_flow/widgets/home_page_header.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -177,7 +178,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       return;
     }
 
-    await _autoConnect();
+    // 加载设备列表，但不自动连接
+    await _loadDevices();
   }
 
   Future<void> _autoLogin() async {
@@ -805,7 +807,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       print('[HOME] 检测到登录状态变化，刷新设备列表');
       _wasLoggedIn = isLoggedIn;
       await _loadDevices();
-      await _autoConnect();
+      // 暂时注释自动连接设备功能
+      // await _autoConnect();
       if (mounted) {
         setState(() {});
       }
@@ -841,156 +844,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 顶部标题与头像
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  RichText(
-                                    text: TextSpan(
-                                      children: [
-                                        TextSpan(
-                                          text: "QIMI",
-                                          style: TextStyle(
-                                            fontSize: 30,
-                                            color: AppColors.black,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        TextSpan(
-                                          text: " Innovation",
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            color: AppColors.black,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Row(
-                                    children: [
-                                      // 设备名称显示（游客模式下也显示）
-                                      GestureDetector(
-                                        onTap: _devices.length > 1
-                                            ? _showDeviceSelector
-                                            : null,
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              AppLocalizations.of(context)
-                                                  .t('homepage_slogan'),
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w400,
-                                                color: AppColors.black1,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  // 已登录且未连接且有设备时，显示连接按钮
-                                  if (UserService().isLoggedIn &&
-                                      !(_devices.isEmpty && !connected)) ...[
-                                    const SizedBox(height: 8),
-                                    GestureDetector(
-                                      onTap: _isConnecting
-                                          ? null
-                                          : () async {
-                                              if (_currentDevice != null) {
-                                                await _connectToDevice(
-                                                    _currentDevice!);
-                                              }
-                                            },
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            l10n.t('connect_device'),
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: _isConnecting
-                                                  ? Colors.grey
-                                                  : AppColors.orange,
-                                              fontWeight: FontWeight.w500,
-                                              decoration:
-                                                  TextDecoration.underline,
-                                            ),
-                                          ),
-                                          if (_isConnecting) ...[
-                                            const SizedBox(width: 8),
-                                            SizedBox(
-                                              width: 14,
-                                              height: 14,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor:
-                                                    AlwaysStoppedAnimation<
-                                                            Color>(
-                                                        AppColors.orange),
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  if (UserService().isLoggedIn) {
-                                    final result =
-                                        await Navigator.of(context).push(
-                                      PageRouteBuilder(
-                                        pageBuilder: (_, __, ___) =>
-                                            SettingsPage(
-                                                deviceDetail: deviceDetail),
-                                      ),
-                                    );
-                                    // 如果从设置页返回时设备列表有变化，刷新设备列表
-                                    if (result == true && mounted) {
-                                      print('[HOME] 设备列表已变化，刷新列表');
-                                      await _loadDevices();
-                                    }
-                                  } else {
-                                    Navigator.of(context).push(
-                                      PageRouteBuilder(
-                                        fullscreenDialog: true,
-                                        pageBuilder: (_, __, ___) =>
-                                            const EmailLoginPage(),
-                                      ),
-                                    );
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                  elevation: 0,
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: const Size(33, 33),
-                                  shape: const CircleBorder(),
-                                ),
-                                child: Center(
-                                  child: (UserService().isGuestMode
-                                          ? Assets.home.images.homeAvatarYk
-                                          : Assets.home.images.homeAvatar)
-                                      .image(
-                                    width: 50,
-                                    height: 50,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          HomePageHeader(
+                            devices: _devices,
+                            isConnecting: _isConnecting,
+                            connected: connected,
+                            currentDevice: _currentDevice,
+                            deviceDetail: deviceDetail,
+                            onDeviceSelectorTap: _showDeviceSelector,
+                            onConnectDeviceTap: () async {
+                              if (_currentDevice != null) {
+                                await _connectToDevice(_currentDevice!);
+                              }
+                            },
+                            onSettingsReturn: () async {
+                              if (mounted) {
+                                print('[HOME] 设备列表已变化，刷新列表');
+                                await _loadDevices();
+                              }
+                            },
                           ),
 
                           // 设备列表为空时，只显示头像、两行文案、logo图片和addDeviceBig按钮

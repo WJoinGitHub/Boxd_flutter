@@ -50,8 +50,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _wasLoggedIn = UserService().isLoggedIn;
     _loadTemperatureUnit();
-    _init();
-    _isInitialized = true;
+    _init().then((_) {
+      _isInitialized = true;
+      print('[HOME] 初始化完成');
+    });
 
     // 注册401错误回调，用于清空设备列表
     UserService().onUnauthorized = () {
@@ -104,21 +106,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             }
             print('[HOME] 转换后电量: $batteryLevel%');
           }
-          
           // 更新温度
           if (status.temperature != null) {
             temperature = status.temperature!;
             print('[HOME] 更新温度: $temperature°C');
           }
-          
           // 更新温度单位（优先使用设备返回的单位）
           if (status.isFahrenheit != null) {
             temperatureUnit = status.isFahrenheit! ? '°F' : '°C';
             print('[HOME] 更新温度单位: $temperatureUnit（来自设备）');
           }
-          
           // 如果设备状态变为待机或关机，清除剩余加热时间
-          if (status.state == DeviceState.ready || 
+          if (status.state == DeviceState.ready ||
               status.state == DeviceState.disabled) {
             _remainingHeatingTime = null;
           }
@@ -173,6 +172,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const EmailLoginPage()),
       );
+      // 即使跳转到登录页面，也标记为已初始化，避免后续重复调用
+      _isInitialized = true;
       return;
     }
 
@@ -477,7 +478,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       for (var d in connectedDevices) {
         if (timeoutOccurred) break;
-        
+
         // 优先通过设备名称匹配
         final deviceName = device['device_name'] as String? ?? '';
         if (deviceName.isNotEmpty) {
@@ -489,17 +490,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             break;
           }
           // 部分匹配：如果设备名称前缀相同（如 QIMI-B13-），也尝试连接
-          if (connectedName.startsWith('QIMI-') && deviceName.startsWith('QIMI-')) {
+          if (connectedName.startsWith('QIMI-') &&
+              deviceName.startsWith('QIMI-')) {
             final connectedPrefix = connectedName.split('-').take(2).join('-');
             final devicePrefix = deviceName.split('-').take(2).join('-');
             if (connectedPrefix == devicePrefix) {
-              print('[HOME] 找到已连接的设备（通过名称前缀匹配）: $connectedName (目标: $deviceName)');
+              print(
+                  '[HOME] 找到已连接的设备（通过名称前缀匹配）: $connectedName (目标: $deviceName)');
               targetDevice = d;
               break;
             }
           }
         }
-        
+
         // 尝试通过UUID匹配（作为备选方案）
         final currentUuid = Platform.isAndroid
             ? d.remoteId.str.replaceAll(':', '').toUpperCase()
@@ -520,16 +523,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           if (mounted && !isAutoConnect) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(AppLocalizations.of(context).t('turn_on_bluetooth')),
+                content:
+                    Text(AppLocalizations.of(context).t('turn_on_bluetooth')),
               ),
             );
           }
           return;
         }
-        
+
         print('[HOME] 开始扫描设备...');
         print('[HOME] 目标设备UUID: $deviceUuid');
-        
+
         final deviceCompleter = Completer<BluetoothDevice?>();
         StreamSubscription? scanSubscription;
         bool scanStarted = false;
@@ -544,13 +548,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             print('[HOME] 收到扫描结果: ${results.length} 个设备');
             for (var r in results) {
               if (timeoutOccurred || deviceCompleter.isCompleted) break;
-              
+
               final currentUuid = Platform.isAndroid
                   ? r.device.remoteId.str.replaceAll(':', '').toUpperCase()
                   : r.device.remoteId.str.replaceAll('-', '').toUpperCase();
-              
-              print('[HOME] 扫描到设备: ${r.device.platformName}, UUID: $currentUuid');
-              
+
+              print(
+                  '[HOME] 扫描到设备: ${r.device.platformName}, UUID: $currentUuid');
+
               // 优先通过设备名称匹配（因为API返回的device_uuid不是MAC地址）
               final deviceName = device['device_name'] as String? ?? '';
               if (deviceName.isNotEmpty) {
@@ -563,18 +568,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 }
                 // 部分匹配：如果设备名称前缀相同（如 QIMI-B13-），也尝试连接
                 // 因为设备名称可能因为固件更新等原因略有变化
-                if (scannedName.startsWith('QIMI-') && deviceName.startsWith('QIMI-')) {
+                if (scannedName.startsWith('QIMI-') &&
+                    deviceName.startsWith('QIMI-')) {
                   // 提取型号部分（如 QIMI-B13-AKH02 中的 QIMI-B13）
-                  final scannedPrefix = scannedName.split('-').take(2).join('-');
+                  final scannedPrefix =
+                      scannedName.split('-').take(2).join('-');
                   final devicePrefix = deviceName.split('-').take(2).join('-');
                   if (scannedPrefix == devicePrefix) {
-                    print('[HOME] 找到匹配的设备（通过名称前缀匹配）: $scannedName (目标: $deviceName)');
+                    print(
+                        '[HOME] 找到匹配的设备（通过名称前缀匹配）: $scannedName (目标: $deviceName)');
                     deviceCompleter.complete(r.device);
                     break;
                   }
                 }
               }
-              
+
               // 尝试通过UUID匹配（作为备选方案，虽然通常不会匹配成功）
               if (currentUuid == deviceUuid) {
                 print('[HOME] 找到匹配的设备（通过UUID）: ${r.device.platformName}');
@@ -586,7 +594,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
           // 启动扫描，超时时间15秒
           try {
-            await FlutterBluePlus.startScan(timeout: const Duration(seconds: 15));
+            await FlutterBluePlus.startScan(
+                timeout: const Duration(seconds: 15));
             scanStarted = true;
             print('[HOME] 扫描已启动，将扫描15秒');
           } catch (e) {
@@ -781,6 +790,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Future<void> _checkLoginStatusAndRefresh() async {
+    // 如果还未初始化完成，不执行刷新，避免与_init()重复调用
+    if (!_isInitialized) {
+      print('[HOME] 还未初始化完成，跳过_checkLoginStatusAndRefresh');
+      return;
+    }
+
     final isLoggedIn = UserService().isLoggedIn;
     print(
         '[HOME] _checkLoginStatusAndRefresh - _wasLoggedIn: $_wasLoggedIn, isLoggedIn: $isLoggedIn');
@@ -829,16 +844,32 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           // 顶部标题与头像
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    "QIMI",
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      color: AppColors.gray4,
-                                      fontWeight: FontWeight.w400,
+                                  RichText(
+                                    text: TextSpan(
+                                      children: [
+                                        TextSpan(
+                                          text: "QIMI",
+                                          style: TextStyle(
+                                            fontSize: 30,
+                                            color: AppColors.black,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        TextSpan(
+                                          text: " Innovation",
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            color: AppColors.black,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                   const SizedBox(height: 3),
@@ -853,43 +884,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Text(
-                                              _getDisplayDeviceName(),
-                                              style: const TextStyle(
-                                                fontSize: 25,
-                                                fontWeight: FontWeight.w900,
-                                                color: Colors.black,
+                                              AppLocalizations.of(context)
+                                                  .t('homepage_slogan'),
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w400,
+                                                color: AppColors.black1,
                                               ),
                                             ),
-                                            if (_devices.length > 1) ...[
-                                              const SizedBox(width: 4),
-                                              const Icon(
-                                                Icons.arrow_drop_down,
-                                                color: Colors.black,
-                                                size: 20,
-                                              ),
-                                            ],
                                           ],
                                         ),
                                       ),
-                                      // 编辑按钮（游客模式下隐藏）
-                                      if (_currentDevice != null &&
-                                          !UserService().isGuestMode) ...[
-                                        const SizedBox(width: 8),
-                                        GestureDetector(
-                                          onTap: _showEditDeviceNameDialog,
-                                          child: Icon(
-                                            Icons.edit,
-                                            size: 18,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                      ],
                                     ],
                                   ),
                                   // 已登录且未连接且有设备时，显示连接按钮
-                                  if (!connected &&
-                                      UserService().isLoggedIn &&
-                                      _currentDevice != null) ...[
+                                  if (UserService().isLoggedIn &&
+                                      !(_devices.isEmpty && !connected)) ...[
                                     const SizedBox(height: 8),
                                     GestureDetector(
                                       onTap: _isConnecting
@@ -970,9 +980,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   shape: const CircleBorder(),
                                 ),
                                 child: Center(
-                                  child: Assets.user.images.userAvatar.image(
-                                    width: 33,
-                                    height: 33,
+                                  child: (UserService().isGuestMode
+                                          ? Assets.home.images.homeAvatarYk
+                                          : Assets.home.images.homeAvatar)
+                                      .image(
+                                    width: 50,
+                                    height: 50,
                                     fit: BoxFit.contain,
                                   ),
                                 ),
@@ -980,222 +993,280 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             ],
                           ),
 
-                          const SizedBox(height: 2),
-
-                          // 连接状态
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                connected
-                                    ? l10n.t('connected')
-                                    : l10n.t('connect_your_lunch_box'),
-                                style: TextStyle(
-                                  fontSize: connected ? 20 : 13,
-                                  color: connected
-                                      ? AppColors.green
-                                      : Colors.black54,
-                                  fontWeight: FontWeight.w300,
-                                ),
-                              ),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  if (!UserService().isLoggedIn) {
-                                    await Navigator.of(context).push(
-                                      PageRouteBuilder(
-                                        fullscreenDialog: true,
-                                        pageBuilder: (_, __, ___) =>
-                                            const EmailLoginPage(),
-                                      ),
-                                    );
-                                    if (!mounted || !UserService().isLoggedIn)
-                                      return;
-                                  }
-                                  final result =
-                                      await Navigator.of(context).push(
-                                    PageRouteBuilder(
-                                      pageBuilder: (_, __, ___) =>
-                                          const DeviceConnectPage(),
-                                    ),
-                                  );
-                                  if (result == true && mounted) {
-                                    // 绑定设备成功后，刷新设备列表（包括游客模式）
-                                    if (UserService().isLoggedIn) {
-                                      await _loadDevices();
-                                    }
-                                    setState(() =>
-                                        connected = bleService.isConnected);
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                  elevation: 0,
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: const Size(29, 27),
-                                  shape: const CircleBorder(),
-                                ),
-                                child: Center(
-                                  child: Assets.home.images.addDevice.image(
-                                    width: 21,
-                                    height: 21,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          // 🔥 新增：左右图片区域
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // 左边：状态图片 + 模式文案 + 温度（仅在连接时显示）
-                          if (connected)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // 状态图片
-                                _getModeImage(),
-                                const SizedBox(height: 20),
-                                // 模式文案
-                                Text(
-                                  _getModeText(),
-                                  style: const TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                const SizedBox(height: 15),
-                                // 温度显示（类似keepwarmpage样式）
-                                Row(
-                                  children: [
-                                    Assets.device.images.temperature.image(
-                                      width: 31,
+                          // 设备列表为空时，只显示头像、两行文案、logo图片和addDeviceBig按钮
+                          if (UserService().isLoggedIn &&
+                              !UserService().isGuestMode &&
+                              _devices.isEmpty &&
+                              !connected) ...[
+                            const SizedBox(height: 40),
+                            Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const SizedBox(height: 100),
+                                  SizedBox(
+                                    height: 132,
+                                    child: Assets.login.images.logo.image(
                                       fit: BoxFit.contain,
                                     ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '${_getDisplayTemperature()}  ',
-                                      style: const TextStyle(
-                                        fontSize: 30,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap: _toggleTemperatureUnit,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                              color: const Color(0xFF7F8489),
-                                              width: 1),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                  ),
+                                  const SizedBox(height: 100),
+                                  GestureDetector(
+                                    onTap: () async {
+                                      final result =
+                                          await Navigator.of(context).push(
+                                        PageRouteBuilder(
+                                          pageBuilder: (_, __, ___) =>
+                                              const DeviceConnectPage(),
                                         ),
-                                        child: Text(
-                                          temperatureUnit,
-                                          style: const TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                // 结束时间显示（仅在保温、加热、定时状态时显示）
-                                if (_shouldShowEndTime() &&
-                                    _getEndTimeText() != null) ...[
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'Device work ends at ${_getEndTimeText()}',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.black54,
+                                      );
+                                      if (result == true && mounted) {
+                                        await _loadDevices();
+                                        setState(() =>
+                                            connected = bleService.isConnected);
+                                      }
+                                    },
+                                    child:
+                                        Assets.home.images.addDeviceBig.image(
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.contain,
                                     ),
                                   ),
                                 ],
-                              ],
-                            )
-                          else
-                            const SizedBox.shrink(),
-
-                          // 右边设备图片 + 电量
-                          Column(
-                            children: [
-                              Assets.home.images.homeDevice.image(
-                                width: 150,
-                                fit: BoxFit.contain,
                               ),
-                              if (connected)
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      batteryLevel > 20
-                                          ? Icons.battery_std
-                                          : Icons.battery_alert,
-                                      color: batteryLevel > 20
-                                          ? Colors.green
-                                          : Colors.red,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '$batteryLevel%',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
+                            ),
+                          ]
+                          // 有设备或已连接时的正常UI
+                          else ...[
+                            const SizedBox(height: 2),
+
+                            // 连接状态
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  connected
+                                      ? l10n.t('connected')
+                                      : l10n.t('connect_your_lunch_box'),
+                                  style: TextStyle(
+                                    fontSize: connected ? 20 : 13,
+                                    color: connected
+                                        ? AppColors.green
+                                        : Colors.black54,
+                                    fontWeight: FontWeight.w300,
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    if (!UserService().isLoggedIn) {
+                                      await Navigator.of(context).push(
+                                        PageRouteBuilder(
+                                          fullscreenDialog: true,
+                                          pageBuilder: (_, __, ___) =>
+                                              const EmailLoginPage(),
+                                        ),
+                                      );
+                                      if (!mounted || !UserService().isLoggedIn)
+                                        return;
+                                    }
+                                    final result =
+                                        await Navigator.of(context).push(
+                                      PageRouteBuilder(
+                                        pageBuilder: (_, __, ___) =>
+                                            const DeviceConnectPage(),
                                       ),
+                                    );
+                                    if (result == true && mounted) {
+                                      // 绑定设备成功后，刷新设备列表（包括游客模式）
+                                      if (UserService().isLoggedIn) {
+                                        await _loadDevices();
+                                      }
+                                      setState(() =>
+                                          connected = bleService.isConnected);
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    shadowColor: Colors.transparent,
+                                    elevation: 0,
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(29, 27),
+                                    shape: const CircleBorder(),
+                                  ),
+                                  child: Center(
+                                    child: Assets.home.images.addDevice.image(
+                                      width: 21,
+                                      height: 21,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 20),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 0),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  // 左边：状态图片 + 模式文案 + 温度（仅在连接时显示）
+                                  if (connected)
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // 状态图片
+                                        _getModeImage(),
+                                        const SizedBox(height: 20),
+                                        // 模式文案
+                                        Text(
+                                          _getModeText(),
+                                          style: const TextStyle(
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 15),
+                                        // 温度显示（类似keepwarmpage样式）
+                                        Row(
+                                          children: [
+                                            Assets.device.images.temperature
+                                                .image(
+                                              width: 31,
+                                              fit: BoxFit.contain,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              '${_getDisplayTemperature()}  ',
+                                              style: const TextStyle(
+                                                fontSize: 30,
+                                                fontWeight: FontWeight.w400,
+                                              ),
+                                            ),
+                                            GestureDetector(
+                                              onTap: _toggleTemperatureUnit,
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  border: Border.all(
+                                                      color: const Color(
+                                                          0xFF7F8489),
+                                                      width: 1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                                child: Text(
+                                                  temperatureUnit,
+                                                  style: const TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.w400,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        // 结束时间显示（仅在保温、加热、定时状态时显示）
+                                        if (_shouldShowEndTime() &&
+                                            _getEndTimeText() != null) ...[
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            'Device work ends at ${_getEndTimeText()}',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w400,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    )
+                                  else
+                                    const SizedBox.shrink(),
+
+                                  // 右边设备图片 + 电量
+                                  Column(
+                                    children: [
+                                      Assets.home.images.homeDevice.image(
+                                        width: 150,
+                                        fit: BoxFit.contain,
+                                      ),
+                                      if (connected)
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              batteryLevel > 20
+                                                  ? Icons.battery_std
+                                                  : Icons.battery_alert,
+                                              color: batteryLevel > 20
+                                                  ? Colors.green
+                                                  : Colors.red,
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '$batteryLevel%',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // 三个功能按钮（仅在非空状态时显示）
+                            if (!(UserService().isLoggedIn &&
+                                !UserService().isGuestMode &&
+                                _devices.isEmpty &&
+                                !connected))
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 0, vertical: 7),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 33),
+
+                                    // 三个功能按钮
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        _buildModeButton(
+                                          l10n.t('ins'),
+                                          Assets.device.images.devIns
+                                              .image(width: 48, height: 47),
+                                        ),
+                                        _buildModeButton(
+                                          l10n.t('heat'),
+                                          Assets.device.images.devHeat
+                                              .image(width: 44, height: 53),
+                                        ),
+                                        _buildModeButton(
+                                          l10n.t('timer'),
+                                          Assets.device.images.devTimer
+                                              .image(width: 41, height: 44),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 0, vertical: 7),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 33),
-
-                          // 三个功能按钮
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildModeButton(
-                                l10n.t('ins'),
-                                Assets.device.images.devIns
-                                    .image(width: 48, height: 47),
                               ),
-                              _buildModeButton(
-                                l10n.t('heat'),
-                                Assets.device.images.devHeat
-                                    .image(width: 44, height: 53),
-                              ),
-                              _buildModeButton(
-                                l10n.t('timer'),
-                                Assets.device.images.devTimer
-                                    .image(width: 41, height: 44),
-                              ),
-                            ],
-                          ),
+                          ],
                         ],
                       ),
                     ),
@@ -1280,9 +1351,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 ),
               )
             else
-              Assets.home.images.homeBanner.image(
-                width: double.infinity,
-                fit: BoxFit.contain,
+            // 未连接时，如果设备列表为空，不显示banner（空状态已在上面显示）
+            if (!(UserService().isLoggedIn &&
+                !UserService().isGuestMode &&
+                _devices.isEmpty))
+              Container(
+                // 可以在这里添加banner图片，如果将来需要
+                height: 0,
               ),
           ],
         ),
@@ -1322,8 +1397,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
 
     // 保温和加热模式：根据剩余加热时间计算结束时间
-    if ((_deviceState == DeviceState.keepWarm || 
-         _deviceState == DeviceState.heating) &&
+    if ((_deviceState == DeviceState.keepWarm ||
+            _deviceState == DeviceState.heating) &&
         _remainingHeatingTime != null &&
         _remainingHeatingTime! > 0) {
       final now = DateTime.now();
@@ -1339,18 +1414,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   /// 是否应该显示结束时间（在定时、保温、加热状态时显示）
   bool _shouldShowEndTime() {
     if (_deviceState == null) return false;
-    
+
     // 定时模式：需要开饭时间
     if (_deviceState == DeviceState.timing) {
       return _mealTime != null;
     }
-    
+
     // 保温和加热模式：需要剩余加热时间
-    if (_deviceState == DeviceState.keepWarm || 
+    if (_deviceState == DeviceState.keepWarm ||
         _deviceState == DeviceState.heating) {
       return _remainingHeatingTime != null && _remainingHeatingTime! > 0;
     }
-    
+
     return false;
   }
 

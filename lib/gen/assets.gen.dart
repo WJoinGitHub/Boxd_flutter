@@ -170,14 +170,20 @@ class $AssetsHomeImagesGen {
   /// File path: assets/home/images/add_device.png
   AssetGenImage get addDevice => const AssetGenImage('assets/home/images/add_device.png');
 
-  /// File path: assets/home/images/dev_temperature_f.png
-  AssetGenImage get devTemperatureF => const AssetGenImage('assets/home/images/dev_temperature_f.png');
+  /// File path: assets/home/images/add_device_big.png
+  AssetGenImage get addDeviceBig => const AssetGenImage('assets/home/images/add_device_big.png');
+
+  /// File path: assets/home/images/dev_battery.png
+  AssetGenImage get devBattery => const AssetGenImage('assets/home/images/dev_battery.png');
+
+  /// File path: assets/home/images/edit_pencil.png
+  AssetGenImage get editPencil => const AssetGenImage('assets/home/images/edit_pencil.png');
 
   /// File path: assets/home/images/home_avatar.png
   AssetGenImage get homeAvatar => const AssetGenImage('assets/home/images/home_avatar.png');
 
-  /// File path: assets/home/images/home_banner.png
-  AssetGenImage get homeBanner => const AssetGenImage('assets/home/images/home_banner.png');
+  /// File path: assets/home/images/home_avatar_yk.png
+  AssetGenImage get homeAvatarYk => const AssetGenImage('assets/home/images/home_avatar_yk.png');
 
   /// File path: assets/home/images/home_device.png
   AssetGenImage get homeDevice => const AssetGenImage('assets/home/images/home_device.png');
@@ -186,7 +192,8 @@ class $AssetsHomeImagesGen {
   AssetGenImage get homeDeviceOn => const AssetGenImage('assets/home/images/home_device_on.png');
 
   /// List of all assets
-  List<AssetGenImage> get values => [addDevice, devTemperatureF, homeAvatar, homeBanner, homeDevice, homeDeviceOn];
+  List<AssetGenImage> get values =>
+      [addDevice, addDeviceBig, devBattery, editPencil, homeAvatar, homeAvatarYk, homeDevice, homeDeviceOn];
 }
 
 class $AssetsLaunchImagesGen {

@@ -147,7 +147,7 @@ class ApiClient {
         if (navigatorKey.currentContext != null) {
           final context = navigatorKey.currentContext!;
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const EmailLoginPage()),
+            MaterialPageRoute(builder: (_) => const EmailLoginPage(hideBackButton: true)),
             (route) => false, // 清除所有路由
           );
         }
@@ -236,7 +236,7 @@ class ApiClient {
         if (navigatorKey.currentContext != null) {
           final context = navigatorKey.currentContext!;
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const EmailLoginPage()),
+            MaterialPageRoute(builder: (_) => const EmailLoginPage(hideBackButton: true)),
             (route) => false, // 清除所有路由
           );
         }

@@ -9,7 +9,9 @@ import 'package:flutter_boxd_app_flow/widgets/app_text_field.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 
 class EmailLoginPage extends StatefulWidget {
-  const EmailLoginPage({super.key});
+  final bool hideBackButton;
+  
+  const EmailLoginPage({super.key, this.hideBackButton = false});
 
   @override
   State<EmailLoginPage> createState() => _EmailLoginPageState();
@@ -105,10 +107,13 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
         centerTitle: true, // 标题居中
         backgroundColor: Colors.white, // 确保背景色是白色
         elevation: 0, // 去掉阴影
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        leading: widget.hideBackButton
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+        automaticallyImplyLeading: !widget.hideBackButton,
       ),
       backgroundColor: AppColors.pageBg,
       resizeToAvoidBottomInset: true,

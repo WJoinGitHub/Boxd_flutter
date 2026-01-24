@@ -259,8 +259,12 @@ class BleProtocolHelper {
     return sum & 0xFF;
   }
 
-  /// 解析设备状态响应（新协议：15字节固定长度）
-  /// 协议格式：
+  /// 解析设备状态响应
+  /// 支持两种格式：
+  /// 1. 15字节完整格式（包含所有详细信息）
+  /// 2. 6字节简化格式：Byte 0=起始码, Byte 1=指令码0x51, Byte 2=设备状态, Byte 3-4=数据, Byte 5=结束码
+  /// 
+  /// 15字节格式：
   /// Byte 0: 起始码 0x02
   /// Byte 1: 指令码 0x51
   /// Byte 2: 设备状态 (0=待机, 1-3=保温/加热/定时开饭, 0x05=故障, 0x06=关机)
@@ -273,13 +277,43 @@ class BleProtocolHelper {
   /// Bytes 11-12: 设定加热时间 (两字节，大端序)
   /// Byte 13: 校验码
   /// Byte 14: 结束码 0x03
+  /// 
+  /// 6字节简化格式：
+  /// Byte 0: 起始码 0x02
+  /// Byte 1: 指令码 0x51
+  /// Byte 2: 设备状态
+  /// Byte 3: 数据1
+  /// Byte 4: 数据2
+  /// Byte 5: 结束码 0x03
   static DeviceStatusData? parseDeviceStatus(List<int> data) {
-    // 检查基本格式：必须是15字节，起始码0x02，结束码0x03，指令码0x51
-    if (data.length != 15 ||
+    // 检查基本格式：起始码0x02，结束码0x03，指令码0x51
+    if (data.length < 3 ||
         data[0] != 0x02 ||
-        data[14] != 0x03 ||
+        data[data.length - 1] != 0x03 ||
         data[1] != 0x51) {
       print('[PROTOCOL] 数据格式错误: 长度=${data.length}, 起始=${data[0]}, 结束=${data[data.length - 1]}, 指令=${data.length > 1 ? data[1] : 'N/A'}');
+      return null;
+    }
+
+    // 处理6字节简化格式
+    if (data.length == 6) {
+      final stateValue = data[2];
+      final state = DeviceState.fromValue(stateValue);
+      final data1 = data[3];
+      final data2 = data[4];
+      
+      print('[PROTOCOL] 解析简化格式设备状态: 状态=$stateValue, 数据1=$data1, 数据2=$data2');
+      
+      // 简化格式只返回基本状态信息，其他字段为null
+      return DeviceStatusData(
+        state: state,
+        // 其他字段在简化格式中不可用，设为null
+      );
+    }
+
+    // 处理15字节完整格式
+    if (data.length != 15) {
+      print('[PROTOCOL] 数据长度错误: 期望15字节，实际${data.length}字节');
       return null;
     }
 

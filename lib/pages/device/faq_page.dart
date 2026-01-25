@@ -4,6 +4,7 @@ import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/feedback_page.dart';
+import 'package:flutter_boxd_app_flow/pages/device/faq_detail_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FaqPage extends StatelessWidget {
@@ -25,7 +26,7 @@ class FaqPage extends StatelessWidget {
             const SizedBox(height: 20),*/
 
             // 分类卡片
-            _buildCategoryCards(l10n),
+            _buildCategoryCards(context, l10n),
             const SizedBox(height: 30),
 
             // Top Questions 部分
@@ -73,92 +74,144 @@ class FaqPage extends StatelessWidget {
   }
 
   /// 分类卡片
-  Widget _buildCategoryCards(AppLocalizations l10n) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildCategoryCard(
-              icon: Icons.notifications_outlined,
-              iconColor: Colors.blue,
-              backgroundColor: Colors.blue[50]!,
-              title: 'Questions about',
-              subtitle: 'Getting Started',
+  Widget _buildCategoryCards(BuildContext context, AppLocalizations l10n) {
+    return SizedBox(
+      height: 100, // 固定高度，确保三个卡片高度一致
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 150,
+              child: _buildCategoryCard(
+                number: '1',
+                backgroundColor: Colors.blue[50]!,
+                title: l10n.t('device_connect'),
+                subtitle: l10n.t('not_found'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const FaqDetailPage(
+                          questionKey: 'device_not_found_scan'),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildCategoryCard(
-              icon: Icons.bluetooth_connected,
-              iconColor: Colors.green,
-              backgroundColor: Colors.green[50]!,
-              title: 'Questions about',
-              subtitle: 'How to Connect',
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 150,
+              child: _buildCategoryCard(
+                number: '2',
+                backgroundColor: Colors.green[50]!,
+                title: l10n.t('device_connect'),
+                subtitle: l10n.t('connect_failed'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const FaqDetailPage(
+                          questionKey: 'device_connection_failed'),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildCategoryCard(
-              icon: Icons.help_outline,
-              iconColor: Colors.purple,
-              backgroundColor: Colors.purple[50]!,
-              title: 'Questions about',
-              subtitle: 'How to Use',
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 150,
+              child: _buildCategoryCard(
+                number: '3',
+                backgroundColor: Colors.grey[100]!,
+                title: l10n.t('device_work'),
+                subtitle: l10n.t('not_working'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const FaqDetailPage(
+                          questionKey: 'heating_not_working'),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCategoryCard({
-    required IconData icon,
-    required Color iconColor,
+    required String number,
     required Color backgroundColor,
     required String title,
     required String subtitle,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: iconColor, size: 24),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.black54,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 120, // 固定高度，确保三个卡片高度一致
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              number,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black54,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black54,
+              ),
             ),
-          ),
-        ],
+            Text(
+              subtitle,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   /// Top Questions 部分
   Widget _buildTopQuestions(BuildContext context, AppLocalizations l10n) {
+    // 定义5个常见问题和对应的详情页面key
     final topQuestions = [
-      'Not scanned my equipment',
-      'Ai message how to work',
-      'Device connect failed',
-      'Device connect failed',
-      'Device connect failed',
+      {
+        'text': l10n.t('bluetooth_connection_issues'),
+        'key': 'bluetooth_connection_issues'
+      },
+      {
+        'text': l10n.t('scheduled_heating_issues'),
+        'key': 'scheduled_heating_issues'
+      },
+      {
+        'text': l10n.t('device_connected_not_responding'),
+        'key': 'device_connected_not_responding'
+      },
+      {'text': l10n.t('app_issues_or_crashes'), 'key': 'app_issues_or_crashes'},
+      {
+        'text': l10n.t('can_use_device_without_account'),
+        'key': 'use_device_without_account'
+      },
     ];
 
     return Padding(
@@ -166,66 +219,63 @@ class FaqPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Top Questions',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  // TODO: 跳转到所有问题页面
-                },
-                child: const Text(
-                  'View all',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.red,
-                  ),
-                ),
-              ),
-            ],
+          Text(
+            l10n.t('top_questions'),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
           ),
           const SizedBox(height: 16),
           ...topQuestions.map((question) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: _buildQuestionItem(question),
+                child: _buildQuestionItem(
+                  context,
+                  question['text']!,
+                  question['key']!,
+                ),
               )),
         ],
       ),
     );
   }
 
-  Widget _buildQuestionItem(String question) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              question,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.black,
+  Widget _buildQuestionItem(
+      BuildContext context, String question, String questionKey) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => FaqDetailPage(questionKey: questionKey),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                question,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black,
+                ),
               ),
             ),
-          ),
-          const Icon(
-            Icons.chevron_right,
-            color: Colors.grey,
-            size: 20,
-          ),
-        ],
+            const Icon(
+              Icons.chevron_right,
+              color: Colors.grey,
+              size: 20,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -330,7 +380,8 @@ class FaqPage extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(l10n.t('email_address_copied').replaceAll('{email}', email)),
+        content:
+            Text(l10n.t('email_address_copied').replaceAll('{email}', email)),
         duration: const Duration(seconds: 2),
       ),
     );

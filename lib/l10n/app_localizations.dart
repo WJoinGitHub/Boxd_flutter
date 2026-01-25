@@ -106,6 +106,64 @@ class AppLocalizations {
       'contact_service': 'Contact Service',
       'email': 'Email',
       'email_address_copied': 'Email address copied: {email}',
+      
+      // FAQ Category Cards
+      'questions_about': 'Questions about',
+      'getting_started': 'Getting Started',
+      'how_to_connect': 'How to Connect',
+      'how_to_use': 'How to Use',
+      'device_connect': 'Device connect',
+      'not_found': 'Not Found',
+      'connect_failed': 'Connect Failed',
+      'device_work': 'Device Work',
+      'not_working': 'Not Working',
+      
+      // FAQ Top Questions
+      'top_questions': 'Top Questions',
+      'view_all': 'View all',
+      'not_scanned_equipment': 'Not scanned my equipment',
+      'ai_message_how_to_work': 'Ai message how to work',
+      'device_connect_failed': 'Device connect failed',
+      'bluetooth_connection_issues': 'Bluetooth Connection Issues',
+      'scheduled_heating_issues': 'Scheduled Heating Issues',
+      'device_connected_not_responding': 'Device Connected but Not Responding',
+      'app_issues_or_crashes': 'App Issues or Crashes',
+      'can_use_device_without_account': 'Can I Use the Device Without an Account?',
+      
+      // FAQ Detail Pages
+      'app_issues_or_crashes_title': 'App Issues or Crashes',
+      'app_issues_or_crashes_content_1': 'Please make sure you are using the latest version of the app.',
+      'app_issues_or_crashes_content_2': 'If the issue persists, try restarting your phone or checking whether your system version is supported.',
+      
+      'heating_not_working_title': 'Heating Not Working',
+      'heating_not_working_content_1': 'Please check whether the device is successfully connected and has sufficient battery power.',
+      'heating_not_working_content_2': 'If a scheduled heating time is set, heating will not start until the scheduled time is reached.',
+      
+      'device_connection_failed_title': 'Device Connection Failed',
+      'device_connection_failed_content_1': 'If the connection fails, please check whether the device is already connected to another phone.',
+      'device_connection_failed_content_2': 'Only one phone can connect to the device at a time.',
+      'device_connection_failed_content_3': 'Disconnect the device from other phones and try reconnecting.',
+      
+      'device_not_found_scan_title': 'Device Not Found During Scan',
+      'device_not_found_scan_content_1': 'Please ensure that the smart lunch box is powered on and in standby mode. Turn on Bluetooth on your phone and allow Bluetooth permissions for this app.',
+      'device_not_found_scan_content_2': 'Keep your phone within 1 meter (3 feet) of the device, then refresh the scan list or restart the app.',
+      
+      'use_device_without_account_title': 'Can I Use the Device Without an Account?',
+      'use_device_without_account_content_1': 'Yes. You can use Guest Mode to connect to the device and access basic functions.',
+      'use_device_without_account_content_2': 'such as heating and keep-warm features. Account registration is optional.',
+      
+      'device_connected_not_responding_title': 'Device Connected but Not Responding',
+      'device_connected_not_responding_content_1': 'This may occur due to an unstable Bluetooth signal.',
+      'device_connected_not_responding_content_2': 'Please move closer to the device and try reconnecting.',
+      'device_connected_not_responding_content_3': 'Restarting the device may also help restore normal operation.',
+      
+      'scheduled_heating_issues_title': 'Scheduled Heating Issues',
+      'scheduled_heating_issues_content_1': 'Scheduled heating requires the device to remain powered on.',
+      'scheduled_heating_issues_content_2': 'Please ensure the device is not turned off and the scheduled time has been saved correctly.',
+      
+      'bluetooth_connection_issues_title': 'Bluetooth Connection Issues',
+      'bluetooth_connection_issues_content_1': 'Bluetooth connection stability may be affected by distance or background restrictions.',
+      'bluetooth_connection_issues_content_2': 'Please keep the app running in the foreground and stay close to the device during operation.',
 
       // Keep Warm Page
       'keep_warm_title': 'Keep Warm',
@@ -405,6 +463,64 @@ class AppLocalizations {
       'contact_service': '联系客服',
       'email': '邮箱',
       'email_address_copied': '邮箱地址已复制：{email}',
+      
+      // FAQ Category Cards
+      'questions_about': '关于',
+      'getting_started': '入门指南',
+      'how_to_connect': '如何连接',
+      'how_to_use': '如何使用',
+      'device_connect': '设备连接',
+      'not_found': '未找到',
+      'connect_failed': '连接失败',
+      'device_work': '设备工作',
+      'not_working': '不工作',
+      
+      // FAQ Top Questions
+      'top_questions': '常见问题',
+      'view_all': '查看全部',
+      'not_scanned_equipment': '未扫描到设备',
+      'ai_message_how_to_work': 'AI消息如何使用',
+      'device_connect_failed': '设备连接失败',
+      'bluetooth_connection_issues': '蓝牙连接问题',
+      'scheduled_heating_issues': '定时加热问题',
+      'device_connected_not_responding': '设备已连接但不响应',
+      'app_issues_or_crashes': '应用问题或崩溃',
+      'can_use_device_without_account': '我可以不使用账户使用设备吗？',
+      
+      // FAQ Detail Pages
+      'app_issues_or_crashes_title': '应用问题或崩溃',
+      'app_issues_or_crashes_content_1': '请确保您使用的是最新版本的应用。',
+      'app_issues_or_crashes_content_2': '如果问题仍然存在，请尝试重启手机或检查您的系统版本是否受支持。',
+      
+      'heating_not_working_title': '加热不工作',
+      'heating_not_working_content_1': '请检查设备是否已成功连接并具有足够的电池电量。',
+      'heating_not_working_content_2': '如果设置了定时加热时间，加热将在到达预定时间时才开始。',
+      
+      'device_connection_failed_title': '设备连接失败',
+      'device_connection_failed_content_1': '如果连接失败，请检查设备是否已连接到另一部手机。',
+      'device_connection_failed_content_2': '一次只能有一部手机连接到设备。',
+      'device_connection_failed_content_3': '从其他手机断开设备连接，然后尝试重新连接。',
+      
+      'device_not_found_scan_title': '扫描时未找到设备',
+      'device_not_found_scan_content_1': '请确保智能饭盒已开机并处于待机模式。打开手机蓝牙并允许此应用的蓝牙权限。',
+      'device_not_found_scan_content_2': '将手机保持在设备1米（3英尺）范围内，然后刷新扫描列表或重启应用。',
+      
+      'use_device_without_account_title': '我可以不使用账户使用设备吗？',
+      'use_device_without_account_content_1': '可以。您可以使用游客模式连接设备并访问基本功能，',
+      'use_device_without_account_content_2': '例如加热和保温功能。账户注册是可选的。',
+      
+      'device_connected_not_responding_title': '设备已连接但不响应',
+      'device_connected_not_responding_content_1': '这可能是由于蓝牙信号不稳定造成的。',
+      'device_connected_not_responding_content_2': '请靠近设备并尝试重新连接。',
+      'device_connected_not_responding_content_3': '重启设备也可能有助于恢复正常操作。',
+      
+      'scheduled_heating_issues_title': '定时加热问题',
+      'scheduled_heating_issues_content_1': '定时加热需要设备保持开机状态。',
+      'scheduled_heating_issues_content_2': '请确保设备未关闭，并且定时时间已正确保存。',
+      
+      'bluetooth_connection_issues_title': '蓝牙连接问题',
+      'bluetooth_connection_issues_content_1': '蓝牙连接稳定性可能受到距离或后台限制的影响。',
+      'bluetooth_connection_issues_content_2': '请保持应用在前台运行，并在操作期间靠近设备。',
 
       // Keep Warm Page
       'keep_warm_title': '保温',

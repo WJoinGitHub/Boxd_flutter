@@ -63,12 +63,14 @@ class DeviceHelpPage extends StatelessWidget {
                     children: [
                       Text(
                         l10n.t('help_power_off'),
-                        style: const TextStyle(fontSize: 14, color: Colors.black),
+                        style:
+                            const TextStyle(fontSize: 14, color: Colors.black),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         l10n.t('help_power_on'),
-                        style: const TextStyle(fontSize: 14, color: Colors.black),
+                        style:
+                            const TextStyle(fontSize: 14, color: Colors.black),
                       ),
                     ],
                   ),
@@ -79,22 +81,6 @@ class DeviceHelpPage extends StatelessWidget {
             Text(
               l10n.t('help_trouble'),
               style: const TextStyle(fontSize: 14, color: Colors.black),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              height: 200,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.play_arrow,
-                  size: 60,
-                  color: Colors.grey,
-                ),
-              ),
             ),
             const SizedBox(height: 30),
             Row(
@@ -118,7 +104,8 @@ class DeviceHelpPage extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     minimumSize: const Size(0, 32),
                   ),
                   child: Text(

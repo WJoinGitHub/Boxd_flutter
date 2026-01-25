@@ -125,10 +125,8 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
   }
 
   bool validate(String p) {
-    final lenOk = p.length >= 8 && p.length <= 20;
-    final hasLetter = p.contains(RegExp(r'[A-Za-z]'));
-    final hasDigit = p.contains(RegExp(r'\d')); // ✅ 修正这里
-    return lenOk && hasLetter && hasDigit;
+    // 只需要6位及以上字符，不超过20个字符
+    return p.length >= 6 && p.length <= 20;
   }
 
   @override
@@ -188,45 +186,16 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                 const SizedBox(height: 7),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.t('enter_six_or_more_characters'),
-                        style: TextStyle(
-                          fontFamily: 'SF Pro',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 10,
-                          height: 1.0,
-                          letterSpacing: 0,
-                          color: Color(0xFF131313),
-                        ),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        l10n.t('eight_to_twenty_characters'),
-                        style: TextStyle(
-                          fontFamily: 'SF Pro',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 10,
-                          height: 1.0,
-                          letterSpacing: 0,
-                          color: Color(0xFF131313),
-                        ),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        l10n.t('letters_numbers_special_characters'),
-                        style: TextStyle(
-                          fontFamily: 'SF Pro',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 10,
-                          height: 1.0,
-                          letterSpacing: 0,
-                          color: Color(0xFF131313),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    l10n.t('six_to_twenty_characters'),
+                    style: TextStyle(
+                      fontFamily: 'SF Pro',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 10,
+                      height: 1.0,
+                      letterSpacing: 0,
+                      color: Color(0xFF131313),
+                    ),
                   ),
                 ),
               ],

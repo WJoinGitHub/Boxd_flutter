@@ -7,7 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'user_service.dart';
 import '../main.dart';
-import '../pages/login/email_login_page.dart';
+import '../pages/login/register_email_page.dart';
 
 enum CodeType {
   register,
@@ -143,11 +143,11 @@ class ApiClient {
           print('[API] 清除登录状态失败: $e');
         }
 
-        // 使用全局 navigatorKey 跳转到登录页面
+        // 使用全局 navigatorKey 跳转到注册页面
         if (navigatorKey.currentContext != null) {
           final context = navigatorKey.currentContext!;
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const EmailLoginPage(hideBackButton: true)),
+            MaterialPageRoute(builder: (_) => const RegisterEmailPage()),
             (route) => false, // 清除所有路由
           );
         }
@@ -232,11 +232,11 @@ class ApiClient {
           print('[API] 清除登录状态失败: $e');
         }
 
-        // 使用全局 navigatorKey 跳转到登录页面
+        // 使用全局 navigatorKey 跳转到注册页面
         if (navigatorKey.currentContext != null) {
           final context = navigatorKey.currentContext!;
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const EmailLoginPage(hideBackButton: true)),
+            MaterialPageRoute(builder: (_) => const RegisterEmailPage()),
             (route) => false, // 清除所有路由
           );
         }
@@ -265,7 +265,8 @@ class ApiClient {
 
   /// 发送重置密码验证码（专门的重置密码接口）
   static Future<Map<String, dynamic>> sendResetPasswordCode(String email) =>
-      post('/auth/send-code', {'email': email});
+      post('/auth/send-code',
+          {'email': email, 'type': CodeType.resetPassword.value});
 
   static Future<Map<String, dynamic>> verifyCode(
           String email, String code, CodeType type) =>
@@ -368,9 +369,12 @@ class ApiClient {
   }
 
   static Future<Map<String, dynamic>> resetPassword(
-          String email, String code, String newPassword) =>
-      post('/auth/reset-password',
-          {'email': email, 'code': code, 'new_password': newPassword});
+          String email, String verifyToken, String password) =>
+      post('/auth/reset-password', {
+        'email': email,
+        'verify_token': verifyToken,
+        'new_password': password,
+      });
 
   static Future<Map<String, dynamic>> logout() async {
     final result = await post('/auth/logout', {});

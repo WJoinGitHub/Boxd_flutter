@@ -3,6 +3,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
+import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 
 class DeviceConnectingPage extends StatefulWidget {
   final BluetoothDevice device;
@@ -49,10 +50,11 @@ class _DeviceConnectingPageState extends State<DeviceConnectingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: BxAppBar(
-        title: 'Connect',
+        title: l10n.t('connect'),
         showBack: false,
         rightWidget: IconButton(
           icon: const Icon(Icons.close, color: Colors.black),
@@ -94,17 +96,17 @@ class _DeviceConnectingPageState extends State<DeviceConnectingPage> {
                 children: [
                   const Icon(Icons.close, size: 60, color: Color(0xFFFF7622)),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Connect failed.',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  Text(
+                    l10n.t('connect_failed'),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 12),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 40),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: Text(
-                      'Please try restarting your phone\'s Bluetooth or power off and then power on the device again.',
+                      l10n.t('connect_failed_desc'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Colors.black54),
+                      style: const TextStyle(fontSize: 14, color: Colors.black54),
                     ),
                   ),
                   const SizedBox(height: 32),

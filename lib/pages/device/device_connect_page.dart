@@ -210,32 +210,32 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
 
     if (!bluetoothOn) {
       title = l10n.t('turn_on_bluetooth');
-      desc = "Your phone’s Bluetooth is turned off. Please turn it on.";
-      buttonText = "Open Settings";
+      desc = l10n.t('bluetooth_turned_off_desc');
+      buttonText = l10n.t('open_settings');
       onPressed = () => openAppSettings();
     } else if (Platform.isAndroid && !bluetoothGranted) {
       if (isAndroid12OrAbove) {
-        title = "Please enable Bluetooth permission";
-        desc = "MEDCURSOR needs permission to access the Bluetooth pairing hardware.";
-        buttonText = "Grant Permission";
+        title = l10n.t('enable_bluetooth_permission');
+        desc = l10n.t('bluetooth_permission_desc');
+        buttonText = l10n.t('grant_permission');
         onPressed = () async {
           await Permission.bluetoothScan.request();
           await Permission.bluetoothConnect.request();
           checkStatus();
         };
       } else {
-        title = "Please enable Bluetooth permission";
-        desc = "MEDCURSOR needs permission to access the Bluetooth pairing hardware.";
-        buttonText = "Grant Permission";
+        title = l10n.t('enable_bluetooth_permission');
+        desc = l10n.t('bluetooth_permission_desc');
+        buttonText = l10n.t('grant_permission');
         onPressed = () async {
           await Permission.bluetooth.request();
           checkStatus();
         };
       }
     } else if (Platform.isAndroid && (!locationGranted || !locationOn)) {
-      title = "Please turn on Location";
-      desc = "To find nearby Bluetooth devices.";
-      buttonText = "Turn on";
+      title = l10n.t('turn_on_location');
+      desc = l10n.t('location_desc');
+      buttonText = l10n.t('turn_on');
       onPressed = () async {
         final locService = loc.Location();
         await locService.requestService();

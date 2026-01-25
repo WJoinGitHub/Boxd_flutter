@@ -154,6 +154,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     });
   }
 
+  /// 根据电池电量获取对应的图标
+  AssetGenImage _getBatteryIcon(int level) {
+    if (level >= 100) {
+      return Assets.home.images.devBattery;
+    } else if (level >= 75) {
+      return Assets.home.images.devBattery75;
+    } else if (level >= 50) {
+      return Assets.home.images.devBattery50;
+    } else {
+      // 0-49% 都使用 devBattery25
+      return Assets.home.images.devBattery25;
+    }
+  }
+
   /// 将分钟数转换为时分格式（HH:MM）
   String _formatMinutesToTime(int minutes) {
     final hours = minutes ~/ 60;
@@ -177,9 +191,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       _wasLoggedIn = isLoggedIn;
     }
 
-    // 如果未登录，跳转到登录页面
-    if (!isLoggedIn && mounted) {
-      print('[HOME] 未登录，跳转到登录页面');
+    // 如果未登录且不是游客模式，跳转到登录页面
+    // 游客模式可以使用app，不需要跳转
+    if (!isLoggedIn && !UserService().isGuestMode && mounted) {
+      print('[HOME] 未登录且不是游客模式，跳转到登录页面');
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const EmailLoginPage()),
       );
@@ -251,9 +266,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Future<void> _autoConnect() async {
     print('[HOME] 尝试自动连接...');
-    // 只有在已登录状态下才加载设备列表
-    if (!UserService().isLoggedIn) {
-      print('[HOME] 未登录，跳过加载设备列表');
+    // 只有在已登录或游客模式下才加载设备列表
+    if (!UserService().isLoggedIn && !UserService().isGuestMode) {
+      print('[HOME] 未登录且不是游客模式，跳过加载设备列表');
       return;
     }
 
@@ -918,8 +933,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           ),
 
                           // 设备列表为空时，只显示头像、两行文案、logo图片和addDeviceBig按钮
-                          if (UserService().isLoggedIn &&
-                              !UserService().isGuestMode &&
+                          // 游客模式和登录用户都可以看到这个空状态
+                          if ((UserService().isLoggedIn || UserService().isGuestMode) &&
                               _devices.isEmpty &&
                               !connected) ...[
                             const SizedBox(height: 40),
@@ -1133,7 +1148,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               const SizedBox(height: 8),
                               Row(
                                 children: [
-                                  Assets.home.images.devBattery.image(
+                                  _getBatteryIcon(batteryLevel).image(
                                     width: 20,
                                     height: 20,
                                     fit: BoxFit.contain,
@@ -1304,8 +1319,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               ),
                             ),
                             // 三个功能按钮（仅在非空状态时显示）
-                            if (!(UserService().isLoggedIn &&
-                                !UserService().isGuestMode &&
+                            // 游客模式和登录用户都可以看到功能按钮
+                            if (!((UserService().isLoggedIn || UserService().isGuestMode) &&
                                 _devices.isEmpty &&
                                 !connected))
                               Padding(
@@ -1486,8 +1501,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               )
             else
             // 未连接时，如果设备列表为空，不显示banner（空状态已在上面显示）
-            if (!(UserService().isLoggedIn &&
-                !UserService().isGuestMode &&
+            // 游客模式和登录用户都遵循这个逻辑
+            if (!((UserService().isLoggedIn || UserService().isGuestMode) &&
                 _devices.isEmpty))
               Container(
                 // 可以在这里添加banner图片，如果将来需要

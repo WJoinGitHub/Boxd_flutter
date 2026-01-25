@@ -229,7 +229,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
             // Question about section
             Text(
               l10n.t('question_about'),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: Colors.black,
@@ -308,7 +308,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
               children: [
                 Text(
                   l10n.t('tell_more_info'),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: Colors.black,
@@ -379,7 +379,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                     },
                     child: Text(
                       l10n.t('upload_logs_help'),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 13,
                         color: Colors.black54,
                       ),
@@ -401,9 +401,8 @@ class _FeedbackPageState extends State<FeedbackPage> {
                     ? null
                     : _sendFeedback,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.grey,
+                  backgroundColor: Colors.orange,
+                  disabledBackgroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -419,7 +418,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                       )
                     : Text(
                         l10n.t('send'),
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                         ),

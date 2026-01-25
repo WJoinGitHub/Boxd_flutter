@@ -11,6 +11,7 @@ import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/app_urls.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/pages/webview_page.dart';
+import 'package:flutter_boxd_app_flow/pages/login/register_email_page.dart';
 
 class SettingsPage extends StatefulWidget {
   final Map<String, dynamic>? deviceDetail;
@@ -429,7 +430,11 @@ class _SettingsPageState extends State<SettingsPage> {
         await ApiClient.logout();
         await UserService().logout();
         if (mounted) {
-          Navigator.of(context).pop();
+          // 清除所有路由并跳转到注册页面
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const RegisterEmailPage()),
+            (route) => false,
+          );
         }
       } catch (e) {
         if (mounted) {
@@ -472,7 +477,11 @@ class _SettingsPageState extends State<SettingsPage> {
         await ApiClient.deleteAccount();
         await UserService().logout();
         if (mounted) {
-          Navigator.of(context).pop();
+          // 清除所有路由并跳转到注册页面
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const RegisterEmailPage()),
+            (route) => false,
+          );
         }
       } catch (e) {
         if (mounted) {

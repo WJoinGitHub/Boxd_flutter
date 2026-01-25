@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/feedback_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class FaqPage extends StatelessWidget {
   const FaqPage({super.key});
@@ -17,9 +19,10 @@ class FaqPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            /*
             // 视频播放器占位符
             _buildVideoPlaceholder(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 20),*/
 
             // 分类卡片
             _buildCategoryCards(l10n),
@@ -236,7 +239,7 @@ class FaqPage extends StatelessWidget {
         children: [
           Text(
             l10n.t('contact_service'),
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.black,
@@ -245,10 +248,11 @@ class FaqPage extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(
-                child: _buildContactItem(
+              Builder(
+                builder: (context) => _buildContactItem(
                   icon: Icons.email_outlined,
                   label: l10n.t('email'),
+                  onTap: () => _openEmailApp(context),
                 ),
               ),
             ],
@@ -261,25 +265,73 @@ class FaqPage extends StatelessWidget {
   Widget _buildContactItem({
     required IconData icon,
     required String label,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 32, color: Colors.black54),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.black,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: Colors.black54),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 打开系统邮箱应用发送邮件
+  Future<void> _openEmailApp(BuildContext context) async {
+    final email = 'support@qimitech.com';
+    final uri = Uri.parse('mailto:$email');
+    try {
+      // 尝试打开邮箱应用，使用 externalApplication 模式
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        _showEmailFallback(context, email);
+      }
+    } catch (e) {
+      print('打开邮箱应用失败: $e');
+      // 如果失败，尝试使用 platformDefault 模式
+      try {
+        final launched = await launchUrl(
+          uri,
+          mode: LaunchMode.platformDefault,
+        );
+        if (!launched) {
+          _showEmailFallback(context, email);
+        }
+      } catch (e2) {
+        print('使用 platformDefault 模式也失败: $e2');
+        _showEmailFallback(context, email);
+      }
+    }
+  }
+
+  /// 备用方案：复制邮箱地址到剪贴板并提示用户
+  void _showEmailFallback(BuildContext context, String email) {
+    Clipboard.setData(ClipboardData(text: email));
+    final l10n = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.t('email_address_copied').replaceAll('{email}', email)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -290,7 +342,7 @@ class FaqPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: SizedBox(
         width: double.infinity,
-        height: 56,
+        height: 44,
         child: ElevatedButton(
           onPressed: () {
             Navigator.of(context).push(
@@ -300,14 +352,14 @@ class FaqPage extends StatelessWidget {
             );
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black87,
+            backgroundColor: Colors.orange,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
           ),
           child: Text(
             l10n.t('feedback'),
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w500,

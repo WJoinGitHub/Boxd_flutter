@@ -37,7 +37,12 @@ class _VerificationPageState extends State<VerificationPage> {
     _controllers =
         List.generate(widget.codeLength, (_) => TextEditingController());
     _nodes = List.generate(widget.codeLength, (_) => FocusNode());
-    _sendCode(showLoading: false);
+    // 延迟到 widget 构建完成后再调用，确保 context 可用
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _sendCode(showLoading: false);
+      }
+    });
   }
 
   void _startTimer() {

@@ -92,7 +92,8 @@ class HomePageHeader extends StatelessWidget {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  if (UserService().isLoggedIn) {
+                  // 登录用户或游客模式都可以进入设置页面
+                  if (UserService().isLoggedIn || UserService().isGuestMode) {
                     final result = await Navigator.of(context).push(
                       PageRouteBuilder(
                         pageBuilder: (_, __, ___) =>

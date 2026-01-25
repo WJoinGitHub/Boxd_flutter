@@ -176,6 +176,15 @@ class $AssetsHomeImagesGen {
   /// File path: assets/home/images/dev_battery.png
   AssetGenImage get devBattery => const AssetGenImage('assets/home/images/dev_battery.png');
 
+  /// File path: assets/home/images/dev_battery25.png
+  AssetGenImage get devBattery25 => const AssetGenImage('assets/home/images/dev_battery25.png');
+
+  /// File path: assets/home/images/dev_battery50.png
+  AssetGenImage get devBattery50 => const AssetGenImage('assets/home/images/dev_battery50.png');
+
+  /// File path: assets/home/images/dev_battery75.png
+  AssetGenImage get devBattery75 => const AssetGenImage('assets/home/images/dev_battery75.png');
+
   /// File path: assets/home/images/edit_pencil.png
   AssetGenImage get editPencil => const AssetGenImage('assets/home/images/edit_pencil.png');
 
@@ -193,7 +202,7 @@ class $AssetsHomeImagesGen {
 
   /// List of all assets
   List<AssetGenImage> get values =>
-      [addDevice, addDeviceBig, devBattery, editPencil, homeAvatar, homeAvatarYk, homeDevice, homeDeviceOn];
+      [addDevice, addDeviceBig, devBattery, devBattery25, devBattery50, devBattery75, editPencil, homeAvatar, homeAvatarYk, homeDevice, homeDeviceOn];
 }
 
 class $AssetsLaunchImagesGen {

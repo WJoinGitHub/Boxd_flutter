@@ -1,5 +1,13 @@
 allprojects {
     repositories {
+        // 阿里云镜像
+        maven {
+            url = uri("https://maven.aliyun.com/repository/public")
+        }
+        maven {
+            url = uri("https://maven.aliyun.com/repository/google")
+        }
+        // 备用源
         google()
         mavenCentral()
     }

@@ -87,7 +87,7 @@ class _MinutesPickerBottomSheetState extends State<_MinutesPickerBottomSheet> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildMinutesPicker(),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 8, height: 2),
                       const Text(
                         'MIN',
                         style: TextStyle(

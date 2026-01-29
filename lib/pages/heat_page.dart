@@ -35,6 +35,7 @@ class _HeatPageState extends State<HeatPage> {
     reminderHelper.updateReminderTimeFromDuration(minutes);
 
     _loadTemperatureUnit();
+    _loadSavedHeatTemperature();
     _loadBatteryLevel();
 
     bleService.statusStream.listen((status) {
@@ -67,6 +68,14 @@ class _HeatPageState extends State<HeatPage> {
     }
   }
 
+  /// 从本地读取上次设置过的加热温度，有效范围 70-100 摄氏度
+  Future<void> _loadSavedHeatTemperature() async {
+    final saved = await AppStorage.loadHeatTemperature();
+    if (mounted && saved != null && saved >= 70 && saved <= 100) {
+      setState(() => selectedTemperature = saved);
+    }
+  }
+
   @override
   void dispose() {
     reminderHelper.dispose();
@@ -92,6 +101,16 @@ class _HeatPageState extends State<HeatPage> {
       return (selectedTemperature! * 9 / 5 + 32).round();
     }
     return selectedTemperature!;
+  }
+
+  /// 温度范围 70-100 为摄氏度，华氏度时转换显示
+  String _getTemperatureRangeDisplay() {
+    if (temperatureUnit == '°F') {
+      final lowF = (70 * 9 / 5 + 32).round();
+      final highF = (100 * 9 / 5 + 32).round();
+      return '$lowF - $highF $temperatureUnit';
+    }
+    return '70 - 100 $temperatureUnit';
   }
 
   void _sendCommand() async {
@@ -130,6 +149,10 @@ class _HeatPageState extends State<HeatPage> {
       heatingTime: minutes,
       mealTime: 0,
     );
+
+    if (success) {
+      await AppStorage.saveHeatTemperature(selectedTemperature!);
+    }
 
     if (!success) {
       if (mounted) {
@@ -332,7 +355,7 @@ class _HeatPageState extends State<HeatPage> {
                               child: Text(
                                 selectedTemperature != null
                                     ? '$displayTemp $temperatureUnit'
-                                    : '75 - 100 $temperatureUnit',
+                                    : _getTemperatureRangeDisplay(),
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w400,

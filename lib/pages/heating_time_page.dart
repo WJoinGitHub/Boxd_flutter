@@ -46,6 +46,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     reminderHelper.selectedMinute = minTime.minute;
 
     _loadTemperatureUnit();
+    _loadSavedHeatingTimeTemperature();
     _loadBatteryLevel();
 
     bleService.statusStream.listen((status) {
@@ -78,6 +79,14 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     }
   }
 
+  /// 从本地读取上次设置过的定时加热温度，有效范围 70-100 摄氏度
+  Future<void> _loadSavedHeatingTimeTemperature() async {
+    final saved = await AppStorage.loadHeatingTimeTemperature();
+    if (mounted && saved != null && saved >= 70 && saved <= 100) {
+      setState(() => selectedTemperature = saved);
+    }
+  }
+
   @override
   void dispose() {
     reminderHelper.dispose();
@@ -91,6 +100,16 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
       return (selectedTemperature! * 9 / 5 + 32).round();
     }
     return selectedTemperature!;
+  }
+
+  /// 温度范围 70-100 为摄氏度，华氏度时转换显示
+  String _getTemperatureRangeDisplay() {
+    if (temperatureUnit == '°F') {
+      final lowF = (70 * 9 / 5 + 32).round();
+      final highF = (100 * 9 / 5 + 32).round();
+      return '$lowF - $highF $temperatureUnit';
+    }
+    return '70 - 100 $temperatureUnit';
   }
 
   Future<void> _showMinutesPicker() async {
@@ -193,6 +212,10 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
       heatingTime: heatingTotalMinutes,
       mealTime: mealTimeTotalMinutes,
     );
+
+    if (success) {
+      await AppStorage.saveHeatingTimeTemperature(selectedTemperature!);
+    }
 
     if (mounted) {
       if (success) {
@@ -411,7 +434,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
                               child: Text(
                                 selectedTemperature != null
                                     ? '$displayTemp $temperatureUnit'
-                                    : '75 - 100 $temperatureUnit',
+                                    : _getTemperatureRangeDisplay(),
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w400,

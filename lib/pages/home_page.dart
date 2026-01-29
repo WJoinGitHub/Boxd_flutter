@@ -396,15 +396,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 final deviceUuid = device['device_uuid'] as String? ?? '';
                 final deviceName =
                     device['device_name'] as String? ?? 'Unknown Device';
-                // 如果有多个设备，添加序列号
-                final displayName = _devices.length > 1
-                    ? '$deviceName ${index + 1}'
-                    : deviceName;
                 final isCurrent = _currentDevice?['device_uuid'] == deviceUuid;
                 final isDeviceConnected = connected && isCurrent;
 
                 return ListTile(
-                  title: Text(displayName),
+                  title: Text(deviceName),
                   trailing: isCurrent
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
@@ -934,7 +930,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
                           // 设备列表为空时，只显示头像、两行文案、logo图片和addDeviceBig按钮
                           // 游客模式和登录用户都可以看到这个空状态
-                          if ((UserService().isLoggedIn || UserService().isGuestMode) &&
+                          if ((UserService().isLoggedIn ||
+                                  UserService().isGuestMode) &&
                               _devices.isEmpty &&
                               !connected) ...[
                             const SizedBox(height: 40),
@@ -1256,9 +1253,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                   final now = DateTime.now();
                                                   // 当前时间从00:00开始的总分钟数
                                                   final currentMinutes =
-                                                      now.hour * 60 + now.minute;
+                                                      now.hour * 60 +
+                                                          now.minute;
                                                   // 计算剩余分钟数
-                                                  int diff = _mealTime! - currentMinutes;
+                                                  int diff = _mealTime! -
+                                                      currentMinutes;
                                                   // 如果为负，说明是明天的时间
                                                   if (diff < 0) {
                                                     diff += 24 * 60; // 加24小时
@@ -1320,7 +1319,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             ),
                             // 三个功能按钮（仅在非空状态时显示）
                             // 游客模式和登录用户都可以看到功能按钮
-                            if (!((UserService().isLoggedIn || UserService().isGuestMode) &&
+                            if (!((UserService().isLoggedIn ||
+                                    UserService().isGuestMode) &&
                                 _devices.isEmpty &&
                                 !connected))
                               Padding(

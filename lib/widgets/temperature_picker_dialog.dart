@@ -4,7 +4,8 @@ import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 
 /// 显示温度选择底部弹窗
-/// 返回选择的温度值（摄氏度）
+/// [initialTemperature] 必须为摄氏度（75-100），与单位无关。
+/// 返回选择的温度值（摄氏度）。
 Future<int?> showTemperaturePicker(
   BuildContext context,
   int initialTemperature,
@@ -40,13 +41,13 @@ class _TemperaturePickerBottomSheetState
   @override
   void initState() {
     super.initState();
-    // 确保初始温度在有效范围内（70-100°C）
-    _celsiusTemperature = widget.initialTemperature.clamp(70, 100);
+    // initialTemperature 约定为摄氏度，确保在有效范围内（75-100°C）
+    _celsiusTemperature = widget.initialTemperature.clamp(75, 100);
     // 同步初始化 temperature，避免异步加载时未初始化
     temperature = _celsiusTemperature;
     // 先初始化控制器（使用默认单位°C）
     _temperatureController = FixedExtentScrollController(
-      initialItem: temperature - 70, // 摄氏度：70-100，索引从0开始
+      initialItem: temperature - 75, // 摄氏度：75-100，索引从0开始
     );
     _loadTemperatureUnit();
   }
@@ -63,12 +64,12 @@ class _TemperaturePickerBottomSheetState
       setState(() {
         temperatureUnit = unit;
         // 确保摄氏度在有效范围内
-        _celsiusTemperature = _celsiusTemperature.clamp(70, 100);
+        _celsiusTemperature = _celsiusTemperature.clamp(75, 100);
         // 根据单位转换显示温度
         if (unit == '°F') {
           temperature = _celsiusToFahrenheit(_celsiusTemperature);
-          // 确保华氏度在有效范围内
-          temperature = temperature.clamp(158, 212);
+          // 确保华氏度在有效范围内（75°C=167°F，100°C=212°F）
+          temperature = temperature.clamp(167, 212);
         } else {
           temperature = _celsiusTemperature;
         }
@@ -76,8 +77,8 @@ class _TemperaturePickerBottomSheetState
         _temperatureController?.dispose();
         _temperatureController = FixedExtentScrollController(
           initialItem: unit == '°F'
-              ? temperature - 158 // 华氏度：158-212，索引从0开始
-              : temperature - 70, // 摄氏度：70-100，索引从0开始
+              ? temperature - 167 // 华氏度：167-212，索引从0开始
+              : temperature - 75, // 摄氏度：75-100，索引从0开始
         );
       });
     }
@@ -94,10 +95,10 @@ class _TemperaturePickerBottomSheetState
   }
 
   /// 获取温度范围
-  int get _minTemperature => temperatureUnit == '°F' ? 158 : 70;
+  int get _minTemperature => temperatureUnit == '°F' ? 167 : 75;
   int get _maxTemperature => temperatureUnit == '°F' ? 212 : 100;
   int get _temperatureCount =>
-      _maxTemperature - _minTemperature + 1; // 31个值（70-100或158-212）
+      _maxTemperature - _minTemperature + 1; // 26个值（75-100或167-212）
 
   /// 根据索引获取温度值
   int _getTemperatureFromIndex(int index) {
@@ -199,6 +200,7 @@ class _TemperaturePickerBottomSheetState
       return const SizedBox(width: 80, height: 200);
     }
     return SizedBox(
+      key: ValueKey(temperatureUnit),
       width: 80,
       height: 200,
       child: ListWheelScrollView.useDelegate(

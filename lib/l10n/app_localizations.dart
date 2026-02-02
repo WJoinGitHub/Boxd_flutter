@@ -354,7 +354,7 @@ class AppLocalizations {
       // Calendar
       'calendar_permission_denied': 'Calendar permission denied',
       'calendar_permission_denied_detail':
-          'Calendar permission denied. Please enable it in settings to use reminder feature.',
+          'Failed to add event. No calendar permission. Please enable it in settings to use the reminder feature.',
       'failed_to_access_calendar': 'Failed to access calendar',
       'failed_to_retrieve_calendars': 'Failed to retrieve calendars',
       'no_calendars_available': 'No calendars available',
@@ -696,7 +696,7 @@ class AppLocalizations {
 
       // Calendar
       'calendar_permission_denied': '日历权限被拒绝',
-      'calendar_permission_denied_detail': '日历权限被拒绝。请在设置中启用以使用提醒功能。',
+      'calendar_permission_denied_detail': '日程添加失败。没有添加日程权限，请在设置中启用以使用提醒功能。',
       'failed_to_access_calendar': '访问日历失败',
       'failed_to_retrieve_calendars': '获取日历列表失败',
       'no_calendars_available': '没有可用的日历',

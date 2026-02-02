@@ -228,7 +228,8 @@ class BleService {
       List<int> data, int command, int subCommand) async {
     if (_writeCharacteristic == null) throw Exception('未连接设备');
 
-    _commandCompleter = Completer<bool>();
+    final completer = Completer<bool>();
+    _commandCompleter = completer;
     _pendingCommand = command;
     _pendingSubCommand = subCommand;
 
@@ -236,7 +237,7 @@ class BleService {
       await _writeCharacteristic!.write(data, withoutResponse: false);
       print('[BLE] 数据已发送: $data');
 
-      return await _commandCompleter!.future.timeout(
+      return await completer.future.timeout(
         const Duration(seconds: 10),
         onTimeout: () {
           _commandCompleter = null;
@@ -289,6 +290,7 @@ class BleService {
       }
     }
 
+    // 处理命令响应（如 setWork 0x40 的 6 字节：起始, 指令, 子指令, 结果, 数据, 结束）
     if (data.length >= 5 && data[0] == 0x02 && data[data.length - 1] == 0x03) {
       final command = data[1];
       final subCommand = data[2];
@@ -300,6 +302,11 @@ class BleService {
         _commandCompleter = null;
         _pendingCommand = null;
         _pendingSubCommand = null;
+        return; // 已处理命令响应，不再解析为设备状态
+      }
+      // 6 字节且指令 0x40：setWork 响应，不解析为设备状态，避免报“数据格式错误”
+      if (data.length == 6 && data[1] == 0x40) {
+        return;
       }
     }
 

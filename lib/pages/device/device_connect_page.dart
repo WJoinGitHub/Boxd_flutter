@@ -46,12 +46,19 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
 
   Future<void> checkStatus() async {
     print('[SCAN] 开始检查状态...');
-    // 蓝牙状态
+    // 蓝牙状态（启动时可能为 unknown：暂停 1.5 秒后重试，最多检测 3 次）
     try {
-      final btState = await FlutterBluePlus.adapterState.first.timeout(
-        const Duration(seconds: 2),
-        onTimeout: () => BluetoothAdapterState.on,
-      );
+      BluetoothAdapterState btState =
+          await FlutterBluePlus.adapterState.first;
+      for (int attempt = 1;
+          attempt < 3 && btState == BluetoothAdapterState.unknown;
+          attempt++) {
+        await Future.delayed(const Duration(milliseconds: 1500));
+        btState = await FlutterBluePlus.adapterState.first;
+      }
+      if (btState == BluetoothAdapterState.unknown) {
+        btState = BluetoothAdapterState.on;
+      }
       bluetoothOn = btState == BluetoothAdapterState.on;
       print('[SCAN] 蓝牙状态: $bluetoothOn');
     } catch (e) {
@@ -90,12 +97,15 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       print('[SCAN] iOS bluetoothGranted: $bluetoothGranted');
     }
 
-    print('[SCAN] 最终状态 - bluetoothOn: $bluetoothOn, bluetoothGranted: $bluetoothGranted, locationOn: $locationOn, locationGranted: $locationGranted');
+    print(
+        '[SCAN] 最终状态 - bluetoothOn: $bluetoothOn, bluetoothGranted: $bluetoothGranted, locationOn: $locationOn, locationGranted: $locationGranted');
 
     if (mounted) {
       setState(() {});
       // 如果所有条件都满足，自动开始扫描
-      if (bluetoothOn && bluetoothGranted && (Platform.isIOS || (locationOn && locationGranted))) {
+      if (bluetoothOn &&
+          bluetoothGranted &&
+          (Platform.isIOS || (locationOn && locationGranted))) {
         print('[SCAN] 条件满足，将自动开始扫描');
         Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) startScan();
@@ -117,8 +127,9 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
 
   Future<void> startScan() async {
     print('[SCAN] startScan 被调用');
-    print('[SCAN] bluetoothOn: $bluetoothOn, bluetoothGranted: $bluetoothGranted');
-    
+    print(
+        '[SCAN] bluetoothOn: $bluetoothOn, bluetoothGranted: $bluetoothGranted');
+
     if (!bluetoothOn || !bluetoothGranted) {
       print('[SCAN] 条件不满足，无法扫描');
       return;
@@ -139,7 +150,9 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
       print('[SCAN] 已连接设备: ${connectedDevices.length} 个');
       for (var device in connectedDevices) {
-        if (device.platformName.isNotEmpty && !devices.contains(device)) {
+        if (device.platformName.isNotEmpty &&
+            device.platformName.startsWith('QIMI') &&
+            !devices.contains(device)) {
           print('[SCAN] 已连接: ${device.platformName} (${device.remoteId})');
           if (mounted) {
             setState(() {
@@ -156,7 +169,9 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
         if (!mounted) return;
         print('[SCAN] 收到扫描结果: ${results.length} 个设备');
         for (var r in results) {
-          if (!devices.contains(r.device) && r.device.platformName.isNotEmpty) {
+          if (!devices.contains(r.device) &&
+              r.device.platformName.isNotEmpty &&
+              r.device.platformName.startsWith('QIMI')) {
             print(
                 '[SCAN] 发现设备: ${r.device.platformName} (${r.device.remoteId})');
             if (mounted) {
@@ -249,8 +264,10 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
       onPressed = scanning ? null : startScan;
     }
 
-    final showBluetoothIcon = bluetoothOn && bluetoothGranted && (Platform.isIOS || (locationOn && locationGranted));
-    
+    final showBluetoothIcon = bluetoothOn &&
+        bluetoothGranted &&
+        (Platform.isIOS || (locationOn && locationGranted));
+
     return Column(
       children: [
         Expanded(
@@ -259,14 +276,16 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
               const SizedBox(height: 6),
               if (!showBluetoothIcon) ...[
                 Text(title,
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+                    style: const TextStyle(
+                        fontSize: 17, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 7),
               ],
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 27),
                 child: Text(desc,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                    style:
+                        const TextStyle(fontSize: 12, color: Colors.black54)),
               ),
               const SizedBox(height: 50),
               if (showBluetoothIcon) ...[
@@ -278,19 +297,26 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Assets.device.images.devHelpMsg.image(width: 20, height: 20),
+                        Assets.device.images.devHelpMsg
+                            .image(width: 20, height: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text.rich(
                             TextSpan(
-                              style: const TextStyle(fontSize: 12, color: Colors.black),
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.black),
                               children: [
-                                TextSpan(text: AppLocalizations.of(context).t('device_trouble_msg')),
+                                TextSpan(
+                                    text: AppLocalizations.of(context)
+                                        .t('device_trouble_msg')),
                                 TextSpan(
                                   text: AppLocalizations.of(context).t('help'),
-                                  style: const TextStyle(color: Color(0xFFFF7622)),
+                                  style:
+                                      const TextStyle(color: Color(0xFFFF7622)),
                                 ),
-                                TextSpan(text: AppLocalizations.of(context).t('device_trouble_suffix')),
+                                TextSpan(
+                                    text: AppLocalizations.of(context)
+                                        .t('device_trouble_suffix')),
                               ],
                             ),
                           ),
@@ -309,11 +335,13 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
                         icon: const Icon(Icons.refresh, color: Colors.white),
                         label: Text(
                           AppLocalizations.of(context).t('retry'),
-                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 16),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFF7622),
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 32, vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(25),
                           ),
@@ -324,7 +352,8 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
                 ],
               ] else
                 Center(
-                  child: (Platform.isAndroid && (!locationGranted || !locationOn))
+                  child: (Platform.isAndroid &&
+                          (!locationGranted || !locationOn))
                       ? Assets.device.images.devOpenLocation.image(height: 400)
                       : Assets.device.images.devOpenBle.image(height: 400),
                 ),
@@ -338,8 +367,8 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
               onPressed: onPressed,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
-                shape:
-                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
                 minimumSize: const Size(double.infinity, 47),
               ),
               child: Text(buttonText,
@@ -397,14 +426,17 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
                 ),
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                  leading: Assets.device.images.hotRice.image(width: 40, height: 40),
+                  leading:
+                      Assets.device.images.hotRice.image(width: 40, height: 40),
                   title: Text(
                     device.platformName.isNotEmpty
                         ? device.platformName
                         : AppLocalizations.of(context).t('unknown_device'),
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w500),
                   ),
-                  trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+                  trailing: const Icon(Icons.arrow_forward_ios,
+                      color: Colors.grey, size: 16),
                   onTap: () => connectDevice(device),
                 ),
               );
@@ -420,8 +452,14 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: BxAppBar(
-        title: bluetoothOn && bluetoothGranted ? AppLocalizations.of(context).t('auto_detecting') : AppLocalizations.of(context).t('connect_device_title'),
-        rightWidget: Text(AppLocalizations.of(context).t('help'), style: const TextStyle(color: Color(0xFFFF7622), fontSize: 16, fontWeight: FontWeight.w500)),
+        title: bluetoothOn && bluetoothGranted
+            ? AppLocalizations.of(context).t('auto_detecting')
+            : AppLocalizations.of(context).t('connect_device_title'),
+        rightWidget: Text(AppLocalizations.of(context).t('help'),
+            style: const TextStyle(
+                color: Color(0xFFFF7622),
+                fontSize: 16,
+                fontWeight: FontWeight.w500)),
         onRightPressed: () {
           Navigator.push(
             context,
@@ -434,7 +472,9 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
           Expanded(
             child: _buildStatusSection(),
           ),
-          if (bluetoothOn && bluetoothGranted && (Platform.isIOS || (locationOn && locationGranted)))
+          if (bluetoothOn &&
+              bluetoothGranted &&
+              (Platform.isIOS || (locationOn && locationGranted)))
             Expanded(
               child: _buildDeviceList(),
             ),
@@ -443,5 +483,3 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
     );
   }
 }
-
-

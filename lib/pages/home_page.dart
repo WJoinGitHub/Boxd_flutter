@@ -252,9 +252,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         if (mounted) {
           setState(() {
             _devices = devices;
-            // 设置当前设备（优先使用已连接的设备，否则使用第一个）
-            if (_currentDevice == null && devices.isNotEmpty) {
-              _currentDevice = devices.first;
+            // 列表为空时清空当前设备，以便显示空设备列表 UI
+            if (devices.isEmpty) {
+              _currentDevice = null;
+            } else {
+              // 当前设备不在新列表中时清空（例如已被移除）
+              if (_currentDevice != null &&
+                  !devices.any((d) =>
+                      d['device_uuid'] == _currentDevice!['device_uuid'])) {
+                _currentDevice = null;
+              }
+              if (_currentDevice == null && devices.isNotEmpty) {
+                _currentDevice = devices.first;
+              }
             }
           });
         }
@@ -565,8 +575,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       }
 
       if (targetDevice == null && !timeoutOccurred) {
-        // 检查蓝牙状态
-        final bluetoothAdapterState = await FlutterBluePlus.adapterState.first;
+        // 检查蓝牙状态（启动时可能为 unknown：暂停 1.5 秒后重试，最多检测 3 次）
+        BluetoothAdapterState bluetoothAdapterState =
+            await FlutterBluePlus.adapterState.first;
+        for (int attempt = 1;
+            attempt < 3 && bluetoothAdapterState == BluetoothAdapterState.unknown;
+            attempt++) {
+          await Future.delayed(const Duration(milliseconds: 1500));
+          if (!mounted || timeoutOccurred) return;
+          bluetoothAdapterState =
+              await FlutterBluePlus.adapterState.first;
+        }
+        if (bluetoothAdapterState == BluetoothAdapterState.unknown) {
+          bluetoothAdapterState = BluetoothAdapterState.on;
+        }
         if (bluetoothAdapterState != BluetoothAdapterState.on) {
           print('[HOME] 蓝牙未开启，无法扫描');
           timeoutTimer?.cancel();
@@ -924,6 +946,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               if (mounted) {
                                 print('[HOME] 设备列表已变化，刷新列表');
                                 await _loadDevices();
+                                // 若移除所有设备后列表为空，断开连接并更新状态，以显示空设备列表 UI
+                                if (mounted && _devices.isEmpty && connected) {
+                                  await bleService.disconnect();
+                                  setState(() => connected = false);
+                                }
                               }
                             },
                           ),

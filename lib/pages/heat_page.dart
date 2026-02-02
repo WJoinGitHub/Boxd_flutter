@@ -68,10 +68,10 @@ class _HeatPageState extends State<HeatPage> {
     }
   }
 
-  /// 从本地读取上次设置过的加热温度，有效范围 70-100 摄氏度
+  /// 从本地读取上次设置过的加热温度，有效范围 75-100 摄氏度
   Future<void> _loadSavedHeatTemperature() async {
     final saved = await AppStorage.loadHeatTemperature();
-    if (mounted && saved != null && saved >= 70 && saved <= 100) {
+    if (mounted && saved != null && saved >= 75 && saved <= 100) {
       setState(() => selectedTemperature = saved);
     }
   }
@@ -103,14 +103,14 @@ class _HeatPageState extends State<HeatPage> {
     return selectedTemperature!;
   }
 
-  /// 温度范围 70-100 为摄氏度，华氏度时转换显示
+  /// 温度范围 75-100 为摄氏度，华氏度时转换显示
   String _getTemperatureRangeDisplay() {
     if (temperatureUnit == '°F') {
-      final lowF = (70 * 9 / 5 + 32).round();
+      final lowF = (75 * 9 / 5 + 32).round();
       final highF = (100 * 9 / 5 + 32).round();
       return '$lowF - $highF $temperatureUnit';
     }
-    return '70 - 100 $temperatureUnit';
+    return '75 - 100 $temperatureUnit';
   }
 
   void _sendCommand() async {
@@ -327,8 +327,7 @@ class _HeatPageState extends State<HeatPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: GestureDetector(
                       onTap: () async {
-                        final initialTemp = selectedTemperature ??
-                            (temperature > 0 ? temperature : 90);
+                        final initialTemp = selectedTemperature ?? 90;
                         final result = await showTemperaturePicker(
                           context,
                           initialTemp,

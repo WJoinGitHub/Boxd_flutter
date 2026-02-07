@@ -1,9 +1,27 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// 读取 key.properties（用于 Google Play 发布签名）
+// key.properties 在 android/ 下；storeFile 路径相对 android/app/ 解析（与 Flutter 文档一致）
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+val releaseStoreFile = keystoreProperties["storeFile"]?.toString()?.let { project.file(it) }
+val hasValidReleaseSigning = keystorePropertiesFile.exists() &&
+    releaseStoreFile != null &&
+    releaseStoreFile.exists() &&
+    keystoreProperties["keyAlias"] != null &&
+    keystoreProperties["storePassword"] != null &&
+    keystoreProperties["keyPassword"] != null
 
 android {
     namespace = "com.qimi.heatlink"
@@ -20,11 +38,19 @@ android {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
+    signingConfigs {
+        create("release") {
+            if (hasValidReleaseSigning) {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = releaseStoreFile
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+        }
+    }
+
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.qimi.heatlink"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = 35
         versionCode = flutter.versionCode
@@ -33,9 +59,22 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (hasValidReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                if (keystorePropertiesFile.exists()) {
+                    throw GradleException(
+                        "Release 签名配置无效。请检查 android/key.properties：" +
+                        " storeFile 指向的 keystore 是否存在？" +
+                        " keystore 在 android/ 下时 storeFile 填 ../upload-keystore.jks"
+                    )
+                } else {
+                    throw GradleException(
+                        "Release 构建需要签名。请复制 android/key.properties.example 为 android/key.properties，" +
+                        "填写 keystore 路径（storeFile=../upload-keystore.jks）、密码和 keyAlias。"
+                    )
+                }
+            }
         }
     }
 }

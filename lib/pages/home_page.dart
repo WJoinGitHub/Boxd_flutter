@@ -18,6 +18,7 @@ import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/widgets/home_page_header.dart';
 import 'package:flutter_boxd_app_flow/models/device_model.dart';
 import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
+import 'package:flutter_boxd_app_flow/utils/dialog_button_styles.dart';
 import 'package:flutter_boxd_app_flow/utils/ble_device_name_match.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -383,12 +384,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         ),
         actions: [
           TextButton(
-            style: TextButton.styleFrom(foregroundColor: AppColors.orange),
+            style: DialogButtonStyles.cancel,
             onPressed: () => Navigator.pop(context),
             child: Text(l10n.t('cancel')),
           ),
           TextButton(
-            style: TextButton.styleFrom(foregroundColor: AppColors.orange),
+            style: DialogButtonStyles.primaryAction,
             onPressed: () => Navigator.pop(context, controller.text.trim()),
             child: Text(l10n.t('save')),
           ),

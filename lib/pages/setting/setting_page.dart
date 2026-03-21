@@ -11,6 +11,7 @@ import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/app_urls.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
+import 'package:flutter_boxd_app_flow/utils/dialog_button_styles.dart';
 import 'package:flutter_boxd_app_flow/pages/webview_page.dart';
 import 'package:flutter_boxd_app_flow/pages/login/register_email_page.dart';
 
@@ -232,10 +233,12 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         actions: [
           TextButton(
+            style: DialogButtonStyles.cancel,
             onPressed: () => Navigator.pop(context),
             child: Text(l10n.t('cancel')),
           ),
           TextButton(
+            style: DialogButtonStyles.primaryAction,
             onPressed: () => Navigator.pop(context, controller.text.trim()),
             child: Text(l10n.t('save')),
           ),
@@ -406,10 +409,12 @@ class _SettingsPageState extends State<SettingsPage> {
         content: Text(l10n.t('logout_confirm')),
         actions: [
           TextButton(
+            style: DialogButtonStyles.cancel,
             onPressed: () => Navigator.pop(context, false),
             child: Text(l10n.t('cancel')),
           ),
           TextButton(
+            style: DialogButtonStyles.primaryAction,
             onPressed: () => Navigator.pop(context, true),
             child: Text(l10n.t('confirm')),
           ),
@@ -450,13 +455,14 @@ class _SettingsPageState extends State<SettingsPage> {
         content: Text(l10n.t('delete_account_confirm')),
         actions: [
           TextButton(
+            style: DialogButtonStyles.cancel,
             onPressed: () => Navigator.pop(context, false),
             child: Text(l10n.t('cancel')),
           ),
           TextButton(
+            style: DialogButtonStyles.primaryAction,
             onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.t('delete'),
-                style: const TextStyle(color: Colors.red)),
+            child: Text(l10n.t('delete')),
           ),
         ],
       ),

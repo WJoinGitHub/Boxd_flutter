@@ -8,6 +8,7 @@ import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
+import 'package:flutter_boxd_app_flow/utils/dialog_button_styles.dart';
 
 class MyDevicesPage extends StatefulWidget {
   const MyDevicesPage({super.key});
@@ -103,12 +104,14 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
         content: Text('${l10n.t('unbind_device_confirm')} "$deviceName"?'),
         actions: [
           TextButton(
+            style: DialogButtonStyles.cancel,
             onPressed: () => Navigator.pop(context, false),
             child: Text(l10n.t('cancel')),
           ),
           TextButton(
+            style: DialogButtonStyles.primaryAction,
             onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.t('unbind'), style: const TextStyle(color: Colors.red)),
+            child: Text(l10n.t('unbind')),
           ),
         ],
       ),

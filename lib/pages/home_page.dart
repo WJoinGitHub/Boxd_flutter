@@ -17,6 +17,7 @@ import 'package:flutter_boxd_app_flow/pages/heating_time_page.dart';
 import 'package:flutter_boxd_app_flow/pages/keep_warm_page.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/widgets/home_page_header.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -357,9 +358,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         setState(() {});
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.t('device_name_saved'))),
-          );
+          AppToast.show(context, l10n.t('device_name_saved'));
         }
       }
     }
@@ -593,11 +592,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           print('[HOME] 蓝牙未开启，无法扫描');
           timeoutTimer?.cancel();
           if (mounted && !isAutoConnect) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content:
-                    Text(AppLocalizations.of(context).t('turn_on_bluetooth')),
-              ),
+            AppToast.show(
+              context,
+              AppLocalizations.of(context).t('turn_on_bluetooth'),
             );
           }
           return;
@@ -724,11 +721,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         timeoutTimer?.cancel();
         // 自动连接失败时不显示提示
         if (mounted && !isAutoConnect) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content:
-                  Text(AppLocalizations.of(context).t('failed_to_connect')),
-            ),
+          AppToast.show(
+            context,
+            AppLocalizations.of(context).t('failed_to_connect'),
           );
         }
         return;
@@ -773,11 +768,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           }
           // 自动连接时不显示成功提示
           if (!isAutoConnect && mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content:
-                    Text(AppLocalizations.of(context).t('connection_success')),
-              ),
+            AppToast.show(
+              context,
+              AppLocalizations.of(context).t('connection_success'),
             );
           }
         } else if (mounted && timeoutOccurred) {
@@ -789,11 +782,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           });
           // 自动连接失败时不显示提示
           if (!isAutoConnect) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content:
-                    Text(AppLocalizations.of(context).t('failed_to_connect')),
-              ),
+            AppToast.show(
+              context,
+              AppLocalizations.of(context).t('failed_to_connect'),
             );
           }
         }
@@ -808,10 +799,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         }
         // 自动连接失败时不显示提示
         if (!isAutoConnect) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content:
-                    Text(AppLocalizations.of(context).t('device_not_found'))),
+          AppToast.show(
+            context,
+            AppLocalizations.of(context).t('device_not_found'),
           );
         }
       }
@@ -827,10 +817,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       }
       // 自动连接失败时不显示提示
       if (mounted && !timeoutOccurred && !isAutoConnect) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  '${AppLocalizations.of(context).t('failed_to_connect')}: $e')),
+        AppToast.show(
+          context,
+          '${AppLocalizations.of(context).t('failed_to_connect')}: $e',
         );
       }
     } finally {
@@ -1412,17 +1401,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             final success = await bleService.stopWork();
                             if (mounted) {
                               if (success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(l10n.t('stop')),
-                                  ),
-                                );
+                                AppToast.show(context, l10n.t('stop'));
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content:
-                                        Text(l10n.t('failed_to_power_off')),
-                                  ),
+                                AppToast.show(
+                                  context,
+                                  l10n.t('failed_to_power_off'),
                                 );
                               }
                             }
@@ -1460,16 +1443,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               if (mounted) {
                                 if (success) {
                                   setState(() => _isPoweredOff = false);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content:
-                                            Text(l10n.t('device_powered_on'))),
-                                  );
+                                  AppToast.show(
+                                      context, l10n.t('device_powered_on'));
                                 } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content:
-                                            Text(l10n.t('failed_to_power_on'))),
+                                  AppToast.show(
+                                    context,
+                                    l10n.t('failed_to_power_on'),
                                   );
                                 }
                               }
@@ -1479,16 +1458,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               if (mounted) {
                                 if (success) {
                                   setState(() => _isPoweredOff = true);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content:
-                                            Text(l10n.t('device_powered_off'))),
-                                  );
+                                  AppToast.show(
+                                      context, l10n.t('device_powered_off'));
                                 } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(
-                                            l10n.t('failed_to_power_off'))),
+                                  AppToast.show(
+                                    context,
+                                    l10n.t('failed_to_power_off'),
                                   );
                                 }
                               }
@@ -1713,9 +1688,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
         // 检查设备是否已关机
         if (_isPoweredOff) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.t('device_is_powered_off'))),
-          );
+          AppToast.show(context, l10n.t('device_is_powered_off'));
           return;
         }
 

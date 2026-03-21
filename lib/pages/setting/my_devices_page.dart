@@ -7,6 +7,7 @@ import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 
 class MyDevicesPage extends StatefulWidget {
   const MyDevicesPage({super.key});
@@ -57,9 +58,7 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
     } catch (e) {
       print('[MY_DEVICES] 加载设备列表失败: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${AppLocalizations.of(context).t('failed_to_load_devices')}: $e')),
-        );
+        AppToast.show(context, ApiClient.extractErrorMessage(e));
       }
     } finally {
       if (mounted) {
@@ -121,8 +120,9 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
       final result = await ApiClient.unbindDevice(deviceUuid);
       if (result['code'] == 200) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context).t('device_unbound_successfully'))),
+          AppToast.show(
+            context,
+            AppLocalizations.of(context).t('device_unbound_successfully'),
           );
         }
         // 刷新设备列表
@@ -131,17 +131,15 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
         _deviceListChanged = true; // 标记列表已变化
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(result['message'] ?? l10n.t('failed_to_unbind_device'))),
+          AppToast.show(
+            context,
+            result['message'] ?? l10n.t('failed_to_unbind_device'),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l10n.t('failed_to_unbind_device')}: $e')),
-        );
+        AppToast.show(context, ApiClient.extractErrorMessage(e));
       }
     }
   }

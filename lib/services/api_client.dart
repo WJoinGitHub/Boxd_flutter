@@ -26,6 +26,14 @@ enum CodeType {
   }
 }
 
+class ApiException implements Exception {
+  final String message;
+  const ApiException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class ApiClient {
   static const String baseUrl = 'https://api.qimitech.com';
   static const String basePath = '/api/v1';
@@ -153,9 +161,9 @@ class ApiClient {
         }
       }
 
-      throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      throw ApiException(_extractMessage(response.body));
     } else {
-      throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      throw ApiException(_extractMessage(response.body));
     }
   }
 
@@ -242,10 +250,39 @@ class ApiClient {
         }
       }
 
-      throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      throw ApiException(_extractMessage(response.body));
     } else {
-      throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      throw ApiException(_extractMessage(response.body));
     }
+  }
+
+  static String _extractMessage(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        final message = decoded['message'];
+        if (message is String && message.trim().isNotEmpty) {
+          return message;
+        }
+        final data = decoded['data'];
+        if (data is String && data.trim().isNotEmpty) {
+          return data;
+        }
+      }
+    } catch (_) {
+      // ignore parse failure and fallback to raw body
+    }
+    final raw = body.trim();
+    return raw.isEmpty ? 'Request failed' : raw;
+  }
+
+  static String extractErrorMessage(Object e) {
+    if (e is ApiException) return e.message;
+    final text = e.toString().trim();
+    if (text.startsWith('Exception: ')) {
+      return text.substring('Exception: '.length).trim();
+    }
+    return text;
   }
 
   static Future<Map<String, dynamic>> get(String path,

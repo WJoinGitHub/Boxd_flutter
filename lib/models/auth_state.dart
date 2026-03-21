@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 
 enum LoginStatus {
   success,
@@ -71,9 +72,7 @@ class AuthStateManager extends ChangeNotifier {
 
   void showMessage(BuildContext context, String message) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      AppToast.show(context, message);
     }
   }
 }

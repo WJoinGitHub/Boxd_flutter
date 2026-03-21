@@ -10,6 +10,7 @@ import 'package:flutter_boxd_app_flow/widgets/minutes_picker_dialog.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/widgets/reminder_helper.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 
 class HeatPage extends StatefulWidget {
   const HeatPage({super.key});
@@ -115,29 +116,26 @@ class _HeatPageState extends State<HeatPage> {
 
   void _sendCommand() async {
     if (selectedTemperature == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                AppLocalizations.of(context).t('please_select_temperature'))),
+      AppToast.show(
+        context,
+        AppLocalizations.of(context).t('please_select_temperature'),
       );
       return;
     }
 
     if (minutes < 15 || minutes > 50) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text(AppLocalizations.of(context).t('heating_time_range'))),
+      AppToast.show(
+        context,
+        AppLocalizations.of(context).t('heating_time_range'),
       );
       return;
     }
 
     if (!bleService.isConnected) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text(AppLocalizations.of(context).t('device_not_connected'))),
+        AppToast.show(
+          context,
+          AppLocalizations.of(context).t('device_not_connected'),
         );
       }
       return;
@@ -156,9 +154,9 @@ class _HeatPageState extends State<HeatPage> {
 
     if (!success) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(AppLocalizations.of(context).t('command_failed'))),
+        AppToast.show(
+          context,
+          AppLocalizations.of(context).t('command_failed'),
         );
       }
       return;
@@ -176,9 +174,9 @@ class _HeatPageState extends State<HeatPage> {
         );
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(AppLocalizations.of(context).t('heat_started'))),
+          AppToast.show(
+            context,
+            AppLocalizations.of(context).t('heat_started'),
           );
           Navigator.of(context).pop();
         }
@@ -187,10 +185,9 @@ class _HeatPageState extends State<HeatPage> {
         // 如果是精确闹钟权限错误，静默处理，不显示提示
         if (e is PlatformException && e.code == 'exact_alarms_not_permitted') {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content:
-                      Text(AppLocalizations.of(context).t('heat_started'))),
+            AppToast.show(
+              context,
+              AppLocalizations.of(context).t('heat_started'),
             );
             Navigator.of(context).pop();
           }
@@ -198,9 +195,9 @@ class _HeatPageState extends State<HeatPage> {
           // 其他错误，显示提示
           if (mounted) {
             final l10n = AppLocalizations.of(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text(l10n.t('heat_started_but_reminder_failed'))),
+            AppToast.show(
+              context,
+              l10n.t('heat_started_but_reminder_failed'),
             );
             Navigator.of(context).pop();
           }
@@ -209,9 +206,9 @@ class _HeatPageState extends State<HeatPage> {
     } else {
       // 开关没打开，不做任何日历相关操作，直接成功返回
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(AppLocalizations.of(context).t('heat_started'))),
+        AppToast.show(
+          context,
+          AppLocalizations.of(context).t('heat_started'),
         );
         Navigator.of(context).pop();
       }

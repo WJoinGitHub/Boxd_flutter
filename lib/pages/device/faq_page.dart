@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/feedback_page.dart';
 import 'package:flutter_boxd_app_flow/pages/device/faq_detail_page.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -378,12 +379,10 @@ class FaqPage extends StatelessWidget {
   void _showEmailFallback(BuildContext context, String email) {
     Clipboard.setData(ClipboardData(text: email));
     final l10n = AppLocalizations.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content:
-            Text(l10n.t('email_address_copied').replaceAll('{email}', email)),
-        duration: const Duration(seconds: 2),
-      ),
+    AppToast.show(
+      context,
+      l10n.t('email_address_copied').replaceAll('{email}', email),
+      duration: const Duration(seconds: 2),
     );
   }
 

@@ -5,6 +5,7 @@ import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 import 'package:flutter_boxd_app_flow/widgets/time_picker_dialog.dart';
 
 /// 提醒功能管理类
@@ -68,8 +69,9 @@ class ReminderHelper {
       final calendarsResult = await _calendarPlugin.retrieveCalendars();
       if (!calendarsResult.isSuccess || calendarsResult.data == null) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.t('failed_to_access_calendar'))),
+          AppToast.show(
+            context,
+            l10n.t('failed_to_access_calendar'),
           );
         }
         return false;
@@ -78,8 +80,9 @@ class ReminderHelper {
       final calendars = calendarsResult.data!;
       if (calendars.isEmpty) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.t('no_calendars_available'))),
+          AppToast.show(
+            context,
+            l10n.t('no_calendars_available'),
           );
         }
         return false;
@@ -118,20 +121,18 @@ class ReminderHelper {
       final createEventResult = await _calendarPlugin.createOrUpdateEvent(event);
       if (createEventResult != null && createEventResult.isSuccess) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.t('event_saved_to_calendar'))),
+          AppToast.show(
+            context,
+            l10n.t('event_saved_to_calendar'),
           );
         }
         return true;
       } else {
         final errors = createEventResult?.errors;
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Failed to save to calendar: ${errors != null ? errors.join(', ') : 'Unknown error'}',
-              ),
-            ),
+          AppToast.show(
+            context,
+            'Failed to save to calendar: ${errors != null ? errors.join(', ') : 'Unknown error'}',
           );
         }
         return false;
@@ -152,20 +153,18 @@ class ReminderHelper {
           final result = await _calendarPlugin.requestPermissions();
           if (!result.isSuccess || !result.data!) {
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(l10n.t('calendar_permission_denied_detail')),
-                ),
+              AppToast.show(
+                context,
+                l10n.t('calendar_permission_denied_detail'),
               );
             }
             return false;
           }
         } catch (e) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(l10n.t('calendar_permission_denied_detail')),
-              ),
+            AppToast.show(
+              context,
+              l10n.t('calendar_permission_denied_detail'),
             );
           }
           return false;
@@ -212,10 +211,9 @@ class ReminderHelper {
       final createResult = await _calendarPlugin.createOrUpdateEvent(event);
       if (createResult?.isSuccess == true) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.t('calendar_reminder_created_successfully')),
-            ),
+          AppToast.show(
+            context,
+            l10n.t('calendar_reminder_created_successfully'),
           );
         }
         return true;

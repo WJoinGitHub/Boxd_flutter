@@ -11,6 +11,7 @@ import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/pages/home_page.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 
 class RegisterEmailPage extends StatefulWidget {
   const RegisterEmailPage({super.key});
@@ -89,16 +90,14 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
           );
         }
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(result['message'] ?? l10n.t('guest_login_failed'))),
+        AppToast.show(
+          context,
+          result['message'] ?? l10n.t('guest_login_failed'),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l10n.t('guest_login_failed')}: $e')),
-        );
+        AppToast.show(context, ApiClient.extractErrorMessage(e));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -108,9 +107,7 @@ class _RegisterEmailPageState extends State<RegisterEmailPage> {
   void _sendCode() {
     final l10n = AppLocalizations.of(context);
     if (!_emailCtrl.text.contains('@') || !_emailCtrl.text.contains('.')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.t('invalid_email_message'))),
-      );
+      AppToast.show(context, l10n.t('invalid_email_message'));
       return;
     }
 

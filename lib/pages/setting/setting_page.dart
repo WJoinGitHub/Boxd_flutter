@@ -10,6 +10,7 @@ import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/app_urls.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 import 'package:flutter_boxd_app_flow/pages/webview_page.dart';
 import 'package:flutter_boxd_app_flow/pages/login/register_email_page.dart';
 
@@ -252,20 +253,16 @@ class _SettingsPageState extends State<SettingsPage> {
           await UserService().fetchUserInfo();
           setState(() {});
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.t('nickname_updated_successfully'))),
-          );
+          AppToast.show(context, l10n.t('nickname_updated_successfully'));
         } else if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(result['message'] ?? l10n.t('update_failed'))),
+          AppToast.show(
+            context,
+            result['message'] ?? l10n.t('update_failed'),
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${l10n.t('update_failed')}: $e')),
-          );
+          AppToast.show(context, ApiClient.extractErrorMessage(e));
         }
       }
     }
@@ -438,9 +435,7 @@ class _SettingsPageState extends State<SettingsPage> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${l10n.t('logout_failed')}: $e')),
-          );
+          AppToast.show(context, ApiClient.extractErrorMessage(e));
         }
       }
     }
@@ -485,9 +480,7 @@ class _SettingsPageState extends State<SettingsPage> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${l10n.t('delete_account_failed')}: $e')),
-          );
+          AppToast.show(context, ApiClient.extractErrorMessage(e));
         }
       }
     }

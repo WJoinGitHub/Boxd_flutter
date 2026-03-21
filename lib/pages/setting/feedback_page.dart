@@ -4,6 +4,7 @@ import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -143,17 +144,13 @@ class _FeedbackPageState extends State<FeedbackPage> {
     final l10n = AppLocalizations.of(context);
     // 判断用户是否有输入
     if (_selectedTags.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.t('select_question_type'))),
-      );
+      AppToast.show(context, l10n.t('select_question_type'));
       return;
     }
 
     final content = _contentController.text.trim();
     if (content.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.t('enter_feedback_content'))),
-      );
+      AppToast.show(context, l10n.t('enter_feedback_content'));
       return;
     }
 
@@ -186,25 +183,19 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
       if (mounted) {
         if (result['code'] == 200 || result['code'] == 201) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.t('feedback_submitted'))),
-          );
+          AppToast.show(context, l10n.t('feedback_submitted'));
           Navigator.of(context).pop();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? l10n.t('feedback_failed')),
-            ),
+          AppToast.show(
+            context,
+            result['message'] ?? l10n.t('feedback_failed'),
           );
         }
       }
     } catch (e) {
       print('[FEEDBACK] 提交反馈失败: $e');
       if (mounted) {
-        final l10n = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l10n.t('failed_to_send_feedback')}: $e')),
-        );
+        AppToast.show(context, ApiClient.extractErrorMessage(e));
       }
     } finally {
       if (mounted) {

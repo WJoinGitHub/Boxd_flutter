@@ -7,6 +7,7 @@ import 'package:flutter_boxd_app_flow/services/ble_protocol.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -233,9 +234,7 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
       final permissionsGranted = await _calendarPlugin.requestPermissions();
       if (!permissionsGranted.isSuccess || !permissionsGranted.data!) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.t('calendar_permission_denied'))),
-          );
+          AppToast.show(context, l10n.t('calendar_permission_denied'));
         }
         return;
       }
@@ -243,9 +242,8 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
       final calendarsResult = await _calendarPlugin.retrieveCalendars();
       if (!calendarsResult.isSuccess || calendarsResult.data == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.t('failed_to_retrieve_calendars'))),
-          );
+          AppToast.show(
+              context, l10n.t('failed_to_retrieve_calendars'));
         }
         return;
       }
@@ -253,9 +251,7 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
       final calendars = calendarsResult.data!;
       if (calendars.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.t('no_calendars_available'))),
-          );
+          AppToast.show(context, l10n.t('no_calendars_available'));
         }
         return;
       }
@@ -296,22 +292,17 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
       final createEventResult =
           await _calendarPlugin.createOrUpdateEvent(event);
       if (createEventResult != null && createEventResult.isSuccess && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.t('saved_to_calendar'))),
-        );
+        AppToast.show(context, l10n.t('saved_to_calendar'));
       } else if (mounted) {
         final errors = createEventResult?.errors;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  '${l10n.t('failed_to_save_to_calendar')}: ${errors != null ? errors.join(', ') : l10n.t('unknown_error')}')),
+        AppToast.show(
+          context,
+          '${l10n.t('failed_to_save_to_calendar')}: ${errors != null ? errors.join(', ') : l10n.t('unknown_error')}',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l10n.t('error')}: $e')),
-        );
+        AppToast.show(context, '${l10n.t('error')}: $e');
       }
     }
   }
@@ -319,10 +310,9 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
   Future<void> _startKeepWarm() async {
     if (!bleService.isConnected) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text(AppLocalizations.of(context).t('device_not_connected'))),
+        AppToast.show(
+          context,
+          AppLocalizations.of(context).t('device_not_connected'),
         );
       }
       return;
@@ -336,11 +326,11 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
     );
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(success
-                ? AppLocalizations.of(context).t('keep_warm_started')
-                : AppLocalizations.of(context).t('command_failed'))),
+      AppToast.show(
+        context,
+        success
+            ? AppLocalizations.of(context).t('keep_warm_started')
+            : AppLocalizations.of(context).t('command_failed'),
       );
       if (success) {
         Navigator.of(context).pop();

@@ -10,6 +10,7 @@ import 'package:flutter_boxd_app_flow/widgets/time_picker_dialog.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/widgets/reminder_helper.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 
 class HeatingTimePage extends StatefulWidget {
   const HeatingTimePage({super.key});
@@ -136,10 +137,9 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
 
   void _sendCommand() async {
     if (selectedTemperature == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                AppLocalizations.of(context).t('please_select_temperature'))),
+      AppToast.show(
+        context,
+        AppLocalizations.of(context).t('please_select_temperature'),
       );
       return;
     }
@@ -148,10 +148,9 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
 
     // 验证不超过5小时（300分钟）
     if (heatingTotalMinutes > 300) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text(AppLocalizations.of(context).t('heating_time_exceed'))),
+      AppToast.show(
+        context,
+        AppLocalizations.of(context).t('heating_time_exceed'),
       );
       return;
     }
@@ -176,17 +175,17 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
 
     // 验证不超过5小时（300分钟）
     if (diffMinutes > 300) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(AppLocalizations.of(context).t('end_time_exceed'))),
+      AppToast.show(
+        context,
+        AppLocalizations.of(context).t('end_time_exceed'),
       );
       return;
     }
 
     if (diffMinutes < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(AppLocalizations.of(context).t('end_time_past'))),
+      AppToast.show(
+        context,
+        AppLocalizations.of(context).t('end_time_past'),
       );
       return;
     }
@@ -194,10 +193,9 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     // 验证：时长 + 现在时间 < 结束时间
     final estimatedEndTime = now.add(Duration(minutes: heatingTotalMinutes));
     if (estimatedEndTime.isAfter(actualTargetTime)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                AppLocalizations.of(context).t('heating_duration_too_long'))),
+      AppToast.show(
+        context,
+        AppLocalizations.of(context).t('heating_duration_too_long'),
       );
       return;
     }
@@ -224,16 +222,15 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
         if (reminderHelper.remindEnabled) {
           await reminderHelper.createTimingCalendarReminder(context);
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  AppLocalizations.of(context).t('timing_heating_started'))),
+        AppToast.show(
+          context,
+          AppLocalizations.of(context).t('timing_heating_started'),
         );
         Navigator.of(context).pop();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(AppLocalizations.of(context).t('command_failed'))),
+        AppToast.show(
+          context,
+          AppLocalizations.of(context).t('command_failed'),
         );
       }
     }

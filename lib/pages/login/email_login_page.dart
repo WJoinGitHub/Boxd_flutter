@@ -7,6 +7,7 @@ import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/widgets/app_text_field.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 
 class EmailLoginPage extends StatefulWidget {
   final bool hideBackButton;
@@ -75,23 +76,20 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
         }
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.t('login_success'))),
-          );
+          AppToast.show(context, l10n.t('login_success'));
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const HomePage()),
           );
         }
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? l10n.t('login_failed'))),
+        AppToast.show(
+          context,
+          result['message'] ?? l10n.t('login_failed'),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l10n.t('login_failed')}: $e')),
-        );
+        AppToast.show(context, ApiClient.extractErrorMessage(e));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -179,19 +177,14 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                   onPressed: () {
                     // 验证邮箱是否输入
                     if (_emailCtrl.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(l10n.t('enter_email')),
-                        ),
-                      );
+                      AppToast.show(context, l10n.t('enter_email'));
                       return;
                     }
                     // 验证邮箱格式
                     if (!_isEmail(_emailCtrl.text)) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(l10n.t('invalid_email_message')),
-                        ),
+                      AppToast.show(
+                        context,
+                        l10n.t('invalid_email_message'),
                       );
                       return;
                     }

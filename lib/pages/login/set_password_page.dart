@@ -4,6 +4,7 @@ import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 import 'package:flutter_boxd_app_flow/widgets/app_text_field.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/pages/home_page.dart';
@@ -38,9 +39,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
   Future<void> _savePassword() async {
     final l10n = AppLocalizations.of(context);
     if (!validate(_pwdCtrl.text)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.t('password_requirements_detail'))),
-      );
+      AppToast.show(context, l10n.t('password_requirements_detail'));
       return;
     }
 
@@ -53,14 +52,12 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
           _pwdCtrl.text,
         );
         if (result['code'] == 200 && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.t('password_reset_success'))),
-          );
+          AppToast.show(context, l10n.t('password_reset_success'));
           Navigator.of(context).popUntil((route) => route.isFirst);
         } else if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(result['message'] ?? l10n.t('reset_failed'))),
+          AppToast.show(
+            context,
+            result['message'] ?? l10n.t('reset_failed'),
           );
         }
       } else {
@@ -97,27 +94,22 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
             }
           }
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.t('registration_success'))),
-            );
+            AppToast.show(context, l10n.t('registration_success'));
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => const HomePage()),
               (route) => false, // 清除所有路由，返回到首页
             );
           }
         } else if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content:
-                    Text(result['message'] ?? l10n.t('registration_failed'))),
+          AppToast.show(
+            context,
+            result['message'] ?? l10n.t('registration_failed'),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l10n.t('request_error')}: $e')),
-        );
+        AppToast.show(context, ApiClient.extractErrorMessage(e));
       }
     } finally {
       if (mounted) setState(() => _loading = false);

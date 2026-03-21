@@ -7,6 +7,7 @@ import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 import 'set_password_page.dart';
 
 class VerificationPage extends StatefulWidget {
@@ -90,17 +91,14 @@ class _VerificationPageState extends State<VerificationPage> {
           );
         }
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text(result['message'] ?? l10n.t('verification_failed'))),
+        AppToast.show(
+          context,
+          result['message'] ?? l10n.t('verification_failed'),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l10n.t('verification_failed')}: $e')),
-        );
+        AppToast.show(context, ApiClient.extractErrorMessage(e));
       }
     }
   }
@@ -117,17 +115,16 @@ class _VerificationPageState extends State<VerificationPage> {
       } else {
         setState(() => _secondsLeft = 0);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message'] ?? l10n.t('send_failed'))),
+          AppToast.show(
+            context,
+            result['message'] ?? l10n.t('send_failed'),
           );
         }
       }
     } catch (e) {
       setState(() => _secondsLeft = 0);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${l10n.t('send_failed')}: $e')),
-        );
+        AppToast.show(context, ApiClient.extractErrorMessage(e));
       }
     } finally {
       if (showLoading && mounted) setState(() => _loading = false);

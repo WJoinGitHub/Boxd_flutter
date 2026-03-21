@@ -5,6 +5,7 @@ import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
+import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 
 class UnitSwitchingPage extends StatefulWidget {
   const UnitSwitchingPage({super.key});
@@ -45,17 +46,12 @@ class _UnitSwitchingPageState extends State<UnitSwitchingPage> {
       try {
         await bleService.syncTime();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${l10n.t('temperature_unit_changed_to')} $unit')),
-          );
+          AppToast.show(context, '${l10n.t('temperature_unit_changed_to')} $unit');
         }
       } catch (e) {
         print('[UNIT] 发送温度单位命令失败: $e');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(l10n.t('failed_to_send_command_try_again'))),
-          );
+          AppToast.show(context, l10n.t('failed_to_send_command_try_again'));
         }
       }
     }

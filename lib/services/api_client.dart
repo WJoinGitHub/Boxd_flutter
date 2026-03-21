@@ -499,11 +499,13 @@ class ApiClient {
   }
 
   // ==================== 设备管理 ====================
-  static Future<Map<String, dynamic>> bindDevice(String deviceUuid,
-          {String? deviceName}) =>
+  static Future<Map<String, dynamic>> bindDevice(
+    String deviceUuid, {
+    String? deviceName,
+  }) =>
       post('/devices/bind', {
         'device_uuid': deviceUuid,
-        if (deviceName != null) 'device_name': deviceName
+        if (deviceName != null) 'device_name': deviceName,
       });
 
   static Future<Map<String, dynamic>> getDevices(

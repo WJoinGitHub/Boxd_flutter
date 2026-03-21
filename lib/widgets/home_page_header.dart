@@ -4,14 +4,15 @@ import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/pages/login/email_login_page.dart';
 import 'package:flutter_boxd_app_flow/pages/setting/setting_page.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
+import 'package:flutter_boxd_app_flow/models/device_model.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 
 /// 首页顶部标题与头像组件
 class HomePageHeader extends StatelessWidget {
-  final List<Map<String, dynamic>> devices;
+  final List<DeviceModel> devices;
   final bool isConnecting;
   final bool connected;
-  final Map<String, dynamic>? currentDevice;
+  final DeviceModel? currentDevice;
   final Map<String, dynamic>? deviceDetail;
   final VoidCallback? onDeviceSelectorTap;
   final VoidCallback? onSettingsReturn;
@@ -29,7 +30,6 @@ class HomePageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 7),
       child: Column(

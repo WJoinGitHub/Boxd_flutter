@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/device/device_connect_page.dart';
@@ -17,8 +16,9 @@ import 'package:flutter_boxd_app_flow/pages/heating_time_page.dart';
 import 'package:flutter_boxd_app_flow/pages/keep_warm_page.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/widgets/home_page_header.dart';
+import 'package:flutter_boxd_app_flow/models/device_model.dart';
 import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
-
+import 'package:flutter_boxd_app_flow/utils/ble_device_name_match.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -32,8 +32,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   int batteryLevel = 0;
   Map<String, dynamic>? deviceDetail;
   String temperatureUnit = '°C';
-  List<Map<String, dynamic>> _devices = [];
-  Map<String, dynamic>? _currentDevice;
+  List<DeviceModel> _devices = [];
+  DeviceModel? _currentDevice;
   bool _wasLoggedIn = false;
   bool _isInitialized = false;
   DeviceState? _deviceState;
@@ -242,21 +242,25 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     try {
       final result = await ApiClient.getDevices(page: 1, pageSize: 100);
       if (result['code'] == 200 && result['data'] != null) {
-        final devices = List<Map<String, dynamic>>.from(result['data']);
-
-        // 从本地匹配保存的设备名称
+        final raw = result['data'] as List;
+        final List<DeviceModel> devices = [];
         final userId = UserService().currentUser?.id;
-        if (userId != null && userId.isNotEmpty) {
-          for (var device in devices) {
-            final deviceUuid = device['device_uuid'] as String?;
-            if (deviceUuid != null) {
-              final localName =
-                  await AppStorage.loadDeviceLocalName(userId, deviceUuid);
-              if (localName != null && localName.isNotEmpty) {
-                device['local_name'] = localName;
-              }
+
+        for (final item in raw) {
+          if (item is! Map) continue;
+          final m = Map<String, dynamic>.from(item);
+          final du = m['device_uuid']?.toString();
+          String? localName;
+          if (userId != null &&
+              userId.isNotEmpty &&
+              du != null &&
+              du.isNotEmpty) {
+            localName = await AppStorage.loadDeviceLocalName(userId, du);
+            if (localName != null && localName.isEmpty) {
+              localName = null;
             }
           }
+          devices.add(DeviceModel.fromJson(m, localName: localName));
         }
 
         if (mounted) {
@@ -268,8 +272,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             } else {
               // 当前设备不在新列表中时清空（例如已被移除）
               if (_currentDevice != null &&
-                  !devices.any((d) =>
-                      d['device_uuid'] == _currentDevice!['device_uuid'])) {
+                  !devices
+                      .any((d) => d.deviceUuid == _currentDevice!.deviceUuid)) {
                 _currentDevice = null;
               }
               if (_currentDevice == null && devices.isNotEmpty) {
@@ -301,38 +305,61 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       return;
     }
 
-    // 取设备列表第一个设备，走用户点击连接设备的逻辑
-    final firstDevice = _devices.first;
-    print('[HOME] 自动连接第一个设备: ${firstDevice['device_uuid']}');
-    await _connectToDevice(firstDevice, isAutoConnect: true);
+    // 自动连接：优先选「deviceName」与当前已连接 BLE 的 platformName 一致的那台绑定设备
+    DeviceModel target = _devices.first;
+    var pickedByConnectedBleName = false;
+    try {
+      final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
+      for (final bound in _devices) {
+        final exactHit = connectedDevices.any(
+          (c) =>
+              bleNameMatchLevel(bound.deviceName, c.platformName) ==
+              BleNameMatchLevel.exact,
+        );
+        if (exactHit) {
+          target = bound;
+          pickedByConnectedBleName = true;
+          print(
+              '[HOME] 自动连接：已连接 BLE 名称精确匹配，选中 ${bound.deviceUuid} (${bound.deviceName})');
+          break;
+        }
+      }
+      if (!pickedByConnectedBleName) {
+        for (final bound in _devices) {
+          final prefixHit = connectedDevices.any(
+            (c) =>
+                bleNameMatchLevel(bound.deviceName, c.platformName) ==
+                BleNameMatchLevel.prefix,
+          );
+          if (prefixHit) {
+            target = bound;
+            pickedByConnectedBleName = true;
+            print(
+                '[HOME] 自动连接：已连接 BLE QIMI 前缀匹配，选中 ${bound.deviceUuid} (${bound.deviceName})');
+            break;
+          }
+        }
+      }
+      if (!pickedByConnectedBleName && _devices.length > 1) {
+        print(
+            '[HOME] 自动连接：无已连接 BLE 与列表 deviceName 匹配，使用列表首台 ${target.deviceUuid}');
+      }
+    } catch (e) {
+      print('[HOME] 自动连接选设备异常: $e');
+    }
+    await _connectToDevice(target, isAutoConnect: true);
   }
 
-  /// 获取显示设备名（如果有多个设备，添加序列号）
+  /// 获取首页展示的设备名（多设备时也不再追加编号）
   String _getDisplayDeviceName() {
     if (_currentDevice == null) return 'HeatLink';
-
-    // 优先使用本地保存的名称
-    final localName = _currentDevice!['local_name'] as String?;
-    final deviceName =
-        localName ?? (_currentDevice!['device_name'] as String? ?? 'HeatLink');
-
-    if (_devices.length > 1) {
-      // 找到当前设备在列表中的索引
-      final index = _devices.indexWhere(
-        (device) => device['device_uuid'] == _currentDevice!['device_uuid'],
-      );
-      if (index >= 0) {
-        return '$deviceName ${index + 1}';
-      }
-    }
-    return deviceName;
+    return _currentDevice!.headerDisplayName();
   }
 
   Future<void> _showEditDeviceNameDialog() async {
     if (_currentDevice == null) return;
 
-    final currentName =
-        _getDisplayDeviceName().replaceAll(RegExp(r' \d+$'), ''); // 移除序列号
+    final currentName = _getDisplayDeviceName();
     final controller = TextEditingController(text: currentName);
 
     final l10n = AppLocalizations.of(context);
@@ -342,17 +369,26 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         title: Text(l10n.t('edit_device_name')),
         content: TextField(
           controller: controller,
+          cursorColor: AppColors.orange,
           decoration: InputDecoration(
             hintText: l10n.t('enter_device_name'),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: AppColors.orange, width: 2),
+            ),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: AppColors.orange, width: 1),
+            ),
           ),
           autofocus: true,
         ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.orange),
             onPressed: () => Navigator.pop(context),
             child: Text(l10n.t('cancel')),
           ),
           TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.orange),
             onPressed: () => Navigator.pop(context, controller.text.trim()),
             child: Text(l10n.t('save')),
           ),
@@ -362,11 +398,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     if (newName != null && newName.isNotEmpty && newName != currentName) {
       final userId = UserService().currentUser?.id;
-      final deviceUuid = _currentDevice!['device_uuid'] as String?;
+      final deviceUuid = _currentDevice!.deviceUuid;
 
-      if (userId != null && userId.isNotEmpty && deviceUuid != null) {
+      if (userId != null && userId.isNotEmpty && deviceUuid.isNotEmpty) {
         await AppStorage.saveDeviceLocalName(userId, deviceUuid, newName);
-        _currentDevice!['local_name'] = newName;
+        _currentDevice = _currentDevice!.copyWith(localName: newName);
         setState(() {});
 
         if (mounted) {
@@ -379,7 +415,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Future<void> _showDeviceSelector() async {
     if (_devices.isEmpty) return;
 
-    final selectedDevice = await showModalBottomSheet<Map<String, dynamic>>(
+    final selectedDevice = await showModalBottomSheet<DeviceModel>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
@@ -414,14 +450,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               itemCount: _devices.length,
               itemBuilder: (context, index) {
                 final device = _devices[index];
-                final deviceUuid = device['device_uuid'] as String? ?? '';
-                final deviceName =
-                    device['device_name'] as String? ?? 'Unknown Device';
-                final isCurrent = _currentDevice?['device_uuid'] == deviceUuid;
+                final deviceUuid = device.deviceUuid;
+                final title = device.listDisplayName();
+                final isCurrent = _currentDevice?.deviceUuid == deviceUuid;
                 final isDeviceConnected = connected && isCurrent;
 
                 return ListTile(
-                  title: Text(deviceName),
+                  title: Text(
+                    title,
+                    style: TextStyle(
+                      color: isCurrent ? AppColors.orange : null,
+                      fontWeight: isCurrent ? FontWeight.w600 : null,
+                    ),
+                  ),
                   trailing: isCurrent
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
@@ -455,12 +496,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
 
     if (selectedDevice != null &&
-        selectedDevice['device_uuid'] != _currentDevice?['device_uuid']) {
+        selectedDevice.deviceUuid != _currentDevice?.deviceUuid) {
       await _switchDevice(selectedDevice);
     }
   }
 
-  Future<void> _switchDevice(Map<String, dynamic> newDevice) async {
+  Future<void> _switchDevice(DeviceModel newDevice) async {
     // 断开当前设备
     if (connected && bleService.isConnected) {
       await bleService.disconnect();
@@ -480,7 +521,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     await _connectToDevice(newDevice);
   }
 
-  Future<void> _connectToDevice(Map<String, dynamic> device,
+  Future<void> _connectToDevice(DeviceModel device,
       {bool isAutoConnect = false}) async {
     if (mounted) {
       setState(() {
@@ -511,7 +552,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     Timer? timeoutTimer;
 
     try {
-      final deviceUuid = device['device_uuid'] as String;
+      final deviceUuid = device.deviceUuid;
       print('[HOME] 连接设备: $deviceUuid');
 
       // 启动超时定时器
@@ -547,41 +588,25 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       BluetoothDevice? targetDevice;
 
+      // 先精确匹配 deviceName == platformName（多台 QIMI 设备时避免连错）
       for (var d in connectedDevices) {
         if (timeoutOccurred) break;
-
-        // 优先通过设备名称匹配
-        final deviceName = device['device_name'] as String? ?? '';
-        if (deviceName.isNotEmpty) {
-          final connectedName = d.platformName;
-          // 精确匹配
-          if (connectedName == deviceName) {
-            print('[HOME] 找到已连接的设备（通过名称精确匹配）: $connectedName');
+        if (bleNameMatchLevel(device.deviceName, d.platformName) ==
+            BleNameMatchLevel.exact) {
+          print('[HOME] 找到已连接的设备（名称精确匹配）: ${d.platformName}');
+          targetDevice = d;
+          break;
+        }
+      }
+      if (targetDevice == null) {
+        for (var d in connectedDevices) {
+          if (timeoutOccurred) break;
+          if (bleNameMatchLevel(device.deviceName, d.platformName) ==
+              BleNameMatchLevel.prefix) {
+            print('[HOME] 找到已连接的设备（QIMI 前缀匹配）: ${d.platformName}');
             targetDevice = d;
             break;
           }
-          // 部分匹配：如果设备名称前缀相同（如 QIMI-B13-），也尝试连接
-          if (connectedName.startsWith('QIMI-') &&
-              deviceName.startsWith('QIMI-')) {
-            final connectedPrefix = connectedName.split('-').take(2).join('-');
-            final devicePrefix = deviceName.split('-').take(2).join('-');
-            if (connectedPrefix == devicePrefix) {
-              print(
-                  '[HOME] 找到已连接的设备（通过名称前缀匹配）: $connectedName (目标: $deviceName)');
-              targetDevice = d;
-              break;
-            }
-          }
-        }
-
-        // 尝试通过UUID匹配（作为备选方案）
-        final currentUuid = Platform.isAndroid
-            ? d.remoteId.str.replaceAll(':', '').toUpperCase()
-            : d.remoteId.str.replaceAll('-', '').toUpperCase();
-        if (currentUuid == deviceUuid) {
-          print('[HOME] 找到已连接的设备（通过UUID）: ${d.platformName}');
-          targetDevice = d;
-          break;
         }
       }
 
@@ -590,12 +615,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         BluetoothAdapterState bluetoothAdapterState =
             await FlutterBluePlus.adapterState.first;
         for (int attempt = 1;
-            attempt < 3 && bluetoothAdapterState == BluetoothAdapterState.unknown;
+            attempt < 3 &&
+                bluetoothAdapterState == BluetoothAdapterState.unknown;
             attempt++) {
           await Future.delayed(const Duration(milliseconds: 1500));
           if (!mounted || timeoutOccurred) return;
-          bluetoothAdapterState =
-              await FlutterBluePlus.adapterState.first;
+          bluetoothAdapterState = await FlutterBluePlus.adapterState.first;
         }
         if (bluetoothAdapterState == BluetoothAdapterState.unknown) {
           bluetoothAdapterState = BluetoothAdapterState.on;
@@ -613,11 +638,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         }
 
         print('[HOME] 开始扫描设备...');
-        print('[HOME] 目标设备UUID: $deviceUuid');
+        print('[HOME] 目标 deviceName=${device.deviceName}（按名称匹配 BLE）');
 
         final deviceCompleter = Completer<BluetoothDevice?>();
         StreamSubscription? scanSubscription;
         bool scanStarted = false;
+        // 仅前缀匹配时不在首轮回调里立刻连接，等扫描结束再用，避免多台 QIMI 误连
+        BluetoothDevice? scanPrefixFallback;
 
         try {
           // 先设置监听器，再启动扫描，避免丢失结果
@@ -627,49 +654,26 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             }
 
             print('[HOME] 收到扫描结果: ${results.length} 个设备');
+            BluetoothDevice? batchExact;
             for (var r in results) {
               if (timeoutOccurred || deviceCompleter.isCompleted) break;
 
-              final currentUuid = Platform.isAndroid
-                  ? r.device.remoteId.str.replaceAll(':', '').toUpperCase()
-                  : r.device.remoteId.str.replaceAll('-', '').toUpperCase();
-
               print(
-                  '[HOME] 扫描到设备: ${r.device.platformName}, UUID: $currentUuid');
+                  '[HOME] 扫描到设备: ${r.device.platformName}, remoteId=${r.device.remoteId.str}');
 
-              // 优先通过设备名称匹配（因为API返回的device_uuid不是MAC地址）
-              final deviceName = device['device_name'] as String? ?? '';
-              if (deviceName.isNotEmpty) {
-                final scannedName = r.device.platformName;
-                // 精确匹配
-                if (scannedName == deviceName) {
-                  print('[HOME] 找到匹配的设备（通过名称精确匹配）: $scannedName');
-                  deviceCompleter.complete(r.device);
-                  break;
-                }
-                // 部分匹配：如果设备名称前缀相同（如 QIMI-B13-），也尝试连接
-                // 因为设备名称可能因为固件更新等原因略有变化
-                if (scannedName.startsWith('QIMI-') &&
-                    deviceName.startsWith('QIMI-')) {
-                  // 提取型号部分（如 QIMI-B13-AKH02 中的 QIMI-B13）
-                  final scannedPrefix =
-                      scannedName.split('-').take(2).join('-');
-                  final devicePrefix = deviceName.split('-').take(2).join('-');
-                  if (scannedPrefix == devicePrefix) {
-                    print(
-                        '[HOME] 找到匹配的设备（通过名称前缀匹配）: $scannedName (目标: $deviceName)');
-                    deviceCompleter.complete(r.device);
-                    break;
-                  }
-                }
-              }
-
-              // 尝试通过UUID匹配（作为备选方案，虽然通常不会匹配成功）
-              if (currentUuid == deviceUuid) {
-                print('[HOME] 找到匹配的设备（通过UUID）: ${r.device.platformName}');
-                deviceCompleter.complete(r.device);
+              final level =
+                  bleNameMatchLevel(device.deviceName, r.device.platformName);
+              if (level == BleNameMatchLevel.exact) {
+                batchExact = r.device;
                 break;
               }
+              if (level == BleNameMatchLevel.prefix) {
+                scanPrefixFallback ??= r.device;
+              }
+            }
+            if (batchExact != null && !deviceCompleter.isCompleted) {
+              print('[HOME] 找到匹配的设备（名称精确）: ${batchExact.platformName}');
+              deviceCompleter.complete(batchExact);
             }
           });
 
@@ -692,11 +696,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           try {
             targetDevice = await deviceCompleter.future.timeout(
               const Duration(seconds: 15),
-              onTimeout: () {
-                print('[HOME] 扫描超时（15秒），未找到设备');
-                return null;
-              },
+              onTimeout: () => null,
             );
+            final prefixCandidate = scanPrefixFallback;
+            if (targetDevice == null && prefixCandidate != null) {
+              print(
+                  '[HOME] 扫描未等到精确名称匹配，使用 QIMI 前缀候选: ${prefixCandidate.platformName}');
+              targetDevice = prefixCandidate;
+            } else if (targetDevice == null) {
+              print('[HOME] 扫描超时（15秒），未找到名称匹配的设备');
+            }
           } catch (e) {
             print('[HOME] 扫描等待失败: $e');
           }
@@ -1069,8 +1078,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                         );
                                         if (!mounted ||
                                             (!UserService().isLoggedIn &&
-                                                !UserService()
-                                                    .isGuestMode)) return;
+                                                !UserService().isGuestMode))
+                                          return;
                                       }
                                       final result =
                                           await Navigator.of(context).push(
@@ -1731,6 +1740,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           border: Border.all(color: color, width: 1),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 20),
             SizedBox(
@@ -1739,13 +1749,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             ),
             const Spacer(),
             Padding(
-              padding: const EdgeInsets.only(bottom: 28),
+              padding: const EdgeInsets.fromLTRB(4, 0, 4, 28),
               child: Text(
                 label,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   color: color,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
+                  height: 1.15,
                 ),
               ),
             ),

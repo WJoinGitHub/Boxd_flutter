@@ -4,6 +4,8 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'api_client.dart';
 import 'ble_protocol.dart';
 import '../utils/app_storage.dart';
+import '../models/device_model.dart';
+import '../utils/ble_device_name_match.dart';
 
 class BleService {
   static final BleService _instance = BleService._internal();
@@ -48,8 +50,11 @@ class BleService {
     }
   }
 
-  /// 连接设备
-  Future<bool> connect(BluetoothDevice device, {bool skipBind = false}) async {
+  /// 连接设备。绑定时使用协议 [getDeviceUuid] 得到的 UUID 作为 `device_uuid`。
+  Future<bool> connect(
+    BluetoothDevice device, {
+    bool skipBind = false,
+  }) async {
     // 在连接新设备前，先停止旧的心跳定时器
     _stopHeartbeatMonitor();
 
@@ -167,7 +172,7 @@ class BleService {
         final deviceName = device.platformName.isNotEmpty
             ? device.platformName
             : 'Boxd-${deviceUuid.substring(deviceUuid.length - 4)}';
-        print('[BLE] 绑定设备 UUID: $deviceUuid, 名称: $deviceName');
+        print('[BLE] 绑定设备 UUID(协议): $deviceUuid, 名称: $deviceName');
 
         bool bindSuccess = false;
         for (int i = 0; i < 3; i++) {
@@ -543,32 +548,41 @@ class BleService {
       if (result['code'] == 200 && result['data'] != null) {
         final devices = result['data'] as List;
         if (devices.isNotEmpty) {
-          final deviceUuid = devices[0]['device_uuid'];
-          print('[BLE] 找到绑定设备: $deviceUuid');
+          final row = Map<String, dynamic>.from(devices[0] as Map);
+          final bound = DeviceModel.fromJson(row);
+          print('[BLE] 找到绑定设备: ${bound.deviceUuid} (${bound.deviceName})');
 
           final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
-          for (var device in connectedDevices) {
-            final currentUuid = Platform.isAndroid
-                ? device.remoteId.str.replaceAll(':', '').toUpperCase()
-                : device.remoteId.str.replaceAll('-', '').toUpperCase();
-            if (currentUuid == deviceUuid) {
-              print('[BLE] 设备已连接');
-              return device;
+          for (var bleDevice in connectedDevices) {
+            if (bleNameMatchLevel(bound.deviceName, bleDevice.platformName) ==
+                BleNameMatchLevel.exact) {
+              print('[BLE] 设备已连接（名称精确匹配）');
+              return bleDevice;
+            }
+          }
+          for (var bleDevice in connectedDevices) {
+            if (bleNameMatchLevel(bound.deviceName, bleDevice.platformName) ==
+                BleNameMatchLevel.prefix) {
+              print('[BLE] 设备已连接（QIMI 前缀匹配）');
+              return bleDevice;
             }
           }
 
-          print('[BLE] 开始扫描设备...');
+          print('[BLE] 开始扫描设备（按名称匹配，精确优先）...');
           await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
 
-          BluetoothDevice? foundDevice;
+          BluetoothDevice? scanExact;
+          BluetoothDevice? scanPrefix;
           final subscription = FlutterBluePlus.scanResults.listen((results) {
             for (var r in results) {
-              final currentUuid = Platform.isAndroid
-                  ? r.device.remoteId.str.replaceAll(':', '').toUpperCase()
-                  : r.device.remoteId.str.replaceAll('-', '').toUpperCase();
-              if (currentUuid == deviceUuid) {
-                foundDevice = r.device;
+              final level =
+                  bleNameMatchLevel(bound.deviceName, r.device.platformName);
+              if (level == BleNameMatchLevel.exact) {
+                scanExact = r.device;
                 break;
+              }
+              if (level == BleNameMatchLevel.prefix) {
+                scanPrefix ??= r.device;
               }
             }
           });
@@ -577,6 +591,11 @@ class BleService {
           await FlutterBluePlus.stopScan();
           await subscription.cancel();
 
+          final foundDevice = scanExact ?? scanPrefix;
+          if (foundDevice != null) {
+            print('[BLE] 扫描选中: ${foundDevice.platformName} '
+                '(${scanExact != null ? "精确" : "前缀"})');
+          }
           return foundDevice;
         }
       }

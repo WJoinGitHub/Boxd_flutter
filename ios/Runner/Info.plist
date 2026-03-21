@@ -48,6 +48,8 @@
 	<string>This app needs local network access for debugging</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs location access to find nearby Bluetooth devices</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app uses your location only when needed to discover and connect to nearby Bluetooth devices. Background location is not required for core features.</string>
 	<key>NSRemindersUsageDescription</key>
 	<string>This app needs reminders access to notify you when your meal is ready</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

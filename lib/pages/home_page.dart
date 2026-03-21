@@ -44,6 +44,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _isConnecting = false; // 是否正在连接设备
   int? _connectCountdown; // 连接倒计时（秒）
   Timer? _connectTimer; // 连接倒计时定时器
+  Future<void>? _loadDevicesFuture; // 防止设备列表并发重复请求
 
   final bleService = BleService();
 
@@ -230,6 +231,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Future<void> _loadDevices() async {
+    // 如果已有进行中的请求，直接复用并等待，避免并发重复请求
+    if (_loadDevicesFuture != null) {
+      await _loadDevicesFuture;
+      return;
+    }
+
+    final completer = Completer<void>();
+    _loadDevicesFuture = completer.future;
     try {
       final result = await ApiClient.getDevices(page: 1, pageSize: 100);
       if (result['code'] == 200 && result['data'] != null) {
@@ -272,6 +281,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       }
     } catch (e) {
       print('[HOME] 加载设备列表失败: $e');
+    } finally {
+      completer.complete();
+      _loadDevicesFuture = null;
     }
   }
 
@@ -887,7 +899,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (!_wasLoggedIn && isLoggedIn) {
       print('[HOME] 检测到登录状态变化，刷新设备列表');
       _wasLoggedIn = isLoggedIn;
-      await _loadDevices();
+      // _autoConnect 内部会先加载设备列表，这里不再重复请求
       await _autoConnect();
       if (mounted) {
         setState(() {});
@@ -1045,7 +1057,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   // 添加设备按钮（在最右边）
                                   GestureDetector(
                                     onTap: () async {
-                                      if (!UserService().isLoggedIn) {
+                                      // 游客仅有内存 token，须与 isLoggedIn 同等对待，勿跳转登录页
+                                      if (!UserService().isLoggedIn &&
+                                          !UserService().isGuestMode) {
                                         await Navigator.of(context).push(
                                           PageRouteBuilder(
                                             fullscreenDialog: true,
@@ -1054,7 +1068,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                           ),
                                         );
                                         if (!mounted ||
-                                            !UserService().isLoggedIn) return;
+                                            (!UserService().isLoggedIn &&
+                                                !UserService()
+                                                    .isGuestMode)) return;
                                       }
                                       final result =
                                           await Navigator.of(context).push(
@@ -1065,7 +1081,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       );
                                       if (result == true && mounted) {
                                         // 绑定设备成功后，刷新设备列表
-                                        if (UserService().isLoggedIn) {
+                                        if (UserService().isLoggedIn ||
+                                            UserService().isGuestMode) {
                                           await _loadDevices();
                                         }
                                         setState(() =>

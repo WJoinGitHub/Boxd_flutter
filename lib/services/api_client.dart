@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -54,6 +55,35 @@ class ApiClient {
   static void setToken(String token) => _token = token;
   static void clearToken() => _token = null;
 
+  /// 每次请求唯一随机串，参与签名并作为 X-Nonce 发送（防重放）
+  static String _generateNonce() {
+    final r = Random.secure();
+    final bytes = List<int>.generate(16, (_) => r.nextInt(256));
+    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
+
+  /// 递归按键名字典序升序排列，再 JSON 编码（与平台签名规则一致）
+  static dynamic _deepSortJsonKeys(dynamic value) {
+    if (value is Map) {
+      final map = Map<String, dynamic>.from(
+        value.map((k, v) => MapEntry(k.toString(), v)),
+      );
+      final keys = map.keys.toList()..sort();
+      return <String, dynamic>{
+        for (final k in keys) k: _deepSortJsonKeys(map[k]),
+      };
+    }
+    if (value is List) {
+      return value.map(_deepSortJsonKeys).toList();
+    }
+    return value;
+  }
+
+  static String _bodyStringForSignature(Map<String, dynamic>? body) {
+    if (body == null) return '';
+    return jsonEncode(_deepSortJsonKeys(body));
+  }
+
   static const Set<String> _ignore401Paths = {
     '/auth/login',
     '/auth/register',
@@ -63,18 +93,34 @@ class ApiClient {
     '/auth/refresh-token',
   };
 
-  /// 生成签名
+  /// 生成 HMAC-SHA256 签名（十六进制小写）
+  ///
+  /// 无 Token 无 Nonce: method + path + timestamp + body + userAgent
+  /// 无 Token 有 Nonce: method + path + timestamp + body + userAgent + nonce
+  /// 有 Token 无 Nonce: method + path + timestamp + token + body + userAgent
+  /// 有 Token 有 Nonce: method + path + timestamp + token + body + userAgent + nonce
   static String _generateSignature(
     String method,
     String path,
     String timestamp,
     String body, {
     bool skipAuth = false,
+    String? nonce,
   }) {
     final token = skipAuth ? '' : (_token?.replaceFirst('Bearer ', '') ?? '');
-    final signString = token.isEmpty
-        ? method + path + timestamp + body + userAgent
-        : method + path + timestamp + token + body + userAgent;
+    final buf = StringBuffer()
+      ..write(method)
+      ..write(path)
+      ..write(timestamp);
+    if (token.isNotEmpty) {
+      buf.write(token);
+    }
+    buf.write(body);
+    buf.write(userAgent);
+    if (nonce != null && nonce.isNotEmpty) {
+      buf.write(nonce);
+    }
+    final signString = buf.toString();
     final key = utf8.encode(appSecret);
     final bytes = utf8.encode(signString);
     final hmac = Hmac(sha256, key);
@@ -98,15 +144,22 @@ class ApiClient {
 
     final timestamp =
         (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
-    final bodyStr = body != null ? jsonEncode(body) : '';
+    final bodyStr = _bodyStringForSignature(body);
+    final nonce = _generateNonce();
     final signature = _generateSignature(
-        method, basePath + path, timestamp, bodyStr,
-        skipAuth: skipAuth);
+      method,
+      basePath + path,
+      timestamp,
+      bodyStr,
+      skipAuth: skipAuth,
+      nonce: nonce,
+    );
 
     final headers = {
       'Content-Type': 'application/json',
       'X-App-ID': appId,
       'X-Timestamp': timestamp,
+      'X-Nonce': nonce,
       'X-Signature': signature,
       'User-Agent': userAgent,
       if (!skipAuth && _token != null) 'Authorization': 'Bearer $_token',
@@ -192,26 +245,30 @@ class ApiClient {
       request.files.addAll(files.values);
     }
 
-    // 对于 multipart 请求，签名需要使用 fields 的 JSON 格式
-    // 将 fields 转换为 JSON 字符串用于签名（按照 key 排序以确保一致性）
+    // 对于 multipart 请求，签名使用 fields 的 JSON（键字典序，与文档一致）
     final sortedFields = Map.fromEntries(
       fields.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
     );
-    final bodyStr = jsonEncode(sortedFields);
+    final bodyStr = _bodyStringForSignature(sortedFields);
+    final nonce = _generateNonce();
+    final signature = _generateSignature(
+      'POST',
+      basePath + path,
+      timestamp,
+      bodyStr,
+      nonce: nonce,
+    );
 
     // 添加 headers
     final headers = {
       'X-App-ID': appId,
       'X-Timestamp': timestamp,
+      'X-Nonce': nonce,
+      'X-Signature': signature,
       'User-Agent': userAgent,
       if (_token != null) 'Authorization': 'Bearer $_token',
     };
     request.headers.addAll(headers);
-
-    // 生成签名（使用 fields 的 JSON 格式）
-    final signature =
-        _generateSignature('POST', basePath + path, timestamp, bodyStr);
-    request.headers['X-Signature'] = signature;
 
     print('Request POST (multipart): $uri');
     print('Headers: ${request.headers}');

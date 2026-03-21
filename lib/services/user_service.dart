@@ -182,7 +182,19 @@ class UserService {
     try {
       print('[USER] 开始从本地加载 token...');
       final prefs = await SharedPreferences.getInstance();
-      _accessToken = prefs.getString('access_token');
+      final savedAccess = prefs.getString('access_token');
+
+      // 游客 token 不写入 SharedPreferences，禁止用「本地无 token」覆盖内存中的游客会话
+      if (savedAccess == null &&
+          _isGuestMode &&
+          _accessToken != null &&
+          _accessToken!.isNotEmpty) {
+        ApiClient.setToken(_accessToken!);
+        print('[USER] 保持内存中的游客会话，跳过 loadFromLocal 覆盖');
+        return true;
+      }
+
+      _accessToken = savedAccess;
       _refreshToken = prefs.getString('refresh_token');
       final expiresAtStr = prefs.getString('expires_at');
       final userInfoStr = prefs.getString('user_info');
@@ -267,6 +279,7 @@ class UserService {
   Future<bool> refreshAccessToken() async {
     if (_refreshToken == null) return false;
 
+    final wasGuest = _isGuestMode;
     try {
       final result = await ApiClient.refreshToken(_refreshToken!);
       if (result['code'] == 200) {
@@ -277,6 +290,7 @@ class UserService {
             refreshToken: tokens['refresh_token'],
             expiresAt: tokens['expires_at'],
             expiresIn: tokens['expires_in'],
+            isGuest: wasGuest,
           );
           print('[USER] 刷新 token 成功');
           return true;

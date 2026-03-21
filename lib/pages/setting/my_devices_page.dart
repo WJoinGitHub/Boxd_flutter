@@ -230,10 +230,6 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                       // 优先使用本地保存的名称
                       final localName = device['local_name'] as String?;
                       final deviceName = localName ?? (device['device_name'] as String? ?? 'Unknown Device');
-                      // 如果有多个设备，添加序列号
-                      final displayName = _devices.length > 1
-                          ? '$deviceName ${index + 1}'
-                          : deviceName;
                       final isConnected = _isDeviceConnected(deviceUuid);
 
                       return Container(
@@ -252,7 +248,7 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                displayName,
+                                deviceName,
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,

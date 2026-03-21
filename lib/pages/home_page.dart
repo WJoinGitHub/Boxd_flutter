@@ -64,12 +64,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     // 注册401错误回调，用于清空设备列表
     UserService().onUnauthorized = () {
       if (mounted) {
+        // 与登出一致：清空列表并断开蓝牙，避免下一账号误用连接
+        bleService.disconnect();
         setState(() {
           _devices = [];
           _currentDevice = null;
           _wasLoggedIn = false;
+          connected = false;
+          temperature = 0;
+          batteryLevel = 0;
+          _deviceState = null;
+          _mealTime = null;
+          _remainingHeatingTime = null;
+          deviceDetail = null;
         });
-        print('[HOME] 401错误，已清空设备列表');
+        print('[HOME] 401/未授权，已清空设备列表并断开蓝牙');
       }
     };
 
@@ -282,6 +291,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               }
             }
           });
+          // 云端已无绑定设备时，必须断开 BLE，否则 UI 仍像「已连接」
+          if (devices.isEmpty && bleService.isConnected) {
+            await bleService.disconnect();
+            if (mounted) {
+              setState(() {
+                connected = false;
+                temperature = 0;
+                batteryLevel = 0;
+                _deviceState = null;
+                _mealTime = null;
+                _remainingHeatingTime = null;
+                deviceDetail = null;
+              });
+            }
+          }
         }
       }
     } catch (e) {
@@ -301,6 +325,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
 
     await _loadDevices();
+
+    // 游客仅同步云端绑定列表，不自动连蓝牙（避免登出后同一台物理设备仍被连上）
+    if (UserService().isGuestMode) {
+      print('[HOME] 游客模式，不自动连接蓝牙');
+      return;
+    }
+
     if (_devices.isEmpty) {
       print('[HOME] 没有绑定的设备');
       return;
@@ -403,8 +434,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       if (userId != null && userId.isNotEmpty && deviceUuid.isNotEmpty) {
         await AppStorage.saveDeviceLocalName(userId, deviceUuid, newName);
-        _currentDevice = _currentDevice!.copyWith(localName: newName);
-        setState(() {});
+        setState(() {
+          _currentDevice = _currentDevice!.copyWith(localName: newName);
+          // 与切换设备弹窗、Header 共用 _devices，必须同步本地名
+          _devices = [
+            for (final d in _devices)
+              if (d.deviceUuid == deviceUuid)
+                d.copyWith(localName: newName)
+              else
+                d,
+          ];
+        });
 
         if (mounted) {
           AppToast.show(context, l10n.t('device_name_saved'));
@@ -864,7 +904,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _connectionCheckTimer?.cancel();
     _connectTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
-    bleService.dispose();
+    // BleService 为单例：不在此 dispose，否则会关闭 statusStream，登出再进首页后无法收状态
     // 移除401错误回调
     UserService().onUnauthorized = null;
     super.dispose();

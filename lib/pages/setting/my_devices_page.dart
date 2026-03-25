@@ -97,6 +97,7 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
 
   Future<void> _unbindDevice(String deviceUuid, String deviceName) async {
     final l10n = AppLocalizations.of(context);
+    final wasConnected = _isDeviceConnected(deviceUuid);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -122,6 +123,15 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
     try {
       final result = await ApiClient.unbindDevice(deviceUuid);
       if (result['code'] == 200) {
+        // 按需求：先解绑成功，再断开蓝牙连接
+        if (wasConnected && bleService.isConnected) {
+          try {
+            await bleService.disconnect();
+          } catch (e) {
+            print('[MY_DEVICES] 解绑后断开蓝牙失败: $e');
+          }
+        }
+
         if (mounted) {
           AppToast.show(
             context,

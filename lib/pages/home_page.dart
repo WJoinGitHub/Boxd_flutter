@@ -274,20 +274,44 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         }
 
         if (mounted) {
+          // 若当前确实连着某台设备，优先把首页当前设备指向这台，避免“显示A，实际连B”
+          String? connectedUuid;
+          if (bleService.isConnected) {
+            try {
+              connectedUuid = await bleService.getDeviceUuid();
+            } catch (_) {
+              connectedUuid = null;
+            }
+          }
+
           setState(() {
             _devices = devices;
             // 列表为空时清空当前设备，以便显示空设备列表 UI
             if (devices.isEmpty) {
               _currentDevice = null;
             } else {
-              // 当前设备不在新列表中时清空（例如已被移除）
-              if (_currentDevice != null &&
-                  !devices
-                      .any((d) => d.deviceUuid == _currentDevice!.deviceUuid)) {
-                _currentDevice = null;
+              DeviceModel? connectedDevice;
+              if (connectedUuid != null && connectedUuid.isNotEmpty) {
+                final targetUuid = connectedUuid.toUpperCase();
+                for (final d in devices) {
+                  if (d.deviceUuid.toUpperCase() == targetUuid) {
+                    connectedDevice = d;
+                    break;
+                  }
+                }
               }
-              if (_currentDevice == null && devices.isNotEmpty) {
-                _currentDevice = devices.first;
+              if (connectedDevice != null) {
+                _currentDevice = connectedDevice;
+              } else {
+                // 当前设备不在新列表中时清空（例如已被移除）
+                if (_currentDevice != null &&
+                    !devices
+                        .any((d) => d.deviceUuid == _currentDevice!.deviceUuid)) {
+                  _currentDevice = null;
+                }
+                if (_currentDevice == null && devices.isNotEmpty) {
+                  _currentDevice = devices.first;
+                }
               }
             }
           });
@@ -378,6 +402,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       }
     } catch (e) {
       print('[HOME] 自动连接选设备异常: $e');
+    }
+    if (mounted && _currentDevice?.deviceUuid != target.deviceUuid) {
+      setState(() {
+        _currentDevice = target;
+      });
     }
     await _connectToDevice(target, isAutoConnect: true);
   }
@@ -814,6 +843,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           // 清除倒计时
           _connectTimer?.cancel();
           setState(() {
+            // 以本次连接目标为准，避免“已连接状态”和“当前设备”错位
+            _currentDevice = device;
             connected = true;
             _isConnecting = false;
             _connectCountdown = null;

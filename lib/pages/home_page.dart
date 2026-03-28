@@ -340,7 +340,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _autoConnect() async {
+  Future<void> _autoConnect({bool skipLoadDevices = false}) async {
     print('[HOME] 尝试自动连接...');
     // 只有在已登录或游客模式下才加载设备列表
     if (!UserService().isLoggedIn && !UserService().isGuestMode) {
@@ -348,7 +348,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       return;
     }
 
-    await _loadDevices();
+    if (!skipLoadDevices) {
+      await _loadDevices();
+    }
 
     // 游客仅同步云端绑定列表，不自动连蓝牙（避免登出后同一台物理设备仍被连上）
     if (UserService().isGuestMode) {
@@ -1032,6 +1034,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                 if (mounted && _devices.isEmpty && connected) {
                                   await bleService.disconnect();
                                   setState(() => connected = false);
+                                }
+                                // 从「我的设备」解绑等返回后，若仍有绑定设备则尝试自动连接一次（已加载列表，避免重复请求）
+                                if (mounted && _devices.isNotEmpty) {
+                                  await _autoConnect(skipLoadDevices: true);
                                 }
                               }
                             },

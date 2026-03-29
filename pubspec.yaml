@@ -2,7 +2,7 @@ name: flutter_boxd_app_flow
 description: Flutter app with login/register flow (light theme).
 publish_to: 'none'
 
-version: 1.0.2+260328211
+version: 1.0.2+260329181
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

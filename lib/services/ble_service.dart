@@ -322,6 +322,14 @@ class BleService {
     }
   }
 
+  /// 心跳写特征失败时，若 FBP 判定为「设备已断开」则立即清理，不等 3 次超时。
+  /// 使用 [FlutterBluePlusException] 的 [code] 对齐 [FbpErrorCode.deviceIsDisconnected]（日志里的 fbp-code: 6），不依赖文案匹配。
+  static bool _isHeartbeatDeviceNotConnectedError(Object e) {
+    if (e is! FlutterBluePlusException) return false;
+    return e.platform == ErrorPlatform.fbp &&
+        e.code == FbpErrorCode.deviceIsDisconnected.index;
+  }
+
   /// 启动心跳检测
   void _startHeartbeatMonitor() {
     _heartbeatTimer?.cancel();
@@ -357,6 +365,12 @@ class BleService {
         await getDeviceStatus();
       } catch (e) {
         print('[BLE] 心跳指令发送失败: $e');
+        if (_isHeartbeatDeviceNotConnectedError(e)) {
+          print('[BLE] 心跳检测到设备已断开，立即清理连接（不等 3 次失败）');
+          timer.cancel();
+          await disconnect();
+          return;
+        }
       }
 
       if (_lastHeartbeatTime != null) {

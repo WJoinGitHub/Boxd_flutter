@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class AppLocalizations {
   final Locale locale;
+  final Map<String, String> _strings;
 
-  AppLocalizations(this.locale);
+  AppLocalizations._(this.locale, this._strings);
 
   static AppLocalizations of(BuildContext context) {
     return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
@@ -11,6 +15,42 @@ class AppLocalizations {
 
   static const LocalizationsDelegate<AppLocalizations> delegate =
       _AppLocalizationsDelegate();
+
+  /// 使用 assets/l10n/<code>.json 覆盖英文的欧洲/日语系语言
+  static const Set<String> _euLanguageCodes = {
+    'fr',
+    'de',
+    'it',
+    'es',
+    'pt',
+    'ja',
+  };
+
+  static final Map<String, Map<String, String>> _euMergedCache = {};
+
+  static Future<Map<String, String>> _loadEuForLocale(String languageCode) async {
+    if (_euMergedCache.containsKey(languageCode)) {
+      return _euMergedCache[languageCode]!;
+    }
+    final en = _localizedValues['en']!;
+    try {
+      final text =
+          await rootBundle.loadString('assets/l10n/$languageCode.json');
+      final decoded = json.decode(text) as Map<String, dynamic>;
+      final ov = <String, String>{
+        for (final e in decoded.entries)
+          e.key: e.value?.toString() ?? '',
+      };
+      final merged = {...en, ...ov};
+      _euMergedCache[languageCode] = merged;
+      return merged;
+    } catch (e) {
+      debugPrint('[l10n] failed to load $languageCode: $e');
+      final fallback = Map<String, String>.from(en);
+      _euMergedCache[languageCode] = fallback;
+      return fallback;
+    }
+  }
 
   static final Map<String, Map<String, String>> _localizedValues = {
     'en': {
@@ -71,6 +111,7 @@ class AppLocalizations {
       'app': 'App',
       'feedback': 'Feedback',
       'allow_notifications': 'Allow Notifications',
+      'about_heatlink': 'About HeatLink',
       'logout': 'Logout',
       'delete_account': 'Delete Account',
       'logout_confirm': 'Are you sure you want to logout?',
@@ -455,6 +496,7 @@ class AppLocalizations {
       'app': '应用',
       'feedback': '反馈',
       'allow_notifications': '通知',
+      'about_heatlink': '关于 HeatLink',
       'logout': '退出登录',
       'delete_account': '删除账号',
       'logout_confirm': '确定要退出登录吗？',
@@ -739,10 +781,7 @@ class AppLocalizations {
     },
   };
 
-  String t(String key) =>
-      _localizedValues[locale.languageCode]?[key] ??
-      _localizedValues['en']![key] ??
-      key;
+  String t(String key) => _strings[key] ?? key;
 }
 
 class _AppLocalizationsDelegate
@@ -750,11 +789,28 @@ class _AppLocalizationsDelegate
   const _AppLocalizationsDelegate();
 
   @override
-  bool isSupported(Locale locale) => ['en', 'zh'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      AppLocalizations._localizedValues.containsKey(locale.languageCode) ||
+      AppLocalizations._euLanguageCodes.contains(locale.languageCode);
 
   @override
   Future<AppLocalizations> load(Locale locale) async {
-    return AppLocalizations(locale);
+    final code = locale.languageCode;
+    if (code == 'zh') {
+      final merged = {
+        ...AppLocalizations._localizedValues['en']!,
+        ...AppLocalizations._localizedValues['zh']!,
+      };
+      return AppLocalizations._(locale, merged);
+    }
+    if (AppLocalizations._euLanguageCodes.contains(code)) {
+      final merged = await AppLocalizations._loadEuForLocale(code);
+      return AppLocalizations._(locale, merged);
+    }
+    return AppLocalizations._(
+      locale,
+      AppLocalizations._localizedValues['en']!,
+    );
   }
 
   @override

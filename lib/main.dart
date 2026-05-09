@@ -46,6 +46,12 @@ class MyApp extends StatelessWidget {
       supportedLocales: const [
         Locale('en', ''),
         Locale('zh', ''),
+        Locale('fr', ''),
+        Locale('de', ''),
+        Locale('it', ''),
+        Locale('es', ''),
+        Locale('pt', ''),
+        Locale('ja', ''),
       ],
       theme: base.copyWith(
         scaffoldBackgroundColor: AppColors.pageBg,

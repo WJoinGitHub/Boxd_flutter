@@ -2,7 +2,7 @@ name: flutter_boxd_app_flow
 description: Flutter app with login/register flow (light theme).
 publish_to: 'none'
 
-version: 1.0.2+260329181
+version: 1.0.3+260509221
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -48,6 +48,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/l10n/
     - assets/launch/images/
     - assets/login/images/
     - assets/home/images/

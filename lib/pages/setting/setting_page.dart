@@ -14,6 +14,7 @@ import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 import 'package:flutter_boxd_app_flow/utils/dialog_button_styles.dart';
 import 'package:flutter_boxd_app_flow/pages/webview_page.dart';
 import 'package:flutter_boxd_app_flow/pages/login/register_email_page.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsPage extends StatefulWidget {
   final Map<String, dynamic>? deviceDetail;
@@ -27,6 +28,22 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool allowNotifications = true;
   final bleService = BleService();
+  String _appVersion = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(
+        () => _appVersion = '${info.version} (${info.buildNumber})',
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,6 +159,11 @@ class _SettingsPageState extends State<SettingsPage> {
               onChanged: (value) {
                 setState(() => allowNotifications = value);
               },
+            ),
+            _buildRowTile(
+              l10n.t('about_heatlink'),
+              trailing: _appVersion.isEmpty ? null : _appVersion,
+              showChevron: false,
             ),
           ]),
 
@@ -358,26 +380,36 @@ class _SettingsPageState extends State<SettingsPage> {
     String? trailing,
     VoidCallback? onTap,
     Widget? leading, // ✅ 新增：支持传入自定义图片或图标
+    bool showChevron = true,
   }) {
-    return ListTile(
-      leading: leading, // ✅ 显示左侧图片
-      title: Text(title),
-      trailing: trailing != null
+    final Widget? trailingWidget;
+    if (trailing != null) {
+      final text = Text(
+        trailing,
+        style: const TextStyle(
+          color: Colors.black54,
+          fontWeight: FontWeight.w700,
+        ),
+      );
+      trailingWidget = showChevron
           ? Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  trailing,
-                  style: const TextStyle(
-                    color: Colors.black54,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                text,
                 const SizedBox(width: 3),
                 const Icon(Icons.arrow_forward_ios, size: 13),
               ],
             )
-          : const Icon(Icons.arrow_forward_ios, size: 13),
+          : text;
+    } else {
+      trailingWidget =
+          showChevron ? const Icon(Icons.arrow_forward_ios, size: 13) : null;
+    }
+
+    return ListTile(
+      leading: leading, // ✅ 显示左侧图片
+      title: Text(title),
+      trailing: trailingWidget,
       onTap: onTap,
     );
   }

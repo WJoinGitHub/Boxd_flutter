@@ -660,7 +660,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       BluetoothDevice? targetDevice;
 
-      // 先精确匹配 deviceName == platformName（多台 QIMI 设备时避免连错）
+      // 仅精确匹配：Android 上断开后旧机可能仍短暂出现在 connectedSystemDevices；
+      // 若两台设备 QIMI 前两段相同，前缀匹配会误连旧机而 UI 已是新选中的绑定设备。
       for (var d in connectedDevices) {
         if (timeoutOccurred) break;
         if (bleNameMatchLevel(device.deviceName, d.platformName) ==
@@ -668,17 +669,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           print('[HOME] 找到已连接的设备（名称精确匹配）: ${d.platformName}');
           targetDevice = d;
           break;
-        }
-      }
-      if (targetDevice == null) {
-        for (var d in connectedDevices) {
-          if (timeoutOccurred) break;
-          if (bleNameMatchLevel(device.deviceName, d.platformName) ==
-              BleNameMatchLevel.prefix) {
-            print('[HOME] 找到已连接的设备（QIMI 前缀匹配）: ${d.platformName}');
-            targetDevice = d;
-            break;
-          }
         }
       }
 

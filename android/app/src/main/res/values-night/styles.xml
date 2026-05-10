@@ -16,7 +16,8 @@
          running.
 
          This Theme is only used starting with V2 of Flutter's Android embedding. -->
-    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
-        <item name="android:windowBackground">?android:colorBackground</item>
+    <!-- 与浅色一致：应用固定为浅色 Flutter 主题，避免深色系统下 MainActivity 黑底闪屏 -->
+    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@android:color/white</item>
     </style>
 </resources>

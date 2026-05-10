@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
@@ -14,7 +15,12 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initPushByRegion();
+
+  // 推送/统计初始化走原生通道，若在 runApp 之前 await，首帧无法调度，
+  // 再叠加系统深色下 NormalTheme 为黑底，会出现长时间启动黑屏。
+  runApp(const MyApp());
+  _initPushAfterFirstFrame();
+
   // iOS 调试模式下触发本地网络权限弹窗
   if (Platform.isIOS) {
     Future.delayed(const Duration(milliseconds: 500), () async {
@@ -26,8 +32,22 @@ Future<void> main() async {
     });
   }
 
-  print("main start");
-  runApp(const MyApp());
+  if (kDebugMode) {
+    debugPrint('main: runApp scheduled');
+  }
+}
+
+/// 首帧之后再初始化推送，避免阻塞引擎挂载与第一帧绘制。
+void _initPushAfterFirstFrame() {
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    try {
+      await initPushByRegion();
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('initPushByRegion failed: $e\n$st');
+      }
+    }
+  });
 }
 
 class MyApp extends StatelessWidget {

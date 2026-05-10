@@ -6,13 +6,15 @@ import 'pages/splash_page.dart';
 import 'pages/home_page.dart';
 import 'pages/login/register_email_page.dart';
 import 'services/user_service.dart';
+import 'services/push_channel_init.dart';
 import 'utils/app_colors.dart';
 
 // 全局导航器 key，用于在任何地方导航
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initPushByRegion();
   // iOS 调试模式下触发本地网络权限弹窗
   if (Platform.isIOS) {
     Future.delayed(const Duration(milliseconds: 500), () async {

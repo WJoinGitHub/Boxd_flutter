@@ -1,0 +1,103 @@
+group 'com.umeng.push_sdk'
+version '1.0'
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        //华为厂商推送
+//        maven { url 'https://developer.huawei.com/repo' }
+    }
+
+    dependencies {
+        classpath("com.android.tools.build:gradle:7.3.0")
+        //华为厂商推送
+//        classpath 'com.huawei.agconnect:agcp:1.6.0.300'
+    }
+}
+
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        //华为厂商推送
+        maven { url 'https://developer.huawei.com/repo' }
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+
+    if (project.android.hasProperty("namespace")) {
+        namespace 'com.umeng.message.flutter'
+    }
+
+    compileSdkVersion 33
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 33
+    }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+//友盟推送组件
+dependencies {
+    implementation 'com.umeng.umsdk:common:+'
+    implementation 'com.umeng.umsdk:asms:+'
+    implementation 'com.umeng.umsdk:push:+'
+}
+
+//集成华为推送
+//apply plugin: 'com.huawei.agconnect'
+dependencies {
+    implementation 'com.umeng.umsdk:huawei-umengaccs:+'
+    implementation 'com.huawei.hms:push:6.13.0.300'
+}
+
+//集成小米推送
+dependencies {
+    implementation 'com.umeng.umsdk:xiaomi-umengaccs:+'
+    implementation 'com.umeng.umsdk:xiaomi-push:+'
+}
+
+//集成vivo推送
+dependencies {
+    implementation 'com.umeng.umsdk:vivo-umengaccs:+'
+    implementation 'com.umeng.umsdk:vivo-push:+'
+}
+
+//集成OPPO推送（gradle.properties中添加android.useAndroidX=true）
+dependencies {
+    implementation 'com.umeng.umsdk:oppo-umengaccs:+'
+    implementation 'com.umeng.umsdk:oppo-push:+'
+}
+
+//集成魅族推送
+dependencies {
+    implementation 'com.umeng.umsdk:meizu-umengaccs:+'
+    implementation 'com.umeng.umsdk:meizu-push:+'
+}
+
+//集成荣耀推送
+dependencies {
+    implementation 'com.umeng.umsdk:honor-umengaccs:+'
+    implementation 'com.umeng.umsdk:honor-push:+'
+}

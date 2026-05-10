@@ -1,0 +1,61 @@
+apply plugin: 'com.android.application'
+apply plugin: 'dev.flutter.flutter-gradle-plugin'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace 'com.umeng.message.demo'
+
+    compileSdkVersion 34
+
+    defaultConfig {
+        applicationId "com.umeng.message.demo"
+        minSdkVersion flutter.minSdkVersion
+        targetSdkVersion 34
+        versionCode 1
+        versionName "1.0"
+
+        manifestPlaceholders = [
+                UMENG_APPKEY: '5b960fb5a40fa3332e000082',
+                UMENG_MESSAGE_SECRET: 'de1a9295ad7c8a23d3adcf5daac38c3f',
+                UMENG_CHANNEL: 'Dev',
+
+                HUAWEI_APP_ID: '100429257',
+
+                HONOR_APP_ID: '220671410',
+
+                XIAOMI_APP_ID: '2882303761517875511',
+                XIAOMI_APP_KEY: '5961787531511',
+
+                OPPO_APP_KEY: 'c39dd561327e484bb1228b5459063022',
+                OPPO_APP_SECRET: 'a915f817673a45f08065a2236dfe85a7',
+
+                VIVO_APP_ID: '17979',
+                VIVO_APP_KEY: '1b5ce9f6-8304-4afc-b739-0e07fb22775e',
+
+                MEIZU_APP_ID: '116090',
+                MEIZU_APP_KEY: '9413f9968d654df092afecf4d3782391',
+        ]
+    }
+
+    signingConfigs {
+        umeng {
+            storeFile file('push.jks')
+            storePassword "123456"
+            keyAlias "123456"
+            keyPassword "123456"
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.umeng
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        release {
+            signingConfig signingConfigs.umeng
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}

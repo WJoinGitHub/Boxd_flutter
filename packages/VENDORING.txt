@@ -1,0 +1,6 @@
+友盟 umeng_common_sdk / umeng_push_sdk 为从 pub.dev 拷贝的 vendored 副本，
+仅保留 Android 插件声明（已删除 ios/ 与 pubspec 中的 ios platform），
+使 iOS 不再拉取 UMPush 等 Pod。
+
+升级友盟版本时：从 pub-cache 或 pub.dev 取新版本覆盖 packages/ 下对应目录，
+重新删除 ios/ 子目录，并在两个 pubspec.yaml 中去掉 flutter.plugin.platforms.ios。

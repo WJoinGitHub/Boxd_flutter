@@ -1,0 +1,25 @@
+name: umeng_push_sdk
+description: 友盟推送（本仓库 vendored，仅 Android；iOS 已移除）。
+version: 2.4.0+boxd.1
+homepage: https://www.umeng.com/
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.3.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  umeng_common_sdk:
+    path: ../umeng_common_sdk
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.umeng.message
+        pluginClass: UmengPushSdkPlugin

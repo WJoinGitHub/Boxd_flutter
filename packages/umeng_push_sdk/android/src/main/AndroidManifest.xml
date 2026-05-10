@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.umeng.message.flutter">
+
+    <uses-sdk tools:overrideLibrary="com.xiaomi.push,
+            com.hihonor.android.push.sdk.common,
+            com.hihonor.push.sdk,
+            com.huawei.hms.framework.common,
+            com.huawei.hms.framework.network.grs,
+            com.huawei.hms.baselegacyapi,
+            com.huawei.hmf.tasks,
+            com.huawei.agconnect.core,
+            com.huawei.hms.log,
+            com.huawei.hms.base.device,
+            com.huawei.hms.base.ui,
+            com.huawei.hms.stats,
+            com.huawei.hms.base.availableupdate,
+            com.huawei.android.hms.base,
+            com.huawei.android.hms.openid,
+            com.huawei.android.hms.push,
+            com.huawei.hms.hatool,
+            com.huawei.hms.framework.network.frameworkcompat,
+            org.android.agoo.oppo,
+            com.vivo.push,
+            org.android.agoo.vivo,
+            org.android.agoo.meizu,
+            org.android.agoo.huawei,
+            com.pushsdk" />
+
+    <application>
+        <meta-data
+            android:name="UMENG_APPKEY"
+            android:value="${UMENG_APPKEY}" />
+
+        <meta-data
+            android:name="UMENG_MESSAGE_SECRET"
+            android:value="${UMENG_MESSAGE_SECRET}" />
+
+        <meta-data
+            android:name="UMENG_CHANNEL"
+            android:value="${UMENG_CHANNEL}" />
+
+        <meta-data
+            android:name="org.android.agoo.xiaomi.app_id"
+            android:value="appid=${XIAOMI_APP_ID}" />
+
+        <meta-data
+            android:name="org.android.agoo.xiaomi.app_key"
+            android:value="appkey=${XIAOMI_APP_KEY}" />
+
+        <meta-data
+            android:name="org.android.agoo.oppo.app_key"
+            android:value="${OPPO_APP_KEY}" />
+
+        <meta-data
+            android:name="org.android.agoo.oppo.app_secret"
+            android:value="${OPPO_APP_SECRET}" />
+
+        <meta-data
+            android:name="org.android.agoo.meizu.app_id"
+            android:value="appid=${MEIZU_APP_ID}" />
+
+        <meta-data
+            android:name="org.android.agoo.meizu.app_key"
+            android:value="appkey=${MEIZU_APP_KEY}" />
+
+        <meta-data
+            android:name="com.huawei.hms.client.appid"
+            android:value="appid=${HUAWEI_APP_ID}" />
+
+        <meta-data
+            android:name="com.hihonor.push.app_id"
+            android:value="${HONOR_APP_ID}" />
+
+        <meta-data
+            android:name="com.vivo.push.api_key"
+            android:value="${VIVO_APP_KEY}" />
+
+        <meta-data
+            android:name="com.vivo.push.app_id"
+            android:value="${VIVO_APP_ID}" />
+
+        <meta-data
+            android:name="com.hihonor.push.app_id"
+            android:value="${HONOR_APP_ID}" />
+
+        <activity
+            android:name="com.umeng.message.UmengOfflineMessageActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="behind"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="${applicationId}"
+                    android:path="/thirdpush"
+                    android:scheme="agoo" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

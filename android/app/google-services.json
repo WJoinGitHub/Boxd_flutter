@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "897183983293",
+    "project_id": "heatlink-fb3b0",
+    "storage_bucket": "heatlink-fb3b0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:897183983293:android:3b32cc2eda2d51a6cfb9d4",
+        "android_client_info": {
+          "package_name": "com.qimi.heatlink"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQlZ1YFp2cYrK3qWzskb9hcMz7RfMPs3Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

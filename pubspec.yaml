@@ -29,6 +29,13 @@ dependencies:
   url_launcher: ^6.2.5
   webview_flutter: ^4.4.2
   flutter_local_notifications: ^17.2.2
+  # 本地 fork：pubspec 仅声明 android，不包含友盟 iOS 原生依赖
+  umeng_push_sdk:
+    path: packages/umeng_push_sdk
+  umeng_common_sdk:
+    path: packages/umeng_common_sdk
+  firebase_core: ^4.7.0
+  firebase_messaging: ^16.2.0
 
 dev_dependencies:
   flutter_test:

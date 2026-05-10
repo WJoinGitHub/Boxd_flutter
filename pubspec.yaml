@@ -2,7 +2,7 @@ name: flutter_boxd_app_flow
 description: Flutter app with login/register flow (light theme).
 publish_to: 'none'
 
-version: 1.0.3+260510191
+version: 1.0.3+260510221
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -34,8 +34,13 @@ dependencies:
     path: packages/umeng_push_sdk
   umeng_common_sdk:
     path: packages/umeng_common_sdk
-  firebase_core: ^4.7.0
-  firebase_messaging: ^16.2.0
+  firebase_messaging:
+    path: packages/firebase_messaging
+
+dependency_overrides:
+  # 覆盖 hosted 的 firebase_core，使用本仓库 Android-only 副本（iOS 无 Firebase Pod）
+  firebase_core:
+    path: packages/firebase_core
 
 dev_dependencies:
   flutter_test:

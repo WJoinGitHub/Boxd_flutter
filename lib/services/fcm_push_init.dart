@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -5,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
 import '../firebase_options.dart';
+import 'push_token_report.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -37,10 +39,30 @@ Future<void> initFcmPush() async {
       }
     });
 
-    final token = await messaging.getToken();
+    String? token;
+    try {
+      token = await messaging
+          .getToken()
+          .timeout(const Duration(seconds: 12));
+    } on TimeoutException {
+      if (kDebugMode) {
+        debugPrint(
+          'FCM getToken timed out (common without Google Play services)',
+        );
+      }
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('FCM getToken failed: $e\n$st');
+      }
+    }
     if (kDebugMode) {
       debugPrint('FCM token: $token');
     }
+    unawaited(PushTokenReport.syncIfLoggedIn());
+
+    FirebaseMessaging.instance.onTokenRefresh.listen((_) {
+      unawaited(PushTokenReport.syncIfLoggedIn());
+    });
   } catch (e, st) {
     if (kDebugMode) {
       debugPrint('FCM init failed: $e\n$st');

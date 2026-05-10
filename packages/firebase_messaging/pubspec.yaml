@@ -1,0 +1,40 @@
+name: firebase_messaging
+description: >
+  Vendored from flutterfire 16.2.0 — Android plugin only (no iOS/macOS/web),
+  pairs with packages/firebase_core (Android-only). iOS push uses APNs only.
+homepage: https://firebase.google.com/docs/cloud-messaging
+repository: https://github.com/firebase/flutterfire/tree/main/packages/firebase_messaging/firebase_messaging
+version: 16.2.0+boxd.1
+topics:
+  - firebase
+  - messaging
+  - notifications
+
+false_secrets:
+  - example/**
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+  flutter: '>=3.3.0'
+
+dependencies:
+  firebase_core: ^4.7.0
+  firebase_core_platform_interface: ^6.0.3
+  firebase_messaging_platform_interface: ^4.7.9
+  flutter:
+    sdk: flutter
+  meta: ^1.8.0
+
+dev_dependencies:
+  async: ^2.5.0
+  flutter_test:
+    sdk: flutter
+  mockito: ^5.0.0
+  plugin_platform_interface: ^2.1.3
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: io.flutter.plugins.firebase.messaging
+        pluginClass: FlutterFirebaseMessagingPlugin

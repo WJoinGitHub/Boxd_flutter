@@ -8,6 +8,7 @@ import 'pages/home_page.dart';
 import 'pages/login/register_email_page.dart';
 import 'services/user_service.dart';
 import 'services/push_channel_init.dart';
+import 'services/push_token_report.dart';
 import 'utils/app_colors.dart';
 
 // 全局导航器 key，用于在任何地方导航
@@ -38,14 +39,30 @@ Future<void> main() async {
 }
 
 /// 首帧之后再初始化推送，避免阻塞引擎挂载与第一帧绘制。
+///
+/// [initPushByRegion] 内部若有 `await` 永久挂起（例如无 GMS 时 FCM
+/// `getToken()`），则下一行永远不会执行；因此用 [Future.timeout] 与
+/// [finally] 保证 [PushTokenReport.syncIfLoggedIn] 仍会跑到。
 void _initPushAfterFirstFrame() {
   WidgetsBinding.instance.addPostFrameCallback((_) async {
     try {
-      await initPushByRegion();
+      await initPushByRegion().timeout(
+        const Duration(seconds: 20),
+        onTimeout: () {
+          if (kDebugMode) {
+            debugPrint(
+              'initPushByRegion: timed out after 20s (e.g. FCM getToken without '
+              'GMS, or Umeng initCommon blocking); continuing to push token sync',
+            );
+          }
+        },
+      );
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('initPushByRegion failed: $e\n$st');
       }
+    } finally {
+      await PushTokenReport.syncIfLoggedIn();
     }
   });
 }

@@ -4,3 +4,17 @@
 
 升级友盟版本时：从 pub-cache 或 pub.dev 取新版本覆盖 packages/ 下对应目录，
 重新删除 ios/ 子目录，并在两个 pubspec.yaml 中去掉 flutter.plugin.platforms.ios。
+
+---
+
+firebase_core / firebase_messaging 为从 pub-cache 拷贝的 vendored 副本（见
+packages/firebase_core、packages/firebase_messaging），仅保留 Android 插件
+声明（已删除 ios/、macos/、windows/ 等，pubspec 去掉 web 依赖与多平台 plugin）。
+
+升级 FlutterFire 时：用对应版本覆盖上述目录，再按本仓库 pubspec 裁剪
+flutter.plugin.platforms 与 dependencies（勿恢复 firebase_core_web /
+firebase_messaging_web，除非你需要 Web 构建）。
+
+根目录 pubspec 使用 dependency_overrides 将 firebase_core 指到
+packages/firebase_core，以满足 firebase_messaging_platform_interface 对
+firebase_core 的 hosted 版本约束。

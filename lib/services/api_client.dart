@@ -48,6 +48,10 @@ class ApiClient {
 
   static String? _token;
 
+  /// 是否已设置访问令牌（含游客会话），用于推送 token 等需登录态的请求。
+  static bool get hasAccessToken =>
+      _token != null && _token!.trim().isNotEmpty;
+
   static String get appId => Platform.isIOS ? _appIdIOS : _appIdAndroid;
   static String get appSecret =>
       Platform.isIOS ? _appSecretIOS : _appSecretAndroid;
@@ -496,6 +500,30 @@ class ApiClient {
     final result = await delete('/user/account');
     clearToken();
     return result;
+  }
+
+  /// 上报推送 token（需已登录），与 Swagger **POST /api/v1/push/token** 一致。
+  ///
+  /// Body：`app_version`, `device_id`, `push_env`, `push_type`, `token`。
+  ///
+  /// - [pushType]：`upush`（友盟）| `fcm` | `apns`
+  /// - [pushEnv]：`test`（Debug）| `production`（Release）
+  /// - [pushToken]：请求 JSON 字段名为 `token`（FCM / 友盟 registrationId / APNs hex）
+  static Future<Map<String, dynamic>> registerPushToken({
+    required String pushType,
+    required String pushEnv,
+    required String pushToken,
+  }) async {
+    final info = await _getDeviceInfo();
+    final appVersion = info['app_version']?.toString() ?? 'unknown';
+    final deviceId = info['device_id']?.toString() ?? 'unknown';
+    return post('/push/token', {
+      'app_version': appVersion,
+      'device_id': deviceId,
+      'push_env': pushEnv,
+      'push_type': pushType,
+      'token': pushToken,
+    });
   }
 
   // ==================== 设备管理 ====================

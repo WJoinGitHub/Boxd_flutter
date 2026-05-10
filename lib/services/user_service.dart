@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
+import 'push_token_report.dart';
 
 class UserInfo {
   final String id;
@@ -132,6 +134,7 @@ class UserService {
     _refreshToken = refreshToken;
     _isGuestMode = isGuest;
     ApiClient.setToken(accessToken);
+    unawaited(PushTokenReport.syncIfLoggedIn());
 
     String expiresAtStr = '';
     if (expiresAt != null && expiresAt.isNotEmpty) {
@@ -297,10 +300,12 @@ class UserService {
         }
       }
       ApiClient.clearToken();
+      PushTokenReport.clearCache();
       print('[USER] 刷新 token 失败: ${result['message']}');
       return false;
     } catch (e) {
       ApiClient.clearToken();
+      PushTokenReport.clearCache();
       print('[USER] 刷新 token 失败: $e');
       return false;
     }
@@ -314,6 +319,7 @@ class UserService {
     _currentUser = null;
     _isGuestMode = false;
     ApiClient.clearToken();
+    PushTokenReport.clearCache();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
     await prefs.remove('refresh_token');

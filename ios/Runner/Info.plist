@@ -32,6 +32,7 @@
 	<string>This app needs Bluetooth to connect to nearby devices</string>
 	<key>NSBonjourServices</key>
 	<array>
+		<string>_dartVmService._tcp</string>
 		<string>_dartobservatory._tcp</string>
 	</array>
 	<key>NSCalendarsUsageDescription</key>

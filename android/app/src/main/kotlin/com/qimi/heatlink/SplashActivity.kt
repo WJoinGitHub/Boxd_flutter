@@ -9,6 +9,11 @@ import android.widget.TextView
 import android.app.Activity
 
 class SplashActivity : Activity() {
+    override fun onResume() {
+        super.onResume()
+        clearNotificationBadge()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.splash_screen)

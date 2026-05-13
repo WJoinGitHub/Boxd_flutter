@@ -32,6 +32,31 @@ class $AssetsHomeGen {
   $AssetsHomeImagesGen get images => const $AssetsHomeImagesGen();
 }
 
+class $AssetsL10nGen {
+  const $AssetsL10nGen();
+
+  /// File path: assets/l10n/de.json
+  String get de => 'assets/l10n/de.json';
+
+  /// File path: assets/l10n/es.json
+  String get es => 'assets/l10n/es.json';
+
+  /// File path: assets/l10n/fr.json
+  String get fr => 'assets/l10n/fr.json';
+
+  /// File path: assets/l10n/it.json
+  String get it => 'assets/l10n/it.json';
+
+  /// File path: assets/l10n/ja.json
+  String get ja => 'assets/l10n/ja.json';
+
+  /// File path: assets/l10n/pt.json
+  String get pt => 'assets/l10n/pt.json';
+
+  /// List of all assets
+  List<String> get values => [de, es, fr, it, ja, pt];
+}
+
 class $AssetsLaunchGen {
   const $AssetsLaunchGen();
 
@@ -194,15 +219,30 @@ class $AssetsHomeImagesGen {
   /// File path: assets/home/images/home_avatar_yk.png
   AssetGenImage get homeAvatarYk => const AssetGenImage('assets/home/images/home_avatar_yk.png');
 
-  /// File path: assets/home/images/home_device.png
-  AssetGenImage get homeDevice => const AssetGenImage('assets/home/images/home_device.png');
+  /// File path: assets/home/images/home_device_B11.png
+  AssetGenImage get homeDeviceB11 => const AssetGenImage('assets/home/images/home_device_B11.png');
+
+  /// File path: assets/home/images/home_device_B14.png
+  AssetGenImage get homeDeviceB14 => const AssetGenImage('assets/home/images/home_device_B14.png');
 
   /// File path: assets/home/images/home_device_on.png
   AssetGenImage get homeDeviceOn => const AssetGenImage('assets/home/images/home_device_on.png');
 
   /// List of all assets
-  List<AssetGenImage> get values =>
-      [addDevice, addDeviceBig, devBattery, devBattery25, devBattery50, devBattery75, editPencil, homeAvatar, homeAvatarYk, homeDevice, homeDeviceOn];
+  List<AssetGenImage> get values => [
+        addDevice,
+        addDeviceBig,
+        devBattery,
+        devBattery25,
+        devBattery50,
+        devBattery75,
+        editPencil,
+        homeAvatar,
+        homeAvatarYk,
+        homeDeviceB11,
+        homeDeviceB14,
+        homeDeviceOn
+      ];
 }
 
 class $AssetsLaunchImagesGen {
@@ -284,6 +324,7 @@ class Assets {
   static const $AssetsCommonGen common = $AssetsCommonGen();
   static const $AssetsDeviceGen device = $AssetsDeviceGen();
   static const $AssetsHomeGen home = $AssetsHomeGen();
+  static const $AssetsL10nGen l10n = $AssetsL10nGen();
   static const $AssetsLaunchGen launch = $AssetsLaunchGen();
   static const $AssetsLoginGen login = $AssetsLoginGen();
   static const $AssetsSettingGen setting = $AssetsSettingGen();

@@ -20,6 +20,7 @@ import 'package:flutter_boxd_app_flow/models/device_model.dart';
 import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 import 'package:flutter_boxd_app_flow/utils/dialog_button_styles.dart';
 import 'package:flutter_boxd_app_flow/utils/ble_device_name_match.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -305,8 +306,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               } else {
                 // 当前设备不在新列表中时清空（例如已被移除）
                 if (_currentDevice != null &&
-                    !devices
-                        .any((d) => d.deviceUuid == _currentDevice!.deviceUuid)) {
+                    !devices.any(
+                        (d) => d.deviceUuid == _currentDevice!.deviceUuid)) {
                   _currentDevice = null;
                 }
                 if (_currentDevice == null && devices.isNotEmpty) {
@@ -1420,7 +1421,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     const SizedBox.shrink(),
 
                                   // 右边设备图片
-                                  Assets.home.images.homeDevice.image(
+                                  Assets.home.images.homeDeviceB14.image(
                                     width: 150,
                                     fit: BoxFit.contain,
                                   ),

@@ -22,6 +22,17 @@ private final class ApnsTokenStore {
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
+  /// 进入前台或冷启动后首次活跃时清除桌面角标（不依赖 Flutter 引擎是否已就绪）。
+  /// 仅改图标数字，不移除通知中心里已送达的通知。
+  override func applicationDidBecomeActive(_ application: UIApplication) {
+    super.applicationDidBecomeActive(application)
+    if #available(iOS 16.0, *) {
+      UNUserNotificationCenter.current().setBadgeCount(0) { _ in }
+    } else {
+      application.applicationIconBadgeNumber = 0
+    }
+  }
+
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
 

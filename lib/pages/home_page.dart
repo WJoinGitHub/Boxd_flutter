@@ -20,6 +20,7 @@ import 'package:flutter_boxd_app_flow/models/device_model.dart';
 import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 import 'package:flutter_boxd_app_flow/utils/dialog_button_styles.dart';
 import 'package:flutter_boxd_app_flow/utils/ble_device_name_match.dart';
+import 'package:flutter_boxd_app_flow/utils/ble_product_line_assets.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -1420,8 +1421,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   else
                                     const SizedBox.shrink(),
 
-                                  // 右边设备图片
-                                  Assets.home.images.homeDeviceB14.image(
+                                  // 右边设备图片（按当前已连 BLE 名称选 B11 / B14 图）
+                                  homeDeviceHeroImageForBleName(
+                                          bleService.connectedPlatformName)
+                                      .image(
                                     width: 150,
                                     fit: BoxFit.contain,
                                   ),

@@ -27,6 +27,9 @@ class BleService {
   bool get isConnected =>
       _writeCharacteristic != null && _notifyCharacteristic != null;
 
+  /// 当前已连接 BLE 外设名称（与 [BluetoothDevice.platformName] 一致），未连接为 `null`。
+  String? get connectedPlatformName => _device?.platformName;
+
   Timer? _heartbeatTimer;
   int _missedHeartbeats = 0;
   DateTime? _lastHeartbeatTime;

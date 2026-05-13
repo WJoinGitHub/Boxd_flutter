@@ -37,21 +37,22 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
       final result = await ApiClient.getDevices(page: 1, pageSize: 100);
       if (result['code'] == 200 && result['data'] != null) {
         final devices = List<Map<String, dynamic>>.from(result['data']);
-        
+
         // 从本地匹配保存的设备名称
         final userId = UserService().currentUser?.id;
         if (userId != null && userId.isNotEmpty) {
           for (var device in devices) {
             final deviceUuid = device['device_uuid'] as String?;
             if (deviceUuid != null) {
-              final localName = await AppStorage.loadDeviceLocalName(userId, deviceUuid);
+              final localName =
+                  await AppStorage.loadDeviceLocalName(userId, deviceUuid);
               if (localName != null && localName.isNotEmpty) {
                 device['local_name'] = localName;
               }
             }
           }
         }
-        
+
         setState(() {
           _devices = devices;
         });
@@ -191,100 +192,103 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: BxAppBar(
-        title: l10n.t('my_devices'),
-        rightWidget: IconButton(
-          icon: const Icon(Icons.add, color: Colors.black),
-          onPressed: _addDevice,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(),
+          title: l10n.t('my_devices'),
+          rightWidget: IconButton(
+            icon: const Icon(Icons.add, color: Colors.black),
+            onPressed: _addDevice,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
         ),
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _devices.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        l10n.t('no_devices'),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: _addDevice,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: Text(l10n.t('add_device')),
-                      ),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    await _loadDevices();
-                    await _checkConnectedDevices();
-                    _deviceListChanged = true; // 标记列表已变化
-                  },
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(20),
-                    itemCount: _devices.length,
-                    itemBuilder: (context, index) {
-                      final device = _devices[index];
-                      final deviceUuid = device['device_uuid'] as String? ?? '';
-                      // 优先使用本地保存的名称
-                      final localName = device['local_name'] as String?;
-                      final deviceName = localName ?? (device['device_name'] as String? ?? 'Unknown Device');
-                      final isConnected = _isDeviceConnected(deviceUuid);
-
-                      return Container(
-                        height: 60,
-                        margin: const EdgeInsets.only(bottom: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: ListTile(
-                          contentPadding:
-                              const EdgeInsets.symmetric(horizontal: 12),
-                          leading: Assets.device.images.hotRice
-                              .image(width: 40, height: 40),
-                          title: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                deviceName,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              if (isConnected) ...[
-                                const SizedBox(width: 6),
-                                Icon(
-                                  Icons.circle,
-                                  color: Colors.green,
-                                  size: 13,
-                                ),
-                              ],
-                            ],
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline,
-                                color: Colors.red),
-                            onPressed: () =>
-                                _unbindDevice(deviceUuid, deviceName),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _devices.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          l10n.t('no_devices'),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.black54,
                           ),
                         ),
-                      );
+                        const SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: _addDevice,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: Text(l10n.t('add_device')),
+                        ),
+                      ],
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: () async {
+                      await _loadDevices();
+                      await _checkConnectedDevices();
+                      _deviceListChanged = true; // 标记列表已变化
                     },
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: _devices.length,
+                      itemBuilder: (context, index) {
+                        final device = _devices[index];
+                        final deviceUuid =
+                            device['device_uuid'] as String? ?? '';
+                        // 优先使用本地保存的名称
+                        final localName = device['local_name'] as String?;
+                        final deviceName = localName ??
+                            (device['device_name'] as String? ??
+                                'Unknown Device');
+                        final isConnected = _isDeviceConnected(deviceUuid);
+
+                        return Container(
+                          height: 60,
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ListTile(
+                            contentPadding:
+                                const EdgeInsets.symmetric(horizontal: 12),
+                            leading: Assets.device.images.devConnectB14
+                                .image(width: 40, height: 40),
+                            title: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  deviceName,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                if (isConnected) ...[
+                                  const SizedBox(width: 6),
+                                  Icon(
+                                    Icons.circle,
+                                    color: Colors.green,
+                                    size: 13,
+                                  ),
+                                ],
+                              ],
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete_outline,
+                                  color: Colors.red),
+                              onPressed: () =>
+                                  _unbindDevice(deviceUuid, deviceName),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
       ),
     );
   }

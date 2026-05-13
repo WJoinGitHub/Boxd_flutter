@@ -110,6 +110,12 @@ class $AssetsDeviceImagesGen {
   /// File path: assets/device/images/dev_btn_rotate.png
   AssetGenImage get devBtnRotate => const AssetGenImage('assets/device/images/dev_btn_rotate.png');
 
+  /// File path: assets/device/images/dev_connect_b11.png
+  AssetGenImage get devConnectB11 => const AssetGenImage('assets/device/images/dev_connect_b11.png');
+
+  /// File path: assets/device/images/dev_connect_b14.png
+  AssetGenImage get devConnectB14 => const AssetGenImage('assets/device/images/dev_connect_b14.png');
+
   /// File path: assets/device/images/dev_eye.png
   AssetGenImage get devEye => const AssetGenImage('assets/device/images/dev_eye.png');
 
@@ -152,9 +158,6 @@ class $AssetsDeviceImagesGen {
   /// File path: assets/device/images/dev_timer_select.png
   AssetGenImage get devTimerSelect => const AssetGenImage('assets/device/images/dev_timer_select.png');
 
-  /// File path: assets/device/images/hot_rice.png
-  AssetGenImage get hotRice => const AssetGenImage('assets/device/images/hot_rice.png');
-
   /// File path: assets/device/images/remain_bell.png
   AssetGenImage get remainBell => const AssetGenImage('assets/device/images/remain_bell.png');
 
@@ -168,6 +171,8 @@ class $AssetsDeviceImagesGen {
   List<AssetGenImage> get values => [
         btnStart,
         devBtnRotate,
+        devConnectB11,
+        devConnectB14,
         devEye,
         devHeat,
         devHeatSelect,
@@ -182,7 +187,6 @@ class $AssetsDeviceImagesGen {
         devRetry,
         devTimer,
         devTimerSelect,
-        hotRice,
         remainBell,
         temperature,
         temperatureChange

@@ -28,7 +28,7 @@ class DeviceHelpPage extends StatelessWidget {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
-            Assets.device.images.hotRice.image(width: 120, height: 120),
+            Assets.device.images.devConnectB14.image(width: 120, height: 120),
             const SizedBox(height: 30),
             Text(
               l10n.t('help_step2'),

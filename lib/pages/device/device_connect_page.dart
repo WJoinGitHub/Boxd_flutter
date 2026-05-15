@@ -6,6 +6,7 @@ import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 import 'package:flutter_boxd_app_flow/pages/device/device_connecting_page.dart';
 import 'package:flutter_boxd_app_flow/pages/device/device_help_page.dart';
+import 'package:flutter_boxd_app_flow/utils/ble_product_line_assets.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:location/location.dart' as loc;
@@ -425,7 +426,7 @@ class _DeviceConnectPageState extends State<DeviceConnectPage> {
                 ),
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                  leading: Assets.device.images.devConnectB14
+                  leading: devConnectImageForBleName(device.platformName)
                       .image(width: 40, height: 40),
                   title: Text(
                     device.platformName.isNotEmpty

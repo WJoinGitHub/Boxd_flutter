@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
+import 'package:flutter_boxd_app_flow/utils/ble_product_line_assets.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 
@@ -67,7 +68,8 @@ class _DeviceConnectingPageState extends State<DeviceConnectingPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Assets.device.images.devConnectB14.image(height: 200),
+            devConnectImageForBleName(widget.device.platformName)
+                .image(height: 200),
             const SizedBox(height: 40),
             Text(
               widget.device.platformName.isNotEmpty

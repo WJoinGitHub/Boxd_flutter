@@ -49,8 +49,7 @@ class ApiClient {
   static String? _token;
 
   /// 是否已设置访问令牌（含游客会话），用于推送 token 等需登录态的请求。
-  static bool get hasAccessToken =>
-      _token != null && _token!.trim().isNotEmpty;
+  static bool get hasAccessToken => _token != null && _token!.trim().isNotEmpty;
 
   static String get appId => Platform.isIOS ? _appIdIOS : _appIdAndroid;
   static String get appSecret =>

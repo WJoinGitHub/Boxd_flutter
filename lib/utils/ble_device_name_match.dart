@@ -10,12 +10,14 @@ BleNameMatchLevel bleNameMatchLevel(
   String blePlatformName,
 ) {
   final deviceName = boundDeviceName.trim();
-  if (deviceName.isEmpty || blePlatformName.isEmpty) {
+  // 部分机型/固件在 GAP 名末尾带空格，不 trim 会导致无法精确匹配、拖满 15s 与总超时竞态
+  final bleName = blePlatformName.trim();
+  if (deviceName.isEmpty || bleName.isEmpty) {
     return BleNameMatchLevel.none;
   }
-  if (blePlatformName == deviceName) return BleNameMatchLevel.exact;
-  if (blePlatformName.startsWith('QIMI-') && deviceName.startsWith('QIMI-')) {
-    final blePrefix = blePlatformName.split('-').take(2).join('-');
+  if (bleName == deviceName) return BleNameMatchLevel.exact;
+  if (bleName.startsWith('QIMI-') && deviceName.startsWith('QIMI-')) {
+    final blePrefix = bleName.split('-').take(2).join('-');
     final listPrefix = deviceName.split('-').take(2).join('-');
     if (blePrefix == listPrefix) return BleNameMatchLevel.prefix;
   }

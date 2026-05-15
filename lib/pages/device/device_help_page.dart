@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/pages/device/faq_page.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
+import 'package:flutter_boxd_app_flow/utils/ble_product_line_assets.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 
 class DeviceHelpPage extends StatelessWidget {
@@ -28,7 +28,7 @@ class DeviceHelpPage extends StatelessWidget {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 20),
-            Assets.device.images.devConnectB14.image(width: 120, height: 120),
+            devConnectImageForBleName(null).image(width: 120, height: 120),
             const SizedBox(height: 30),
             Text(
               l10n.t('help_step2'),

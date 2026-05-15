@@ -32,7 +32,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with WidgetsBindingObserver, RouteAware {
+class _HomePageState extends State<HomePage>
+    with WidgetsBindingObserver, RouteAware {
   bool connected = false;
   int temperature = 0;
   int batteryLevel = 0;
@@ -53,6 +54,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, RouteA
   Future<void>? _loadDevicesFuture; // 防止设备列表并发重复请求
   /// 服务端未读通知数（仅正式登录用户）；用于首页消息角标
   int _unreadNotificationCount = 0;
+
   /// 本次进入首页仅请求一次运营弹窗（已登录非游客）
   bool _homeNotificationPopupRequested = false;
 
@@ -507,6 +509,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, RouteA
   String _getDisplayDeviceName() {
     if (_currentDevice == null) return 'HeatLink';
     return _currentDevice!.headerDisplayName();
+  }
+
+  /// 首页设备大图：已连接用 BLE 广播名，未连接用绑定 `device_name`
+  String? _bleNameForHeroImage() {
+    if (connected) {
+      final platformName = bleService.connectedPlatformName?.trim();
+      if (platformName != null && platformName.isNotEmpty) {
+        return platformName;
+      }
+    }
+    final name = _currentDevice?.deviceName.trim();
+    if (name != null && name.isNotEmpty) return name;
+    return null;
   }
 
   Future<void> _showEditDeviceNameDialog() async {
@@ -1522,9 +1537,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, RouteA
                                   else
                                     const SizedBox.shrink(),
 
-                                  // 右边设备图片（按当前已连 BLE 名称选 B11 / B14 图）
+                                  // 右边设备图片（已连 BLE 名 / 未连 device_name 选 B11 / B14 图）
                                   homeDeviceHeroImageForBleName(
-                                          bleService.connectedPlatformName)
+                                          _bleNameForHeroImage())
                                       .image(
                                     width: 150,
                                     fit: BoxFit.contain,
@@ -1718,6 +1733,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, RouteA
   /// 切换温度单位
   Future<void> _toggleTemperatureUnit() async {
     if (!connected) return;
+
+    final l10n = AppLocalizations.of(context);
+    if (_isPoweredOff || _deviceState == DeviceState.disabled) {
+      if (mounted) {
+        AppToast.show(context, l10n.t('device_is_powered_off'));
+      }
+      return;
+    }
 
     final newUnit = temperatureUnit == '°C' ? '°F' : '°C';
     await AppStorage.saveUnit(newUnit);

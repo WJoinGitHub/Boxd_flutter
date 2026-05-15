@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
-import 'package:flutter_boxd_app_flow/pages/device/device_connect_page.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
+import 'package:flutter_boxd_app_flow/models/device_model.dart';
+import 'package:flutter_boxd_app_flow/pages/device/device_connect_page.dart';
 import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
+import 'package:flutter_boxd_app_flow/utils/ble_product_line_assets.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 import 'package:flutter_boxd_app_flow/utils/dialog_button_styles.dart';
@@ -18,7 +19,7 @@ class MyDevicesPage extends StatefulWidget {
 }
 
 class _MyDevicesPageState extends State<MyDevicesPage> {
-  List<Map<String, dynamic>> _devices = [];
+  List<DeviceModel> _devices = [];
   bool _loading = false;
   final bleService = BleService();
   Set<String> _connectedDeviceUuids = {};
@@ -36,26 +37,30 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
     try {
       final result = await ApiClient.getDevices(page: 1, pageSize: 100);
       if (result['code'] == 200 && result['data'] != null) {
-        final devices = List<Map<String, dynamic>>.from(result['data']);
-
-        // 从本地匹配保存的设备名称
+        final raw = result['data'] as List;
         final userId = UserService().currentUser?.id;
-        if (userId != null && userId.isNotEmpty) {
-          for (var device in devices) {
-            final deviceUuid = device['device_uuid'] as String?;
-            if (deviceUuid != null) {
-              final localName =
-                  await AppStorage.loadDeviceLocalName(userId, deviceUuid);
-              if (localName != null && localName.isNotEmpty) {
-                device['local_name'] = localName;
-              }
+        final devices = <DeviceModel>[];
+
+        for (final item in raw) {
+          if (item is! Map) continue;
+          final m = Map<String, dynamic>.from(item);
+          final deviceUuid = m['device_uuid']?.toString();
+          String? localName;
+          if (userId != null &&
+              userId.isNotEmpty &&
+              deviceUuid != null &&
+              deviceUuid.isNotEmpty) {
+            localName = await AppStorage.loadDeviceLocalName(userId, deviceUuid);
+            if (localName != null && localName.isEmpty) {
+              localName = null;
             }
           }
+          devices.add(DeviceModel.fromJson(m, localName: localName));
         }
 
-        setState(() {
-          _devices = devices;
-        });
+        if (mounted) {
+          setState(() => _devices = devices);
+        }
       }
     } catch (e) {
       print('[MY_DEVICES] 加载设备列表失败: $e');
@@ -180,6 +185,18 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
         _connectedDeviceUuids.contains(deviceUuid.toUpperCase());
   }
 
+  /// 列表图标用蓝牙广播名（与首页 `connectedPlatformName` / 绑定 `device_name` 一致）
+  String? _bleNameForDeviceImage(DeviceModel device) {
+    if (_isDeviceConnected(device.deviceUuid) && bleService.isConnected) {
+      final platformName = bleService.connectedPlatformName?.trim();
+      if (platformName != null && platformName.isNotEmpty) {
+        return platformName;
+      }
+    }
+    final name = device.deviceName.trim();
+    return name.isEmpty ? null : name;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -237,14 +254,10 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                       itemCount: _devices.length,
                       itemBuilder: (context, index) {
                         final device = _devices[index];
-                        final deviceUuid =
-                            device['device_uuid'] as String? ?? '';
-                        // 优先使用本地保存的名称
-                        final localName = device['local_name'] as String?;
-                        final deviceName = localName ??
-                            (device['device_name'] as String? ??
-                                'Unknown Device');
+                        final deviceUuid = device.deviceUuid;
+                        final deviceName = device.listDisplayName();
                         final isConnected = _isDeviceConnected(deviceUuid);
+                        final bleName = _bleNameForDeviceImage(device);
 
                         return Container(
                           height: 60,
@@ -256,8 +269,11 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                           child: ListTile(
                             contentPadding:
                                 const EdgeInsets.symmetric(horizontal: 12),
-                            leading: Assets.device.images.devConnectB14
-                                .image(width: 40, height: 40),
+                            leading: devConnectImageForBleName(bleName).image(
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.contain,
+                            ),
                             title: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [

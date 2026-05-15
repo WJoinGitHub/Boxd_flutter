@@ -288,6 +288,13 @@
   "temperature_unit_changed_to": "Unidade de temperatura alterada para",
   "failed_to_send_command_try_again": "Falha ao enviar o comando, tente novamente",
   "unknown_error": "Erro desconhecido",
+  "notifications_title": "Notificações",
+  "messages_empty": "Sem notificações",
+  "messages_load_failed": "Falha ao carregar notificações",
+  "time_just_now": "Agora mesmo",
+  "time_minutes_ago": "Há {minutes} minutos",
+  "time_hours_ago": "Há {hours} horas",
+  "time_yesterday": "Ontem",
   "dont_have_account": "Não tem uma conta?",
   "help_intro": "Não se preocupe, estou aqui para ajudar. Vamos resolver isso juntos. Por favor, tente o seguinte:"
 }

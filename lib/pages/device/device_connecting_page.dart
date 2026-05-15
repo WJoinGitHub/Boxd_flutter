@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
 import 'package:flutter_boxd_app_flow/services/ble_service.dart';
-import 'package:flutter_boxd_app_flow/utils/ble_product_line_assets.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
 
 class DeviceConnectingPage extends StatefulWidget {
   final BluetoothDevice device;
-  
+
   const DeviceConnectingPage({super.key, required this.device});
 
   @override
@@ -33,7 +32,7 @@ class _DeviceConnectingPageState extends State<DeviceConnectingPage> {
         await bleService.disconnect();
         await Future.delayed(const Duration(milliseconds: 500));
       }
-      
+
       final success = await bleService.connect(widget.device);
       if (mounted) {
         setState(() => status = success ? 'success' : 'failed');
@@ -68,8 +67,7 @@ class _DeviceConnectingPageState extends State<DeviceConnectingPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            devConnectImageForBleName(widget.device.platformName)
-                .image(height: 200),
+            Assets.device.images.devConnectB14.image(height: 200),
             const SizedBox(height: 40),
             Text(
               widget.device.platformName.isNotEmpty
@@ -100,7 +98,8 @@ class _DeviceConnectingPageState extends State<DeviceConnectingPage> {
                   const SizedBox(height: 24),
                   Text(
                     l10n.t('connect_failed'),
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 12),
                   Padding(
@@ -108,7 +107,8 @@ class _DeviceConnectingPageState extends State<DeviceConnectingPage> {
                     child: Text(
                       l10n.t('connect_failed_desc'),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 14, color: Colors.black54),
+                      style:
+                          const TextStyle(fontSize: 14, color: Colors.black54),
                     ),
                   ),
                   const SizedBox(height: 32),

@@ -10,6 +10,7 @@ import 'services/user_service.dart';
 import 'services/push_channel_init.dart';
 import 'services/push_token_report.dart';
 import 'utils/app_colors.dart';
+import 'app_route_observer.dart';
 
 // 全局导航器 key，用于在任何地方导航
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -76,6 +77,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Boxd App',
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
+      navigatorObservers: [appRouteObserver],
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

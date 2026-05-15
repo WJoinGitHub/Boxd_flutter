@@ -288,6 +288,13 @@
   "temperature_unit_changed_to": "L'unité de température a été modifiée en",
   "failed_to_send_command_try_again": "Échec de l'envoi de la commande, veuillez réessayer",
   "unknown_error": "Erreur inconnue",
+  "notifications_title": "Notifications",
+  "messages_empty": "Aucune notification",
+  "messages_load_failed": "Échec du chargement des notifications",
+  "time_just_now": "À l'instant",
+  "time_minutes_ago": "Il y a {minutes} minutes",
+  "time_hours_ago": "Il y a {hours} heures",
+  "time_yesterday": "Hier",
   "dont_have_account": "Vous n'avez pas de compte ?",
   "help_intro": "Pas de soucis, je suis là pour vous aider. Travaillons ensemble sur cette question. Veuillez essayer ce qui suit :"
 }

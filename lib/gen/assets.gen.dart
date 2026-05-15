@@ -232,6 +232,12 @@ class $AssetsHomeImagesGen {
   /// File path: assets/home/images/home_device_on.png
   AssetGenImage get homeDeviceOn => const AssetGenImage('assets/home/images/home_device_on.png');
 
+  /// File path: assets/home/images/home_message.png
+  AssetGenImage get homeMessage => const AssetGenImage('assets/home/images/home_message.png');
+
+  /// File path: assets/home/images/icon_message.png
+  AssetGenImage get iconMessage => const AssetGenImage('assets/home/images/icon_message.png');
+
   /// List of all assets
   List<AssetGenImage> get values => [
         addDevice,
@@ -245,7 +251,9 @@ class $AssetsHomeImagesGen {
         homeAvatarYk,
         homeDeviceB11,
         homeDeviceB14,
-        homeDeviceOn
+        homeDeviceOn,
+        homeMessage,
+        iconMessage
       ];
 }
 

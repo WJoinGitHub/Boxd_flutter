@@ -288,6 +288,13 @@
   "temperature_unit_changed_to": "温度単位が変更されました",
   "failed_to_send_command_try_again": "コマンドの送信に失敗しました。もう一度お試しください。",
   "unknown_error": "不明なエラー",
+  "notifications_title": "通知",
+  "messages_empty": "通知はありません",
+  "messages_load_failed": "通知の読み込みに失敗しました",
+  "time_just_now": "たった今",
+  "time_minutes_ago": "{minutes}分前",
+  "time_hours_ago": "{hours}時間前",
+  "time_yesterday": "昨日",
   "dont_have_account": "アカウントをお持ちでない場合は、",
   "help_intro": "心配しないでください、私がお手伝いします。一緒にこれを乗り越えていきましょう。次のことを試してください。"
 }

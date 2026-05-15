@@ -16,11 +16,14 @@ import 'package:flutter_boxd_app_flow/pages/heating_time_page.dart';
 import 'package:flutter_boxd_app_flow/pages/keep_warm_page.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/widgets/home_page_header.dart';
+import 'package:flutter_boxd_app_flow/widgets/home_notification_popup.dart';
 import 'package:flutter_boxd_app_flow/models/device_model.dart';
+import 'package:flutter_boxd_app_flow/models/app_notification.dart';
 import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
 import 'package:flutter_boxd_app_flow/utils/dialog_button_styles.dart';
 import 'package:flutter_boxd_app_flow/utils/ble_device_name_match.dart';
 import 'package:flutter_boxd_app_flow/utils/ble_product_line_assets.dart';
+import 'package:flutter_boxd_app_flow/app_route_observer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -29,7 +32,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver, RouteAware {
   bool connected = false;
   int temperature = 0;
   int batteryLevel = 0;
@@ -48,6 +51,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   int? _connectCountdown; // 连接倒计时（秒）
   Timer? _connectTimer; // 连接倒计时定时器
   Future<void>? _loadDevicesFuture; // 防止设备列表并发重复请求
+  /// 服务端未读通知数（仅正式登录用户）；用于首页消息角标
+  int _unreadNotificationCount = 0;
+  /// 本次进入首页仅请求一次运营弹窗（已登录非游客）
+  bool _homeNotificationPopupRequested = false;
 
   final bleService = BleService();
 
@@ -61,6 +68,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _init().then((_) {
       _isInitialized = true;
       print('[HOME] 初始化完成');
+      _refreshUnreadNotificationCountOnHomeVisible();
     });
 
     // 注册401错误回调，用于清空设备列表
@@ -79,6 +87,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           _mealTime = null;
           _remainingHeatingTime = null;
           deviceDetail = null;
+          _unreadNotificationCount = 0;
         });
         print('[HOME] 401/未授权，已清空设备列表并断开蓝牙');
       }
@@ -196,6 +205,76 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
+  /// 首页每次变为可见（含从子页返回、应用回到前台）且为正式登录用户时拉取未读数
+  void _refreshUnreadNotificationCountOnHomeVisible() {
+    if (!mounted) return;
+    if (!UserService().isLoggedIn || UserService().isGuestMode) {
+      if (_unreadNotificationCount != 0) {
+        setState(() => _unreadNotificationCount = 0);
+      }
+      return;
+    }
+    unawaited(_fetchUnreadNotificationCount());
+  }
+
+  Future<void> _fetchUnreadNotificationCount() async {
+    if (!UserService().isLoggedIn || UserService().isGuestMode) {
+      if (mounted) setState(() => _unreadNotificationCount = 0);
+      return;
+    }
+    try {
+      final result = await ApiClient.getNotificationsUnreadCount();
+      if (!mounted) return;
+      final n = _parseUnreadCount(result);
+      setState(() => _unreadNotificationCount = n);
+    } catch (_) {
+      if (mounted) setState(() => _unreadNotificationCount = 0);
+    }
+  }
+
+  int _parseUnreadCount(Map<String, dynamic> result) {
+    if (result['code'] != 200) return 0;
+    final data = result['data'];
+    if (data is! Map) return 0;
+    final raw = data['unread_count'];
+    if (raw is int) return raw;
+    return int.tryParse(raw?.toString() ?? '') ?? 0;
+  }
+
+  /// 首次进入首页（已登录非游客）拉取弹窗数据；有内容则展示（无标题）
+  void _requestHomeNotificationPopupOnce() {
+    if (_homeNotificationPopupRequested) return;
+    if (!UserService().isLoggedIn || UserService().isGuestMode) return;
+    _homeNotificationPopupRequested = true;
+    unawaited(_fetchAndShowHomeNotificationPopup());
+  }
+
+  Future<void> _fetchAndShowHomeNotificationPopup() async {
+    if (!UserService().isLoggedIn || UserService().isGuestMode) return;
+    try {
+      final result = await ApiClient.getNotificationPopup();
+      if (!mounted) return;
+      final data = AppNotification.fromPopupApiResponse(result);
+      if (data == null) return;
+      await HomeNotificationPopup.show(
+        context,
+        data,
+        markReadWhenShown: true,
+        onMarkedRead: () {
+          if (mounted) unawaited(_fetchUnreadNotificationCount());
+        },
+      );
+    } catch (_) {
+      // 静默失败
+    }
+  }
+
+  @override
+  void didPush() => _refreshUnreadNotificationCountOnHomeVisible();
+
+  @override
+  void didPopNext() => _refreshUnreadNotificationCountOnHomeVisible();
+
   Future<void> _init() async {
     await _autoLogin();
     // 登录后检查状态是否变化
@@ -225,6 +304,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     print('[HOME] 开始自动登录...');
     final hasToken = await UserService().loadFromLocal();
     print('[HOME] loadFromLocal 结果: $hasToken');
+
+    // 运营弹窗：token 就绪后即请求，不等待 profile / 设备列表 / 蓝牙（与 _init().then 解耦）
+    if (mounted &&
+        hasToken &&
+        UserService().isLoggedIn &&
+        !UserService().isGuestMode) {
+      _requestHomeNotificationPopupOnce();
+    }
+
     if (hasToken) {
       // 自动登录成功后调用 user/profile 接口刷新用户信息
       try {
@@ -929,6 +1017,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _connectionCheckTimer?.cancel();
     _connectTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
+    appRouteObserver.unsubscribe(this);
     // BleService 为单例：不在此 dispose，否则会关闭 statusStream，登出再进首页后无法收状态
     // 移除401错误回调
     UserService().onUnauthorized = null;
@@ -938,6 +1027,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      appRouteObserver.subscribe(this, route);
+    }
     print('[HOME] didChangeDependencies - _isInitialized: $_isInitialized');
     // 页面恢复时检查登录状态（跳过初始化时的调用）
     if (_isInitialized) {
@@ -956,6 +1049,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     print('[HOME] didChangeAppLifecycleState: $state');
     if (state == AppLifecycleState.resumed) {
       _checkLoginStatusAndRefresh();
+      _refreshUnreadNotificationCountOnHomeVisible();
     }
   }
 
@@ -979,10 +1073,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       if (mounted) {
         setState(() {});
       }
+      _refreshUnreadNotificationCountOnHomeVisible();
     } else if (_wasLoggedIn != isLoggedIn) {
-      // 更新状态，但不刷新（登出情况）
+      // 更新状态，但不刷新设备列表（登出等情况）；刷新 UI（如首页消息入口显隐）
       print('[HOME] 登录状态变化（登出）');
       _wasLoggedIn = isLoggedIn;
+      if (mounted) {
+        setState(() {
+          _unreadNotificationCount = 0;
+        });
+      }
     } else if (isLoggedIn) {
       // 已登录状态下，每次页面显示时刷新设备列表
       print('[HOME] 已登录状态，刷新设备列表');
@@ -1017,6 +1117,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             connected: connected,
                             currentDevice: _currentDevice,
                             deviceDetail: deviceDetail,
+                            unreadNotificationCount: _unreadNotificationCount,
                             onDeviceSelectorTap: _showDeviceSelector,
                             onSettingsReturn: () async {
                               if (mounted) {

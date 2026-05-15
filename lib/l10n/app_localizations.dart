@@ -438,6 +438,22 @@ class AppLocalizations {
       'failed_to_send_command_try_again':
           'Failed to send command, please try again',
       'unknown_error': 'Unknown error',
+
+      // Notifications / in-app messages
+      'notifications_title': 'Notifications',
+      'messages_empty': 'No notifications yet',
+      'messages_load_failed': 'Failed to load notifications',
+      'time_just_now': 'Just now',
+      'time_minutes_ago': '{minutes} minutes ago',
+      'time_hours_ago': '{hours} hours ago',
+      'time_yesterday': 'Yesterday',
+
+      // Notification list / delete
+      'notification_delete_confirm': 'Delete this notification?',
+      'notification_delete_failed': 'Failed to delete notification',
+
+      // Home notification popup (GET /notifications/popup)
+      'notification_popup_button': 'OK',
     },
     'zh': {
       // Common
@@ -778,6 +794,22 @@ class AppLocalizations {
       'temperature_unit_changed_to': '温度单位已更改为',
       'failed_to_send_command_try_again': '发送命令失败，请重试',
       'unknown_error': '未知错误',
+
+      // Notifications / in-app messages
+      'notifications_title': '通知',
+      'messages_empty': '暂无通知',
+      'messages_load_failed': '加载通知失败',
+      'time_just_now': '刚刚',
+      'time_minutes_ago': '{minutes} 分钟前',
+      'time_hours_ago': '{hours} 小时前',
+      'time_yesterday': '昨天',
+
+      // Notification list / delete
+      'notification_delete_confirm': '确定删除这条通知吗？',
+      'notification_delete_failed': '删除失败',
+
+      // Home notification popup (GET /notifications/popup)
+      'notification_popup_button': '知道了',
     },
   };
 

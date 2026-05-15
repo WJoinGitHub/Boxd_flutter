@@ -190,7 +190,7 @@ class ApiClient {
     })();
 
     print('Response: $uri');
-    print('Data: ${response.body}');
+    _debugLogResponseBody(response.body);
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -221,6 +221,21 @@ class ApiClient {
       throw ApiException(_extractMessage(response.body));
     } else {
       throw ApiException(_extractMessage(response.body));
+    }
+  }
+
+  /// Logcat / 部分终端对单行长度有限制，长 JSON 分片打印；业务解析仍使用完整 body。
+  static void _debugLogResponseBody(String body) {
+    const chunk = 1000;
+    final len = body.length;
+    if (len <= chunk) {
+      print('Data: $body');
+      return;
+    }
+    print('Data: (length=$len, ${(len + chunk - 1) ~/ chunk} chunks)');
+    for (var i = 0; i < len; i += chunk) {
+      final end = min(i + chunk, len);
+      print('Data[$i-$end]: ${body.substring(i, end)}');
     }
   }
 
@@ -285,7 +300,7 @@ class ApiClient {
 
     print('Response: $uri');
     print('Status: ${response.statusCode}');
-    print('Data: ${response.body}');
+    _debugLogResponseBody(response.body);
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -638,6 +653,14 @@ class ApiClient {
         'page_size': pageSize,
       });
 
+  /// GET `/notifications/unread-count` — 未读通知数量（用于角标）
+  static Future<Map<String, dynamic>> getNotificationsUnreadCount() =>
+      get('/notifications/unread-count');
+
+  /// GET `/notifications/popup` — 当前未读运营弹窗（首页首次进入可展示）
+  static Future<Map<String, dynamic>> getNotificationPopup() =>
+      get('/notifications/popup');
+
   static Future<Map<String, dynamic>> markNotificationRead(
           int notificationId) =>
       put('/notifications/$notificationId/read', {});
@@ -645,6 +668,14 @@ class ApiClient {
   static Future<Map<String, dynamic>> batchMarkRead(
           List<int> notificationIds) =>
       put('/notifications/batch-read', {'notification_ids': notificationIds});
+
+  /// PUT `/notifications/read-all` — 全部标记已读（无请求体）
+  static Future<Map<String, dynamic>> markAllNotificationsRead() =>
+      put('/notifications/read-all', {});
+
+  /// DELETE `/notifications/{id}` — 删除单条通知
+  static Future<Map<String, dynamic>> deleteNotification(int notificationId) =>
+      delete('/notifications/$notificationId');
 
   // ==================== 系统接口 ====================
   static Future<Map<String, dynamic>> getSystemConfig() =>

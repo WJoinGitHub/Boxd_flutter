@@ -70,6 +70,7 @@ class _HomePageState extends State<HomePage>
     _init().then((_) {
       _isInitialized = true;
       print('[HOME] 初始化完成');
+      // 未读角标；运营弹窗已在 _autoLogin 中尽早请求，避免重复弹两次
       _refreshUnreadNotificationCountOnHomeVisible();
     });
 
@@ -207,7 +208,25 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  /// 首页每次变为可见（含从子页返回、应用回到前台）且为正式登录用户时拉取未读数
+  bool _isHomeRouteCurrent() {
+    if (!mounted) return false;
+    return ModalRoute.of(context)?.isCurrent ?? false;
+  }
+
+  /// 首页可见时刷新未读角标与运营弹窗（子页返回、从后台回到前台；Android/iOS 共用）
+  void _refreshHomeMessagesOnVisible({bool requireRouteCurrent = true}) {
+    if (!mounted || !_isInitialized) return;
+    if (requireRouteCurrent && !_isHomeRouteCurrent()) return;
+    if (!UserService().isLoggedIn || UserService().isGuestMode) {
+      if (_unreadNotificationCount != 0) {
+        setState(() => _unreadNotificationCount = 0);
+      }
+      return;
+    }
+    unawaited(_fetchUnreadNotificationCount());
+    unawaited(_fetchAndShowHomeNotificationPopup());
+  }
+
   void _refreshUnreadNotificationCountOnHomeVisible() {
     if (!mounted) return;
     if (!UserService().isLoggedIn || UserService().isGuestMode) {
@@ -272,10 +291,10 @@ class _HomePageState extends State<HomePage>
   }
 
   @override
-  void didPush() => _refreshUnreadNotificationCountOnHomeVisible();
+  void didPush() => _refreshHomeMessagesOnVisible();
 
   @override
-  void didPopNext() => _refreshUnreadNotificationCountOnHomeVisible();
+  void didPopNext() => _refreshHomeMessagesOnVisible();
 
   Future<void> _init() async {
     await _autoLogin();
@@ -1064,7 +1083,8 @@ class _HomePageState extends State<HomePage>
     print('[HOME] didChangeAppLifecycleState: $state');
     if (state == AppLifecycleState.resumed) {
       _checkLoginStatusAndRefresh();
-      _refreshUnreadNotificationCountOnHomeVisible();
+      // 从后台切回前台且当前在首页：拉未读数 + 运营弹窗（Android / iOS）
+      _refreshHomeMessagesOnVisible();
     }
   }
 

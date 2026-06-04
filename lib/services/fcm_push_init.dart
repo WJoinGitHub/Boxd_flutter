@@ -40,24 +40,34 @@ Future<void> initFcmPush() async {
     });
 
     String? token;
+    String? tokenError;
     try {
       token = await messaging
           .getToken()
           .timeout(const Duration(seconds: 12));
     } on TimeoutException {
+      tokenError =
+          'getToken 超时（12s）。常见于未安装/未启用 Google Play 服务或网络不可用。';
       if (kDebugMode) {
-        debugPrint(
-          'FCM getToken timed out (common without Google Play services)',
-        );
+        debugPrint('FCM getToken timed out (common without Google Play services)');
       }
     } catch (e, st) {
+      tokenError = e.toString();
       if (kDebugMode) {
         debugPrint('FCM getToken failed: $e\n$st');
       }
     }
-    if (kDebugMode) {
-      debugPrint('FCM token: $token');
+
+    if (token != null && token.isNotEmpty) {
+      if (kDebugMode) {
+        debugPrint('FCM token: $token');
+      }
+    } else if (kDebugMode) {
+      final reason = tokenError ??
+          'token 为空（通知权限: ${settings.authorizationStatus.name}）';
+      debugPrint('FCM getToken: $reason');
     }
+
     unawaited(PushTokenReport.syncIfLoggedIn());
 
     FirebaseMessaging.instance.onTokenRefresh.listen((_) {

@@ -39,7 +39,8 @@ fun readUmengDartConst(name: String): String {
 android {
     namespace = "com.qimi.heatlink"
     compileSdk = 36
-    ndkVersion = "27.0.12077973"
+    // Google Play 要求 targetSdk 35+ 的应用支持 16 KB 页；NDK r28+ 默认 16 KB ELF 对齐
+    ndkVersion = "28.0.13004108"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -87,6 +88,13 @@ android {
         manifestPlaceholders["VIVO_APP_KEY"] = ""
         manifestPlaceholders["MEIZU_APP_ID"] = ""
         manifestPlaceholders["MEIZU_APP_KEY"] = ""
+    }
+
+    // AGP 8.5.1+ 默认不压缩 native lib，并在打包时做 16 KB zip 对齐
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
 
     buildTypes {

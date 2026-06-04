@@ -8,7 +8,6 @@ import 'package:umeng_push_sdk/umeng_push_sdk.dart';
 import 'api_client.dart';
 import 'ios_apns_push.dart';
 import 'push_region.dart';
-
 /// 将当前通道的推送 token 上报 [ApiClient.registerPushToken]（需 [ApiClient.hasAccessToken]）。
 ///
 /// 日志前缀 `[PUSH-TOKEN]`，在 `flutter run` / logcat 里与 `I/flutter` 一并可见。
@@ -16,6 +15,7 @@ class PushTokenReport {
   PushTokenReport._();
 
   static String? _lastSentKey;
+
   /// 合并并发 [syncIfLoggedIn]（登录、首帧、友盟回调、重试定时器同时触发时只跑一轮）。
   static Future<void>? _inFlight;
 
@@ -35,7 +35,8 @@ class PushTokenReport {
     if (_upushEmptyRetryIndex >= _upushRetryDelaysSec.length) return;
     final sec = _upushRetryDelaysSec[_upushEmptyRetryIndex];
     _upushEmptyRetryIndex += 1;
-    _log('schedule upush retry in ${sec}s (attempt $_upushEmptyRetryIndex/${_upushRetryDelaysSec.length})');
+    _log(
+        'schedule upush retry in ${sec}s (attempt $_upushEmptyRetryIndex/${_upushRetryDelaysSec.length})');
     Future<void>.delayed(Duration(seconds: sec), syncIfLoggedIn);
   }
 
@@ -96,14 +97,15 @@ class PushTokenReport {
     }
   }
 
-  static Future<({String provider, String? token})?> _resolveLocalToken() async {
+  static Future<({String provider, String? token})?>
+      _resolveLocalToken() async {
     if (Platform.isIOS) {
       final t = await getIosApnsDeviceToken();
       return (provider: 'apns', token: t);
     }
     if (!Platform.isAndroid) return null;
 
-    if (useUmengPushForCurrentDeviceLocale()) {
+    if (await useUmengPushForCurrentDeviceLocale()) {
       final t = await UmengPushSdk.getRegisteredId();
       return (provider: 'upush', token: t);
     }
@@ -111,7 +113,8 @@ class PushTokenReport {
     try {
       final t = await FirebaseMessaging.instance.getToken();
       return (provider: 'fcm', token: t);
-    } catch (_) {
+    } catch (e, st) {
+      _log('FCM getToken failed: $e\n$st');
       return (provider: 'fcm', token: null);
     }
   }

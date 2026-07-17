@@ -110,11 +110,14 @@ class $AssetsDeviceImagesGen {
   /// File path: assets/device/images/dev_btn_rotate.png
   AssetGenImage get devBtnRotate => const AssetGenImage('assets/device/images/dev_btn_rotate.png');
 
-  /// File path: assets/device/images/dev_connect_b11.png
-  AssetGenImage get devConnectB11 => const AssetGenImage('assets/device/images/dev_connect_b11.png');
-
   /// File path: assets/device/images/dev_connect_b14.png
   AssetGenImage get devConnectB14 => const AssetGenImage('assets/device/images/dev_connect_b14.png');
+
+  /// File path: assets/device/images/dev_connect_b15.png
+  AssetGenImage get devConnectB15 => const AssetGenImage('assets/device/images/dev_connect_b15.png');
+
+  /// File path: assets/device/images/dev_connect_b16.png
+  AssetGenImage get devConnectB16 => const AssetGenImage('assets/device/images/dev_connect_b16.png');
 
   /// File path: assets/device/images/dev_eye.png
   AssetGenImage get devEye => const AssetGenImage('assets/device/images/dev_eye.png');
@@ -171,8 +174,9 @@ class $AssetsDeviceImagesGen {
   List<AssetGenImage> get values => [
         btnStart,
         devBtnRotate,
-        devConnectB11,
         devConnectB14,
+        devConnectB15,
+        devConnectB16,
         devEye,
         devHeat,
         devHeatSelect,
@@ -223,11 +227,14 @@ class $AssetsHomeImagesGen {
   /// File path: assets/home/images/home_avatar_yk.png
   AssetGenImage get homeAvatarYk => const AssetGenImage('assets/home/images/home_avatar_yk.png');
 
-  /// File path: assets/home/images/home_device_B11.png
-  AssetGenImage get homeDeviceB11 => const AssetGenImage('assets/home/images/home_device_B11.png');
-
   /// File path: assets/home/images/home_device_B14.png
   AssetGenImage get homeDeviceB14 => const AssetGenImage('assets/home/images/home_device_B14.png');
+
+  /// File path: assets/home/images/home_device_B15.png
+  AssetGenImage get homeDeviceB15 => const AssetGenImage('assets/home/images/home_device_B15.png');
+
+  /// File path: assets/home/images/home_device_B16.png
+  AssetGenImage get homeDeviceB16 => const AssetGenImage('assets/home/images/home_device_B16.png');
 
   /// File path: assets/home/images/home_device_on.png
   AssetGenImage get homeDeviceOn => const AssetGenImage('assets/home/images/home_device_on.png');
@@ -249,8 +256,9 @@ class $AssetsHomeImagesGen {
         editPencil,
         homeAvatar,
         homeAvatarYk,
-        homeDeviceB11,
         homeDeviceB14,
+        homeDeviceB15,
+        homeDeviceB16,
         homeDeviceOn,
         homeMessage,
         iconMessage

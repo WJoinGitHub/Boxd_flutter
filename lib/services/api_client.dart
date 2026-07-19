@@ -565,6 +565,10 @@ class ApiClient {
       delete('/devices/$deviceUuid');
 
   // ==================== 反馈 ====================
+  /// 当前用户品牌信息（反馈目标品牌名 / 邮箱 / 社媒）
+  static Future<Map<String, dynamic>> getFeedbackBrand() =>
+      get('/feedback/brand');
+
   static Future<Map<String, dynamic>> getFeedbackCategories({
     int page = 1,
     int limit = 20,

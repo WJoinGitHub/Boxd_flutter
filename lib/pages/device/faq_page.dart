@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_boxd_app_flow/l10n/app_localizations.dart';
+import 'package:flutter_boxd_app_flow/services/api_client.dart';
 import 'package:flutter_boxd_app_flow/utils/bx_app_bar.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
@@ -8,8 +9,42 @@ import 'package:flutter_boxd_app_flow/pages/setting/feedback_page.dart';
 import 'package:flutter_boxd_app_flow/pages/device/faq_detail_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class FaqPage extends StatelessWidget {
+class FaqPage extends StatefulWidget {
   const FaqPage({super.key});
+
+  @override
+  State<FaqPage> createState() => _FaqPageState();
+}
+
+class _FaqPageState extends State<FaqPage> {
+  /// 本地兜底邮箱（接口无 brand_email 时使用）
+  static const String _fallbackSupportEmail = 'support@qimitech.com';
+
+  String _supportEmail = _fallbackSupportEmail;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBrandEmail();
+  }
+
+  Future<void> _loadBrandEmail() async {
+    try {
+      final result = await ApiClient.getFeedbackBrand();
+      print('[FAQ] 品牌信息接口返回: $result');
+      if (result['code'] != 200 || result['data'] == null) return;
+
+      final data = result['data'];
+      if (data is! Map) return;
+      final email = data['brand_email']?.toString().trim();
+      if (email == null || email.isEmpty) return;
+
+      if (!mounted) return;
+      setState(() => _supportEmail = email);
+    } catch (e) {
+      print('[FAQ] 获取品牌邮箱失败，使用本地兜底: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -346,7 +381,9 @@ class FaqPage extends StatelessWidget {
 
   /// 打开系统邮箱应用发送邮件
   Future<void> _openEmailApp(BuildContext context) async {
-    final email = 'support@qimitech.com';
+    final email = _supportEmail.trim().isNotEmpty
+        ? _supportEmail.trim()
+        : _fallbackSupportEmail;
     final uri = Uri.parse('mailto:$email');
     try {
       // 尝试打开邮箱应用，使用 externalApplication 模式

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/pages/home_page.dart';
 import 'package:flutter_boxd_app_flow/pages/login/register_email_page.dart';
+import 'package:flutter_boxd_app_flow/services/product_service.dart';
 import 'package:flutter_boxd_app_flow/services/user_service.dart';
 import 'package:flutter_boxd_app_flow/utils/app_colors.dart';
 
@@ -19,13 +20,15 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _navigateToHome() async {
-    // 等待2秒显示启动页面
-    await Future.delayed(const Duration(seconds: 2));
+    final delay = Future.delayed(const Duration(seconds: 2));
+    await UserService().loadFromLocal();
+    // 启动页展示期间拉取产品列表（本地缓存优先，再拉网）
+    await Future.wait([
+      delay,
+      ProductService.instance.bootstrap(),
+    ]);
 
     if (!mounted) return;
-
-    // 先加载本地保存的登录信息
-    await UserService().loadFromLocal();
 
     // 检查登录状态
     final isLoggedIn = UserService().isLoggedIn;

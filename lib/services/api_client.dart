@@ -564,6 +564,11 @@ class ApiClient {
   static Future<Map<String, dynamic>> unbindDevice(String deviceUuid) =>
       delete('/devices/$deviceUuid');
 
+  // ==================== 产品 ====================
+  /// 启用中的产品列表（含首页图 / 连接图 URL，按 product_name 匹配蓝牙名）
+  static Future<Map<String, dynamic>> getProducts() => get('/products');
+
+
   // ==================== 反馈 ====================
   /// 当前用户品牌信息（反馈目标品牌名 / 邮箱 / 社媒）
   static Future<Map<String, dynamic>> getFeedbackBrand() =>

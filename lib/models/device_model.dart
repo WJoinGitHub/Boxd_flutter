@@ -1,3 +1,5 @@
+import '../services/product_service.dart';
+
 /// 绑定设备（设备列表接口 + 本地缓存显示名）
 class DeviceModel {
   final int id;
@@ -32,7 +34,9 @@ class DeviceModel {
     final l = localName?.trim();
     if (l != null && l.isNotEmpty) return l;
     final s = deviceName.trim();
-    if (s.isNotEmpty) return s;
+    if (s.isNotEmpty) {
+      return ProductService.instance.displayNameForBle(s, fallback: fallback);
+    }
     return fallback;
   }
 
@@ -40,7 +44,9 @@ class DeviceModel {
     final l = localName?.trim();
     if (l != null && l.isNotEmpty) return l;
     final s = deviceName.trim();
-    if (s.isNotEmpty) return s;
+    if (s.isNotEmpty) {
+      return ProductService.instance.displayNameForBle(s, fallback: fallback);
+    }
     return fallback;
   }
 

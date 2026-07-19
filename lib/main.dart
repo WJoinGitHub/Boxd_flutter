@@ -7,6 +7,7 @@ import 'pages/splash_page.dart';
 import 'pages/home_page.dart';
 import 'pages/login/register_email_page.dart';
 import 'services/user_service.dart';
+import 'services/product_service.dart';
 import 'services/push_channel_init.dart';
 import 'services/push_token_report.dart';
 import 'utils/app_colors.dart';
@@ -21,7 +22,7 @@ Future<void> main() async {
   // 推送/统计初始化走原生通道，若在 runApp 之前 await，首帧无法调度，
   // 再叠加系统深色下 NormalTheme 为黑底，会出现长时间启动黑屏。
   runApp(const MyApp());
-  _initPushAfterFirstFrame();
+  _initAfterFirstFrame();
 
   // iOS 调试模式下触发本地网络权限弹窗
   if (Platform.isIOS) {
@@ -39,13 +40,23 @@ Future<void> main() async {
   }
 }
 
-/// 首帧之后再初始化推送，避免阻塞引擎挂载与第一帧绘制。
+/// 首帧之后再初始化推送与产品列表，避免阻塞引擎挂载与第一帧绘制。
 ///
 /// [initPushByRegion] 内部若有 `await` 永久挂起（例如无 GMS 时 FCM
 /// `getToken()`），则下一行永远不会执行；因此用 [Future.timeout] 与
 /// [finally] 保证 [PushTokenReport.syncIfLoggedIn] 仍会跑到。
-void _initPushAfterFirstFrame() {
+void _initAfterFirstFrame() {
   WidgetsBinding.instance.addPostFrameCallback((_) async {
+    // 产品列表：尽量带上本地 token 后再拉；失败沿用缓存
+    try {
+      await UserService().loadFromLocal();
+      await ProductService.instance.bootstrap();
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('ProductService.bootstrap failed: $e\n$st');
+      }
+    }
+
     try {
       await initPushByRegion().timeout(
         const Duration(seconds: 20),
@@ -126,8 +137,11 @@ class _InitialPageState extends State<_InitialPage> {
 
     if (!mounted) return;
 
-    // 先加载本地保存的登录信息
-    await UserService().loadFromLocal();
+    // 先加载本地保存的登录信息，并拉取/读取产品图片配置
+    await Future.wait([
+      UserService().loadFromLocal(),
+      ProductService.instance.bootstrap(),
+    ]);
 
     // 检查登录状态
     final isLoggedIn = UserService().isLoggedIn;

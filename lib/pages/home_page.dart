@@ -1557,10 +1557,9 @@ class _HomePageState extends State<HomePage>
                                   else
                                     const SizedBox.shrink(),
 
-                                  // 右边设备图片（已连 BLE 名 / 未连 device_name 选 B17 / B16 / B15 / B14 图）
+                                  // 右边设备图片（已连 BLE 名 / 未连 device_name，按产品列表匹配）
                                   homeDeviceHeroImageForBleName(
-                                          _bleNameForHeroImage())
-                                      .image(
+                                    _bleNameForHeroImage(),
                                     width: 150,
                                     fit: BoxFit.contain,
                                   ),

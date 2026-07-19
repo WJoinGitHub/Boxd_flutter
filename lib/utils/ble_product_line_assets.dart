@@ -1,53 +1,83 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_boxd_app_flow/gen/assets.gen.dart';
+import 'package:flutter_boxd_app_flow/services/product_service.dart';
 
-/// 按蓝牙广播名区分的产品线（与 SKU 文案 B17 / B16 / B15 / B13 / B14 一致）。
-enum BleProductLineKind { b17, b16, b15, b1314OrDefault }
-
-BleProductLineKind bleProductLineKindFromName(String? blePlatformName) {
-  final raw = blePlatformName?.trim();
-  if (raw == null || raw.isEmpty) {
-    return BleProductLineKind.b1314OrDefault;
-  }
-  final name = raw.toUpperCase();
-  if (name.contains('B17')) {
-    return BleProductLineKind.b17;
-  }
-  if (name.contains('B16')) {
-    return BleProductLineKind.b16;
-  }
-  if (name.contains('B15')) {
-    return BleProductLineKind.b15;
-  }
-  if (name.contains('B13') || name.contains('B14')) {
-    return BleProductLineKind.b1314OrDefault;
-  }
-  return BleProductLineKind.b1314OrDefault;
+/// 首页右侧大设备图：按蓝牙名匹配产品 `product_name` → `home_image_url`，否则本地 B14 兜底。
+Widget homeDeviceHeroImageForBleName(
+  String? blePlatformName, {
+  double? width,
+  double? height,
+  BoxFit fit = BoxFit.contain,
+}) {
+  return ListenableBuilder(
+    listenable: ProductService.instance,
+    builder: (context, _) {
+      final url = ProductService.instance
+          .matchByBleName(blePlatformName)
+          ?.homeImageUrl
+          .trim();
+      if (url != null && url.isNotEmpty) {
+        return Image.network(
+          url,
+          width: width,
+          height: height,
+          fit: fit,
+          errorBuilder: (_, __, ___) => _homeB14(
+            width: width,
+            height: height,
+            fit: fit,
+          ),
+        );
+      }
+      return _homeB14(width: width, height: height, fit: fit);
+    },
+  );
 }
 
-/// 首页右侧大设备图。
-AssetGenImage homeDeviceHeroImageForBleName(String? blePlatformName) {
-  switch (bleProductLineKindFromName(blePlatformName)) {
-    case BleProductLineKind.b17:
-      return Assets.home.images.homeDeviceB17;
-    case BleProductLineKind.b16:
-      return Assets.home.images.homeDeviceB16;
-    case BleProductLineKind.b15:
-      return Assets.home.images.homeDeviceB15;
-    case BleProductLineKind.b1314OrDefault:
-      return Assets.home.images.homeDeviceB14;
-  }
+/// 连接流程等处的设备图：按蓝牙名匹配 `connect_image_url`，否则本地 B14 兜底。
+Widget devConnectImageForBleName(
+  String? blePlatformName, {
+  double? width,
+  double? height,
+  BoxFit fit = BoxFit.contain,
+}) {
+  return ListenableBuilder(
+    listenable: ProductService.instance,
+    builder: (context, _) {
+      final url = ProductService.instance
+          .matchByBleName(blePlatformName)
+          ?.connectImageUrl
+          .trim();
+      if (url != null && url.isNotEmpty) {
+        return Image.network(
+          url,
+          width: width,
+          height: height,
+          fit: fit,
+          errorBuilder: (_, __, ___) => _connectB14(
+            width: width,
+            height: height,
+            fit: fit,
+          ),
+        );
+      }
+      return _connectB14(width: width, height: height, fit: fit);
+    },
+  );
 }
 
-/// 连接流程等处的 `dev_connect_b*` 插图。
-AssetGenImage devConnectImageForBleName(String? blePlatformName) {
-  switch (bleProductLineKindFromName(blePlatformName)) {
-    case BleProductLineKind.b17:
-      return Assets.device.images.devConnectB17;
-    case BleProductLineKind.b16:
-      return Assets.device.images.devConnectB16;
-    case BleProductLineKind.b15:
-      return Assets.device.images.devConnectB15;
-    case BleProductLineKind.b1314OrDefault:
-      return Assets.device.images.devConnectB14;
-  }
+Widget _homeB14({double? width, double? height, BoxFit fit = BoxFit.contain}) {
+  return Assets.home.images.homeDeviceB14.image(
+    width: width,
+    height: height,
+    fit: fit,
+  );
+}
+
+Widget _connectB14({double? width, double? height, BoxFit fit = BoxFit.contain}) {
+  return Assets.device.images.devConnectB14.image(
+    width: width,
+    height: height,
+    fit: fit,
+  );
 }

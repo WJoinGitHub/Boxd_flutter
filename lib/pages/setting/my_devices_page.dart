@@ -269,7 +269,8 @@ class _MyDevicesPageState extends State<MyDevicesPage> {
                           child: ListTile(
                             contentPadding:
                                 const EdgeInsets.symmetric(horizontal: 12),
-                            leading: devConnectImageForBleName(bleName).image(
+                            leading: devConnectImageForBleName(
+                              bleName,
                               width: 40,
                               height: 40,
                               fit: BoxFit.contain,

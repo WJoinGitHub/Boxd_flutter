@@ -119,6 +119,9 @@ class $AssetsDeviceImagesGen {
   /// File path: assets/device/images/dev_connect_b16.png
   AssetGenImage get devConnectB16 => const AssetGenImage('assets/device/images/dev_connect_b16.png');
 
+  /// File path: assets/device/images/dev_connect_b17.png
+  AssetGenImage get devConnectB17 => const AssetGenImage('assets/device/images/dev_connect_b17.png');
+
   /// File path: assets/device/images/dev_eye.png
   AssetGenImage get devEye => const AssetGenImage('assets/device/images/dev_eye.png');
 
@@ -177,6 +180,7 @@ class $AssetsDeviceImagesGen {
         devConnectB14,
         devConnectB15,
         devConnectB16,
+        devConnectB17,
         devEye,
         devHeat,
         devHeatSelect,
@@ -236,6 +240,9 @@ class $AssetsHomeImagesGen {
   /// File path: assets/home/images/home_device_B16.png
   AssetGenImage get homeDeviceB16 => const AssetGenImage('assets/home/images/home_device_B16.png');
 
+  /// File path: assets/home/images/home_device_B17.png
+  AssetGenImage get homeDeviceB17 => const AssetGenImage('assets/home/images/home_device_B17.png');
+
   /// File path: assets/home/images/home_device_on.png
   AssetGenImage get homeDeviceOn => const AssetGenImage('assets/home/images/home_device_on.png');
 
@@ -259,6 +266,7 @@ class $AssetsHomeImagesGen {
         homeDeviceB14,
         homeDeviceB15,
         homeDeviceB16,
+        homeDeviceB17,
         homeDeviceOn,
         homeMessage,
         iconMessage

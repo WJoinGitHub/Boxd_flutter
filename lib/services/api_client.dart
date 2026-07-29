@@ -565,7 +565,7 @@ class ApiClient {
       delete('/devices/$deviceUuid');
 
   // ==================== 产品 ====================
-  /// 启用中的产品列表（含首页图 / 连接图 URL，按 product_name 匹配蓝牙名）
+  /// 启用中的产品列表（含首页图 / 连接图 URL，按 ble_broadcast_name 匹配蓝牙名）
   static Future<Map<String, dynamic>> getProducts() => get('/products');
 
 

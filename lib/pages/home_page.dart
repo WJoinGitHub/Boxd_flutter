@@ -51,6 +51,10 @@ class _HomePageState extends State<HomePage>
   bool _isConnecting = false; // 是否正在连接设备
   int? _connectCountdown; // 连接倒计时（秒）
   Timer? _connectTimer; // 连接倒计时定时器
+  /// 连接总超时定时器（实例级，便于切换设备时取消上一轮）
+  Timer? _connectTimeoutTimer;
+  /// 连接会话号：每次发起/取消连接递增，过期会话不得再断线或改 UI
+  int _connectSessionId = 0;
   Future<void>? _loadDevicesFuture; // 防止设备列表并发重复请求
   /// 服务端未读通知数（仅正式登录用户）；用于首页消息角标
   int _unreadNotificationCount = 0;
@@ -698,6 +702,9 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _switchDevice(DeviceModel newDevice) async {
+    // 作废进行中的连接（含 15s 超时），避免切换后旧超时把新连接断开
+    _invalidateConnectSession(reason: '切换设备');
+
     // 断开当前设备
     if (connected && bleService.isConnected) {
       await bleService.disconnect();
@@ -717,8 +724,29 @@ class _HomePageState extends State<HomePage>
     await _connectToDevice(newDevice);
   }
 
+  /// 作废当前连接会话：取消超时/倒计时与扫描，后续旧流程全部短路。
+  void _invalidateConnectSession({String reason = ''}) {
+    _connectSessionId++;
+    _connectTimeoutTimer?.cancel();
+    _connectTimeoutTimer = null;
+    _connectTimer?.cancel();
+    _connectTimer = null;
+    try {
+      FlutterBluePlus.stopScan();
+    } catch (e) {
+      print('[HOME] 停止扫描失败($reason): $e');
+    }
+    if (reason.isNotEmpty) {
+      print('[HOME] 作废连接会话($_connectSessionId): $reason');
+    }
+  }
+
   Future<void> _connectToDevice(DeviceModel device,
       {bool isAutoConnect = false}) async {
+    // 新会话：取消上一轮 15s 超时，防止切换设备时并发连接互相踩踏
+    _invalidateConnectSession(reason: isAutoConnect ? '自动连接' : '开始连接');
+    final sessionId = _connectSessionId;
+
     if (mounted) {
       setState(() {
         _isConnecting = true;
@@ -729,6 +757,10 @@ class _HomePageState extends State<HomePage>
     // 启动倒计时定时器
     _connectTimer?.cancel();
     _connectTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (sessionId != _connectSessionId) {
+        timer.cancel();
+        return;
+      }
       if (mounted) {
         setState(() {
           if (_connectCountdown != null && _connectCountdown! > 0) {
@@ -745,14 +777,18 @@ class _HomePageState extends State<HomePage>
 
     // 设置15秒总超时
     bool timeoutOccurred = false;
-    Timer? timeoutTimer;
 
     try {
       final deviceUuid = device.deviceUuid;
-      print('[HOME] 连接设备: $deviceUuid');
+      print('[HOME] 连接设备: $deviceUuid (session=$sessionId)');
 
       // 启动超时定时器
-      timeoutTimer = Timer(const Duration(seconds: 15), () {
+      _connectTimeoutTimer?.cancel();
+      _connectTimeoutTimer = Timer(const Duration(seconds: 15), () {
+        if (sessionId != _connectSessionId) {
+          print('[HOME] 忽略过期连接超时 (session=$sessionId)');
+          return;
+        }
         timeoutOccurred = true;
         // 清除倒计时
         _connectTimer?.cancel();
@@ -776,9 +812,11 @@ class _HomePageState extends State<HomePage>
         }
       });
 
+      bool isStale() => sessionId != _connectSessionId;
+
       final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
-      if (timeoutOccurred || !mounted) {
-        timeoutTimer?.cancel();
+      if (timeoutOccurred || !mounted || isStale()) {
+        _connectTimeoutTimer?.cancel();
         return;
       }
 
@@ -787,7 +825,7 @@ class _HomePageState extends State<HomePage>
       // 仅精确匹配：Android 上断开后旧机可能仍短暂出现在 connectedSystemDevices；
       // 若两台设备 QIMI 前两段相同，前缀匹配会误连旧机而 UI 已是新选中的绑定设备。
       for (var d in connectedDevices) {
-        if (timeoutOccurred) break;
+        if (timeoutOccurred || isStale()) break;
         if (bleNameMatchLevel(device.deviceName, d.platformName) ==
             BleNameMatchLevel.exact) {
           print('[HOME] 找到已连接的设备（名称精确匹配）: ${d.platformName}');
@@ -796,7 +834,7 @@ class _HomePageState extends State<HomePage>
         }
       }
 
-      if (targetDevice == null && !timeoutOccurred) {
+      if (targetDevice == null && !timeoutOccurred && !isStale()) {
         // 检查蓝牙状态（启动时可能为 unknown：暂停 1.5 秒后重试，最多检测 3 次）
         BluetoothAdapterState bluetoothAdapterState =
             await FlutterBluePlus.adapterState.first;
@@ -805,7 +843,7 @@ class _HomePageState extends State<HomePage>
                 bluetoothAdapterState == BluetoothAdapterState.unknown;
             attempt++) {
           await Future.delayed(const Duration(milliseconds: 1500));
-          if (!mounted || timeoutOccurred) return;
+          if (!mounted || timeoutOccurred || isStale()) return;
           bluetoothAdapterState = await FlutterBluePlus.adapterState.first;
         }
         if (bluetoothAdapterState == BluetoothAdapterState.unknown) {
@@ -813,8 +851,8 @@ class _HomePageState extends State<HomePage>
         }
         if (bluetoothAdapterState != BluetoothAdapterState.on) {
           print('[HOME] 蓝牙未开启，无法扫描');
-          timeoutTimer?.cancel();
-          if (mounted && !isAutoConnect) {
+          _connectTimeoutTimer?.cancel();
+          if (mounted && !isAutoConnect && !isStale()) {
             AppToast.show(
               context,
               AppLocalizations.of(context).t('turn_on_bluetooth'),
@@ -835,14 +873,20 @@ class _HomePageState extends State<HomePage>
         try {
           // 先设置监听器，再启动扫描，避免丢失结果
           scanSubscription = FlutterBluePlus.scanResults.listen((results) {
-            if (timeoutOccurred || deviceCompleter.isCompleted) {
+            if (timeoutOccurred ||
+                isStale() ||
+                deviceCompleter.isCompleted) {
               return;
             }
 
             print('[HOME] 收到扫描结果: ${results.length} 个设备');
             BluetoothDevice? batchExact;
             for (var r in results) {
-              if (timeoutOccurred || deviceCompleter.isCompleted) break;
+              if (timeoutOccurred ||
+                  isStale() ||
+                  deviceCompleter.isCompleted) {
+                break;
+              }
 
               print(
                   '[HOME] 扫描到设备: ${r.device.platformName}, remoteId=${r.device.remoteId.str}');
@@ -878,12 +922,23 @@ class _HomePageState extends State<HomePage>
             return;
           }
 
+          if (isStale()) {
+            scanSubscription?.cancel();
+            if (scanStarted) {
+              try {
+                await FlutterBluePlus.stopScan();
+              } catch (_) {}
+            }
+            return;
+          }
+
           // 等待扫描完成或超时，等待时间15秒
           try {
             targetDevice = await deviceCompleter.future.timeout(
               const Duration(seconds: 15),
               onTimeout: () => null,
             );
+            if (isStale()) return;
             final prefixCandidate = scanPrefixFallback;
             if (targetDevice == null && prefixCandidate != null) {
               print(
@@ -924,8 +979,13 @@ class _HomePageState extends State<HomePage>
         }
       }
 
+      if (isStale()) {
+        print('[HOME] 连接会话已过期，中止 (session=$sessionId)');
+        return;
+      }
+
       if (timeoutOccurred) {
-        timeoutTimer?.cancel();
+        _connectTimeoutTimer?.cancel();
         // 自动连接失败时不显示提示
         if (mounted && !isAutoConnect) {
           AppToast.show(
@@ -938,8 +998,8 @@ class _HomePageState extends State<HomePage>
 
       if (targetDevice != null && mounted) {
         // 在连接前再次检查超时
-        if (timeoutOccurred) {
-          timeoutTimer?.cancel();
+        if (timeoutOccurred || isStale()) {
+          _connectTimeoutTimer?.cancel();
           return;
         }
 
@@ -953,7 +1013,18 @@ class _HomePageState extends State<HomePage>
           },
         );
 
-        timeoutTimer?.cancel();
+        if (isStale()) {
+          // 已被新一轮连接取代：若本次误连上，断开以免占用
+          print('[HOME] 过期会话的连接结果，断开并忽略 (session=$sessionId)');
+          if (success) {
+            try {
+              await bleService.disconnect();
+            } catch (_) {}
+          }
+          return;
+        }
+
+        _connectTimeoutTimer?.cancel();
 
         if (success && mounted && !timeoutOccurred) {
           // 清除倒计时
@@ -969,20 +1040,23 @@ class _HomePageState extends State<HomePage>
           // 获取设备详情
           try {
             final detail = await ApiClient.getDeviceDetail(deviceUuid);
-            if (detail['code'] == 200 && detail['data'] != null && mounted) {
+            if (detail['code'] == 200 &&
+                detail['data'] != null &&
+                mounted &&
+                !isStale()) {
               setState(() => deviceDetail = detail['data']);
             }
           } catch (e) {
             print('[HOME] 获取设备详情失败: $e');
           }
           // 自动连接时不显示成功提示
-          if (!isAutoConnect && mounted) {
+          if (!isAutoConnect && mounted && !isStale()) {
             AppToast.show(
               context,
               AppLocalizations.of(context).t('connection_success'),
             );
           }
-        } else if (mounted && timeoutOccurred) {
+        } else if (mounted && timeoutOccurred && !isStale()) {
           // 清除倒计时
           _connectTimer?.cancel();
           setState(() {
@@ -997,9 +1071,9 @@ class _HomePageState extends State<HomePage>
             );
           }
         }
-      } else if (mounted && !timeoutOccurred) {
+      } else if (mounted && !timeoutOccurred && !isStale()) {
         // 未找到设备，确保停止扫描
-        timeoutTimer?.cancel();
+        _connectTimeoutTimer?.cancel();
         try {
           await FlutterBluePlus.stopScan();
           print('[HOME] 未找到设备，扫描已停止');
@@ -1015,7 +1089,9 @@ class _HomePageState extends State<HomePage>
         }
       }
     } catch (e) {
-      timeoutTimer?.cancel();
+      if (sessionId == _connectSessionId) {
+        _connectTimeoutTimer?.cancel();
+      }
       print('[HOME] 连接设备失败: $e');
       // 确保停止扫描
       try {
@@ -1025,23 +1101,29 @@ class _HomePageState extends State<HomePage>
         print('[HOME] 停止扫描失败: $e');
       }
       // 自动连接失败时不显示提示
-      if (mounted && !timeoutOccurred && !isAutoConnect) {
+      if (mounted &&
+          !timeoutOccurred &&
+          !isAutoConnect &&
+          sessionId == _connectSessionId) {
         AppToast.show(
           context,
           '${AppLocalizations.of(context).t('failed_to_connect')}: $e',
         );
       }
     } finally {
-      timeoutTimer?.cancel();
-      // 清除倒计时
-      _connectTimer?.cancel();
-      if (mounted) {
-        setState(() {
-          _isConnecting = false;
-          if (!connected) {
-            _connectCountdown = null;
-          }
-        });
+      if (sessionId == _connectSessionId) {
+        _connectTimeoutTimer?.cancel();
+        _connectTimeoutTimer = null;
+        // 清除倒计时
+        _connectTimer?.cancel();
+        if (mounted) {
+          setState(() {
+            _isConnecting = false;
+            if (!connected) {
+              _connectCountdown = null;
+            }
+          });
+        }
       }
     }
   }
@@ -1050,6 +1132,7 @@ class _HomePageState extends State<HomePage>
   void dispose() {
     _connectionCheckTimer?.cancel();
     _connectTimer?.cancel();
+    _connectTimeoutTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     appRouteObserver.unsubscribe(this);
     // BleService 为单例：不在此 dispose，否则会关闭 statusStream，登出再进首页后无法收状态

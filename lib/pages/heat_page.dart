@@ -27,6 +27,7 @@ class _HeatPageState extends State<HeatPage> {
   String temperatureUnit = '°C';
   final bleService = BleService();
   final ReminderHelper reminderHelper = ReminderHelper();
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -114,7 +115,9 @@ class _HeatPageState extends State<HeatPage> {
     return '75 - 100 $temperatureUnit';
   }
 
-  void _sendCommand() async {
+  Future<void> _sendCommand() async {
+    if (_isSubmitting) return;
+
     if (selectedTemperature == null) {
       AppToast.show(
         context,
@@ -141,49 +144,40 @@ class _HeatPageState extends State<HeatPage> {
       return;
     }
 
-    final success = await bleService.setWork(
-      mode: WorkMode.heating,
-      temperature: selectedTemperature!,
-      heatingTime: minutes,
-      mealTime: 0,
-    );
+    setState(() => _isSubmitting = true);
+    try {
+      final success = await bleService.setWork(
+        mode: WorkMode.heating,
+        temperature: selectedTemperature!,
+        heatingTime: minutes,
+        mealTime: 0,
+      );
 
-    if (success) {
-      await AppStorage.saveHeatTemperature(selectedTemperature!);
-    }
-
-    if (!success) {
-      if (mounted) {
-        AppToast.show(
-          context,
-          AppLocalizations.of(context).t('command_failed'),
-        );
+      if (success) {
+        await AppStorage.saveHeatTemperature(selectedTemperature!);
       }
-      return;
-    }
 
-    // 命令发送成功后，根据remindEnabled决定处理方式
-    if (reminderHelper.remindEnabled) {
-      // 只有当开关打开时，才处理提醒相关操作
-      try {
-        // 保存到日历
-        await reminderHelper.createHeatCalendarReminder(
-          context,
-          temperature: selectedTemperature!,
-          minutes: minutes,
-        );
-
+      if (!success) {
         if (mounted) {
           AppToast.show(
             context,
-            AppLocalizations.of(context).t('heat_started'),
+            AppLocalizations.of(context).t('command_failed'),
           );
-          Navigator.of(context).pop();
         }
-      } catch (e) {
-        print('[HEAT] 处理提醒失败: $e');
-        // 如果是精确闹钟权限错误，静默处理，不显示提示
-        if (e is PlatformException && e.code == 'exact_alarms_not_permitted') {
+        return;
+      }
+
+      // 命令发送成功后，根据remindEnabled决定处理方式
+      if (reminderHelper.remindEnabled) {
+        // 只有当开关打开时，才处理提醒相关操作
+        try {
+          // 保存到日历
+          await reminderHelper.createHeatCalendarReminder(
+            context,
+            temperature: selectedTemperature!,
+            minutes: minutes,
+          );
+
           if (mounted) {
             AppToast.show(
               context,
@@ -191,26 +185,42 @@ class _HeatPageState extends State<HeatPage> {
             );
             Navigator.of(context).pop();
           }
-        } else {
-          // 其他错误，显示提示
-          if (mounted) {
-            final l10n = AppLocalizations.of(context);
-            AppToast.show(
-              context,
-              l10n.t('heat_started_but_reminder_failed'),
-            );
-            Navigator.of(context).pop();
+        } catch (e) {
+          print('[HEAT] 处理提醒失败: $e');
+          // 如果是精确闹钟权限错误，静默处理，不显示提示
+          if (e is PlatformException && e.code == 'exact_alarms_not_permitted') {
+            if (mounted) {
+              AppToast.show(
+                context,
+                AppLocalizations.of(context).t('heat_started'),
+              );
+              Navigator.of(context).pop();
+            }
+          } else {
+            // 其他错误，显示提示
+            if (mounted) {
+              final l10n = AppLocalizations.of(context);
+              AppToast.show(
+                context,
+                l10n.t('heat_started_but_reminder_failed'),
+              );
+              Navigator.of(context).pop();
+            }
           }
         }
+      } else {
+        // 开关没打开，不做任何日历相关操作，直接成功返回
+        if (mounted) {
+          AppToast.show(
+            context,
+            AppLocalizations.of(context).t('heat_started'),
+          );
+          Navigator.of(context).pop();
+        }
       }
-    } else {
-      // 开关没打开，不做任何日历相关操作，直接成功返回
+    } finally {
       if (mounted) {
-        AppToast.show(
-          context,
-          AppLocalizations.of(context).t('heat_started'),
-        );
-        Navigator.of(context).pop();
+        setState(() => _isSubmitting = false);
       }
     }
   }
@@ -220,12 +230,16 @@ class _HeatPageState extends State<HeatPage> {
     final l10n = AppLocalizations.of(context);
     final displayTemp = _getDisplayTemperature();
 
-    return Scaffold(
+    return PopScope(
+      canPop: !_isSubmitting,
+      child: Scaffold(
       backgroundColor: Colors.white,
       appBar: BxAppBar(
         title: l10n.t('heat_title'),
       ),
-      body: Column(
+      body: AbsorbPointer(
+        absorbing: _isSubmitting,
+        child: Column(
         children: [
           // 主要内容区域
           Expanded(
@@ -392,26 +406,38 @@ class _HeatPageState extends State<HeatPage> {
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: _sendCommand,
+                onPressed: _isSubmitting ? null : _sendCommand,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.orange,
+                  disabledBackgroundColor: AppColors.orange.withOpacity(0.6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
                   ),
                 ),
-                child: Text(
-                  l10n.t('start'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        l10n.t('start'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
               ),
             ),
           ),
         ],
       ),
+      ),
+    ),
     );
   }
 }

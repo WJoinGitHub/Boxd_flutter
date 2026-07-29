@@ -32,6 +32,7 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
   final bleService = BleService();
   bool isHeating = false;
   final ReminderHelper reminderHelper = ReminderHelper();
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -135,7 +136,9 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     }
   }
 
-  void _sendCommand() async {
+  Future<void> _sendCommand() async {
+    if (_isSubmitting) return;
+
     if (selectedTemperature == null) {
       AppToast.show(
         context,
@@ -200,38 +203,55 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
       return;
     }
 
+    if (!bleService.isConnected) {
+      if (mounted) {
+        AppToast.show(
+          context,
+          AppLocalizations.of(context).t('device_not_connected'),
+        );
+      }
+      return;
+    }
+
     // 将结束时间转换为总分钟数（从00:00开始计算）
     final mealTimeTotalMinutes =
         reminderHelper.selectedHour * 60 + reminderHelper.selectedMinute;
 
-    final success = await bleService.setWork(
-      mode: WorkMode.timing,
-      temperature: selectedTemperature!,
-      heatingTime: heatingTotalMinutes,
-      mealTime: mealTimeTotalMinutes,
-    );
+    setState(() => _isSubmitting = true);
+    try {
+      final success = await bleService.setWork(
+        mode: WorkMode.timing,
+        temperature: selectedTemperature!,
+        heatingTime: heatingTotalMinutes,
+        mealTime: mealTimeTotalMinutes,
+      );
 
-    if (success) {
-      await AppStorage.saveHeatingTimeTemperature(selectedTemperature!);
-    }
-
-    if (mounted) {
       if (success) {
-        setState(() => isHeating = true);
-        // 只有当开关打开时，才处理日历相关操作
-        if (reminderHelper.remindEnabled) {
-          await reminderHelper.createTimingCalendarReminder(context);
+        await AppStorage.saveHeatingTimeTemperature(selectedTemperature!);
+      }
+
+      if (mounted) {
+        if (success) {
+          setState(() => isHeating = true);
+          // 只有当开关打开时，才处理日历相关操作
+          if (reminderHelper.remindEnabled) {
+            await reminderHelper.createTimingCalendarReminder(context);
+          }
+          AppToast.show(
+            context,
+            AppLocalizations.of(context).t('timing_heating_started'),
+          );
+          Navigator.of(context).pop();
+        } else {
+          AppToast.show(
+            context,
+            AppLocalizations.of(context).t('command_failed'),
+          );
         }
-        AppToast.show(
-          context,
-          AppLocalizations.of(context).t('timing_heating_started'),
-        );
-        Navigator.of(context).pop();
-      } else {
-        AppToast.show(
-          context,
-          AppLocalizations.of(context).t('command_failed'),
-        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
       }
     }
   }
@@ -241,12 +261,16 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
     final l10n = AppLocalizations.of(context);
     final displayTemp = _getDisplayTemperature();
 
-    return Scaffold(
+    return PopScope(
+      canPop: !_isSubmitting,
+      child: Scaffold(
       backgroundColor: Colors.white,
       appBar: BxAppBar(
         title: l10n.t('timer_mode'),
       ),
-      body: Column(
+      body: AbsorbPointer(
+        absorbing: _isSubmitting,
+        child: Column(
         children: [
           // 主要内容区域
           Expanded(
@@ -471,26 +495,38 @@ class _HeatingTimePageState extends State<HeatingTimePage> {
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: _sendCommand,
+                onPressed: _isSubmitting ? null : _sendCommand,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.orange,
+                  disabledBackgroundColor: AppColors.orange.withOpacity(0.6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
                   ),
                 ),
-                child: Text(
-                  l10n.t('start'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        l10n.t('start'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
               ),
             ),
           ),
         ],
       ),
+      ),
+    ),
     );
   }
 }

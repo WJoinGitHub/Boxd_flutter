@@ -100,23 +100,31 @@ class ProductService extends ChangeNotifier {
     );
   }
 
-  /// 蓝牙名包含某条 `product_name` 则命中；优先更长名称，避免短串误匹配。
+  /// 蓝牙名包含某条 `ble_broadcast_name`（优先）则命中。
+  /// 兼容：无广播名时回退 `product_code` / `product_name`。
+  /// 优先更长关键字，避免短串误匹配。
   ProductModel? matchByBleName(String? blePlatformName) {
     final raw = blePlatformName?.trim();
     if (raw == null || raw.isEmpty || _products.isEmpty) return null;
 
     final name = raw.toUpperCase();
-    final sorted = [..._products]..sort(
-        (a, b) =>
-            b.productName.trim().length.compareTo(a.productName.trim().length),
-      );
 
-    for (final p in sorted) {
-      final productName = p.productName.trim().toUpperCase();
-      if (productName.isEmpty) continue;
-      if (name.contains(productName)) return p;
+    ProductModel? matchBy(String Function(ProductModel p) keyOf) {
+      final sorted = [..._products]..sort(
+          (a, b) => keyOf(b).trim().length.compareTo(keyOf(a).trim().length),
+        );
+      for (final p in sorted) {
+        final key = keyOf(p).trim().toUpperCase();
+        if (key.isEmpty) continue;
+        if (name.contains(key)) return p;
+      }
+      return null;
     }
-    return null;
+
+    // 实际蓝牙广播段，例如 QIMI-B11-… 对应 ble_broadcast_name=B11
+    return matchBy((p) => p.bleBroadcastName) ??
+        matchBy((p) => p.productCode) ??
+        matchBy((p) => p.productName);
   }
 
   /// App 展示用蓝牙名：若 `app_display_name` 与 `ble_broadcast_name` 不同，则替换广播段。

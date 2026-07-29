@@ -32,6 +32,7 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
   // 固定值
   static const int temperature = 60; // 60°C（内部存储，发送给设备时使用）
   static const int durationHours = 2; // 2小时
+  bool _isSubmitting = false;
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
@@ -308,6 +309,8 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
   }
 
   Future<void> _startKeepWarm() async {
+    if (_isSubmitting) return;
+
     if (!bleService.isConnected) {
       if (mounted) {
         AppToast.show(
@@ -318,22 +321,29 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
       return;
     }
 
-    final success = await bleService.setWork(
-      mode: WorkMode.keepWarm,
-      temperature: temperature,
-      heatingTime: durationHours * 60,
-      mealTime: 0,
-    );
-
-    if (mounted) {
-      AppToast.show(
-        context,
-        success
-            ? AppLocalizations.of(context).t('keep_warm_started')
-            : AppLocalizations.of(context).t('command_failed'),
+    setState(() => _isSubmitting = true);
+    try {
+      final success = await bleService.setWork(
+        mode: WorkMode.keepWarm,
+        temperature: temperature,
+        heatingTime: durationHours * 60,
+        mealTime: 0,
       );
-      if (success) {
-        Navigator.of(context).pop();
+
+      if (mounted) {
+        AppToast.show(
+          context,
+          success
+              ? AppLocalizations.of(context).t('keep_warm_started')
+              : AppLocalizations.of(context).t('command_failed'),
+        );
+        if (success) {
+          Navigator.of(context).pop();
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
       }
     }
   }
@@ -343,12 +353,16 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
     final l10n = AppLocalizations.of(context);
     final displayTemp = getDisplayTemperature();
 
-    return Scaffold(
+    return PopScope(
+      canPop: !_isSubmitting,
+      child: Scaffold(
       backgroundColor: Colors.white,
       appBar: BxAppBar(
         title: l10n.t('keep_warm'),
       ),
-      body: Column(
+      body: AbsorbPointer(
+        absorbing: _isSubmitting,
+        child: Column(
         children: [
           // 主要内容区域（垂直居中）
           Expanded(
@@ -431,26 +445,38 @@ class _KeepWarmPageState extends State<KeepWarmPage> {
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: _startKeepWarm,
+                onPressed: _isSubmitting ? null : _startKeepWarm,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.orange,
+                  disabledBackgroundColor: AppColors.orange.withOpacity(0.6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
                   ),
                 ),
-                child: Text(
-                  l10n.t('start'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        l10n.t('start'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
               ),
             ),
           ),
         ],
       ),
+      ),
+    ),
     );
   }
 }

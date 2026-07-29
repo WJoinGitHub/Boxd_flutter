@@ -282,7 +282,7 @@ packages:
     source: hosted
     version: "7.0.1"
   firebase_core:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
       path: "packages/firebase_core"
       relative: true
@@ -296,6 +296,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "6.0.3"
+  firebase_core_web:
+    dependency: "direct main"
+    description:
+      name: firebase_core_web
+      sha256: dc5096257cd67292d34d78ceeb90836f02a4be921b5f3934311a02bb2376118c
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "3.6.0"
   firebase_messaging:
     dependency: "direct main"
     description:

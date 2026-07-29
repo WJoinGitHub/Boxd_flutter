@@ -21,6 +21,8 @@ class _FaqPageState extends State<FaqPage> {
   static const String _fallbackSupportEmail = 'support@qimitech.com';
 
   String _supportEmail = _fallbackSupportEmail;
+  /// 邮箱接口已返回（成功或失败）后再展示联系邮箱入口
+  bool _brandEmailReady = false;
 
   @override
   void initState() {
@@ -32,17 +34,19 @@ class _FaqPageState extends State<FaqPage> {
     try {
       final result = await ApiClient.getFeedbackBrand();
       print('[FAQ] 品牌信息接口返回: $result');
-      if (result['code'] != 200 || result['data'] == null) return;
-
-      final data = result['data'];
-      if (data is! Map) return;
-      final email = data['brand_email']?.toString().trim();
-      if (email == null || email.isEmpty) return;
-
-      if (!mounted) return;
-      setState(() => _supportEmail = email);
+      if (result['code'] == 200 && result['data'] is Map) {
+        final email =
+            (result['data'] as Map)['brand_email']?.toString().trim();
+        if (email != null && email.isNotEmpty) {
+          _supportEmail = email;
+        }
+      }
     } catch (e) {
       print('[FAQ] 获取品牌邮箱失败，使用本地兜底: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _brandEmailReady = true);
+      }
     }
   }
 
@@ -69,9 +73,11 @@ class _FaqPageState extends State<FaqPage> {
             _buildTopQuestions(context, l10n),
             const SizedBox(height: 30),
 
-            // Contact Service 部分
-            _buildContactService(l10n),
-            const SizedBox(height: 30),
+            // Contact Service：等邮箱接口返回后再显示（失败也显示兜底邮箱）
+            if (_brandEmailReady) ...[
+              _buildContactService(l10n),
+              const SizedBox(height: 30),
+            ],
 
             // Feedback 按钮
             _buildFeedbackButton(context, l10n),

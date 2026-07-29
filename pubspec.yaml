@@ -36,6 +36,10 @@ dependencies:
     path: packages/umeng_common_sdk
   firebase_messaging:
     path: packages/firebase_messaging
+  # Android-only 的 firebase_core 未带 web；分析/Web 条件导入需要能解析此包
+  firebase_core:
+    path: packages/firebase_core
+  firebase_core_web: ^3.6.0
   flutter_slidable: ^3.1.1
 
 dependency_overrides:

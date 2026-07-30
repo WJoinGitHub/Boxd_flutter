@@ -66,7 +66,8 @@ android {
     defaultConfig {
         applicationId = "com.qimi.heatlink"
         minSdk = flutter.minSdkVersion
-        targetSdk = 35
+        // Google Play：2026-08-31 起更新须 target Android 16（API 36）+
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 

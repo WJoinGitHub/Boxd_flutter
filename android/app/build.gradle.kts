@@ -72,7 +72,9 @@ android {
         versionName = flutter.versionName
 
         ndk {
-            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+            // 不打包 x86_64：友盟 agoo_tnet（libtnet-3.1.14.so）的 x86_64 仍为 4 KB ELF 对齐，
+            // 会导致 Google Play「不支持 16 KB 内存页面大小」。真机仅需 arm。
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a")
         }
 
         val umengChannel = readUmengDartConst("channel")
@@ -95,6 +97,8 @@ android {
     packaging {
         jniLibs {
             useLegacyPackaging = false
+            // 双保险：即使传递依赖带入，也排除未对齐的 x86_64 tnet
+            excludes += setOf("**/x86_64/libtnet*.so", "**/x86/libtnet*.so")
         }
     }
 

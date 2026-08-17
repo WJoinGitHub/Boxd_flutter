@@ -685,6 +685,24 @@ class ApiClient {
   static Future<Map<String, dynamic>> deleteNotification(int notificationId) =>
       delete('/notifications/$notificationId');
 
+  // ==================== 欢迎弹窗 ====================
+  /// GET `/popups/welcome` — 是否展示品牌欢迎弹窗（不传 session_id）
+  static Future<Map<String, dynamic>> getWelcomePopup({String? language}) =>
+      get('/popups/welcome', queryParams: {
+        if (language != null && language.isNotEmpty) 'language': language,
+      });
+
+  /// POST `/popups/welcome/ack` — 弹窗展示结果上报（不传 session_id）
+  /// [action]：`shown` 展示成功；`snooze` 勾选「N 天不再提醒」
+  static Future<Map<String, dynamic>> ackWelcomePopup({
+    required String action,
+    required String language,
+  }) =>
+      post('/popups/welcome/ack', {
+        'action': action,
+        'language': language,
+      });
+
   // ==================== 系统接口 ====================
   static Future<Map<String, dynamic>> getSystemConfig() =>
       get('/system/config');

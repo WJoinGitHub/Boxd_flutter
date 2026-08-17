@@ -17,6 +17,7 @@ import 'package:flutter_boxd_app_flow/pages/keep_warm_page.dart';
 import 'package:flutter_boxd_app_flow/utils/app_storage.dart';
 import 'package:flutter_boxd_app_flow/widgets/home_page_header.dart';
 import 'package:flutter_boxd_app_flow/widgets/home_notification_popup.dart';
+import 'package:flutter_boxd_app_flow/widgets/home_welcome_connect_popup.dart';
 import 'package:flutter_boxd_app_flow/models/device_model.dart';
 import 'package:flutter_boxd_app_flow/models/app_notification.dart';
 import 'package:flutter_boxd_app_flow/utils/app_toast.dart';
@@ -294,6 +295,14 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  /// 首页有绑定设备时请求欢迎弹窗（不依赖蓝牙是否已连接）
+  void _requestWelcomePopupIfNeeded() {
+    if (!mounted) return;
+    if (_devices.isEmpty) return;
+    if (!UserService().isLoggedIn || UserService().isGuestMode) return;
+    unawaited(HomeWelcomeConnectPopup.fetchAndShowIfNeeded(context));
+  }
+
   @override
   void didPush() => _refreshHomeMessagesOnVisible();
 
@@ -430,6 +439,10 @@ class _HomePageState extends State<HomePage>
               }
             }
           });
+          // 有绑定设备时请求欢迎弹窗（是否展示由接口 should_show 决定）
+          if (devices.isNotEmpty && mounted) {
+            _requestWelcomePopupIfNeeded();
+          }
           // 云端已无绑定设备时，必须断开 BLE，否则 UI 仍像「已连接」
           if (devices.isEmpty && bleService.isConnected) {
             await bleService.disconnect();

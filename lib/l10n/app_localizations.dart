@@ -29,9 +29,7 @@ class AppLocalizations {
   static final Map<String, Map<String, String>> _euMergedCache = {};
 
   static Future<Map<String, String>> _loadEuForLocale(String languageCode) async {
-    if (_euMergedCache.containsKey(languageCode)) {
-      return _euMergedCache[languageCode]!;
-    }
+    // 不长期缓存：避免热重载后仍用旧 en/json 合并结果，漏掉新增文案 key
     final en = _localizedValues['en']!;
     try {
       final text =
@@ -454,6 +452,15 @@ class AppLocalizations {
 
       // Home notification popup (GET /notifications/popup)
       'notification_popup_button': 'OK',
+
+      // Welcome popup after BLE connect success
+      'welcome_connect_popup_title': 'Hi, welcome to FYY',
+      'welcome_connect_popup_body':
+          "Thanks for choosing us! If anything's not quite right, just reach out — we'll sort it out fast. We want you to love every meal.",
+      'welcome_connect_popup_button': 'Contact Support',
+      'welcome_connect_popup_got_it': 'Got it',
+      'welcome_connect_popup_dont_remind_15d':
+          "Don't remind me for {days} days",
     },
     'zh': {
       // Common
@@ -810,6 +817,14 @@ class AppLocalizations {
 
       // Home notification popup (GET /notifications/popup)
       'notification_popup_button': '知道了',
+
+      // Welcome popup after BLE connect success
+      'welcome_connect_popup_title': 'Hi，欢迎来到 FYY',
+      'welcome_connect_popup_body':
+          '感谢选择我们！如果有任何不合适的地方，随时联系我们——我们会尽快帮你处理。希望你每一餐都吃得开心。',
+      'welcome_connect_popup_button': '联系客服',
+      'welcome_connect_popup_got_it': '知道了',
+      'welcome_connect_popup_dont_remind_15d': '{days} 天内不再提醒',
     },
   };
 
@@ -846,5 +861,5 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool shouldReload(_AppLocalizationsDelegate old) => false;
+  bool shouldReload(_AppLocalizationsDelegate old) => true;
 }

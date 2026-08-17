@@ -296,5 +296,10 @@
   "time_hours_ago": "{hours}時間前",
   "time_yesterday": "昨日",
   "dont_have_account": "アカウントをお持ちでない場合は、",
-  "help_intro": "心配しないでください、私がお手伝いします。一緒にこれを乗り越えていきましょう。次のことを試してください。"
+  "help_intro": "心配しないでください、私がお手伝いします。一緒にこれを乗り越えていきましょう。次のことを試してください。",
+  "welcome_connect_popup_title": "Hi、FYYへようこそ",
+  "welcome_connect_popup_body": "ご利用ありがとうございます！もし何かお困りのことがあれば、すぐご連絡ください。迅速に対応します。すべてのお食事を楽しんでほしいです。",
+  "welcome_connect_popup_button": "サポートに連絡",
+  "welcome_connect_popup_got_it": "了解",
+  "welcome_connect_popup_dont_remind_15d": "{days}日間表示しない"
 }

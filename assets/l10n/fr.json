@@ -296,5 +296,10 @@
   "time_hours_ago": "Il y a {hours} heures",
   "time_yesterday": "Hier",
   "dont_have_account": "Vous n'avez pas de compte ?",
-  "help_intro": "Pas de soucis, je suis là pour vous aider. Travaillons ensemble sur cette question. Veuillez essayer ce qui suit :"
+  "help_intro": "Pas de soucis, je suis là pour vous aider. Travaillons ensemble sur cette question. Veuillez essayer ce qui suit :",
+  "welcome_connect_popup_title": "Bonjour, bienvenue chez FYY",
+  "welcome_connect_popup_body": "Merci de nous avoir choisis ! Si quelque chose ne va pas, contactez-nous — on règle ça vite. Nous voulons que vous aimiez chaque repas.",
+  "welcome_connect_popup_button": "Contacter le support",
+  "welcome_connect_popup_got_it": "Compris",
+  "welcome_connect_popup_dont_remind_15d": "Ne plus me rappeler pendant {days} jours"
 }

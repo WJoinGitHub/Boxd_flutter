@@ -1,0 +1,9 @@
+---
+description: Prefer CodeGraph MCP tools for exploring this Flutter/Dart codebase
+globs:
+alwaysApply: true
+---
+
+This project has CodeGraph initialized (`.codegraph/` exists). Prefer `codegraph_explore` / related CodeGraph MCP tools for “how does X work”, call chains, and impact analysis before broad Grep/Glob scans.
+
+If CodeGraph MCP tools are unavailable, ask the user to restart Cursor after ensuring `.cursor/mcp.json` points to `/opt/homebrew/bin/codegraph`.

@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "codegraph": {
+      "type": "stdio",
+      "command": "/opt/homebrew/bin/codegraph",
+      "args": [
+        "serve",
+        "--mcp",
+        "--path",
+        "/Users/wxh/git_wxh/Boxd_flutter"
+      ]
+    }
+  }
+}
